@@ -1,0 +1,6 @@
+PyFraME.egg-info
+dist
+build
+.idea
+PyFraME/__pycache__
+tests/__pycache__
