@@ -38,9 +38,11 @@ class FragmentDict(collections.OrderedDict):
         else:
             return self.__add__(other)
 
-    def write_xyz(self):
+    def write_xyz(self, filename=None):
         combined_fragments = sum(self.values())
-        combined_fragments.xyz()
+        if filename is None:
+            filename = combined_fragments.identifier
+        combined_fragments.write_xyz(filename)
 
 
 class Fragment(object):
