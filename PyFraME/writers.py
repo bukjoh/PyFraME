@@ -420,23 +420,23 @@ class InputWriters(object):
                             for comp in polarizabilities[pxy][index]:
                                 pot += ' {0:14.8f}'.format(comp)
                             pot += '\n'
-        if exclusion_lists:
-            # TODO padding with zeros
-            exc_list_length = 0
-            for exc_list in exclusion_lists.values():
-                if exc_list_length < len(exc_list):
-                    exc_list_length = len(exc_list)
-            for exc_list in exclusion_lists.values():
-                exc_diff = exc_list_length - len(exc_list)
-                if exc_diff:
-                    exc_list.extend([0] * exc_diff)
-            pot += 'EXCLISTS\n'
-            pot += '{0} {1}\n'.format(len(exclusion_lists), exc_list_length + 1)
-            for index, exc_list in exclusion_lists.items():
-                pot += '{0:<{1}d}'.format(index, length)
-                for exc in exc_list:
-                    pot += ' {0:{1}d}'.format(exc, length)
-                pot += '\n'
+            if exclusion_lists:
+                # TODO padding with zeros
+                exc_list_length = 0
+                for exc_list in exclusion_lists.values():
+                    if exc_list_length < len(exc_list):
+                        exc_list_length = len(exc_list)
+                for exc_list in exclusion_lists.values():
+                    exc_diff = exc_list_length - len(exc_list)
+                    if exc_diff:
+                        exc_list.extend([0] * exc_diff)
+                pot += 'EXCLISTS\n'
+                pot += '{0} {1}\n'.format(len(exclusion_lists), exc_list_length + 1)
+                for index, exc_list in exclusion_lists.items():
+                    pot += '{0:<{1}d}'.format(index, length)
+                    for exc in exc_list:
+                        pot += ' {0:{1}d}'.format(exc, length)
+                    pot += '\n'
         with open('{0}.pot'.format(filename), 'w') as pot_file:
             pot_file.write(pot)
 
