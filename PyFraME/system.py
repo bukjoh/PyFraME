@@ -392,7 +392,7 @@ class MolecularSystem(object):
             exit('ERROR: potential is not defined')
         if filename is None:
             filename = self.name
-        InputWriters.PyFraME_potential(self, filename)
+        InputWriters.pelib_potential(self, filename)
         # InputWriters.frame_potential(self, filename)
 
     def reset(self):
