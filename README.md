@@ -1,44 +1,46 @@
-PyFraME: Python tool for Fragment-based Multiscale Embedding
-============================================================
+# PyFraME: Python tool for Fragment-based Multiscale Embedding
 
-Description
------------
+## Description
 
-PyFraME is a python package ....
+PyFraME is a Python package ....
 
 
-How to cite
------------
+## How to cite
 
 
 
-
-Requirements
-------------
+## Requirements
 
 To use PyFraME you need
- - Python 3.X
- - NumPy ?.?
- - SciPy ?.?
-
-To run the test suite you need
- - nose ?.?
+ - Python 3
+ - NumPy
+ - SciPy
 
 For certain functionality you will need
- - Dalton
- - LoProp for Dalton
- - Molcas 8
+ - Dalton (http://www.daltonprogram.org)
+ - LoProp for Dalton (https://github.com/vahtras/loprop)
+ - Molcas 8 (http://www.molcas.org)
+
+To run the test suite you need ()
+ - nose
 
 
-Installation
-------------
+## Installation
 
-git clone ....
+To install PyFrame 
+```
+git clone https://gitlab.com/FraME-projects/PyFraME.git
 cd PyFrame
-python3 setup.py install (--user)
+python setup.py install [--user]
+```
+Note that this will install NumPy and Scipy if they are not installed already.
 
 
-Tests
------
+## Tests
 
-nosetest-3
+To run the test suite type
+```
+nosetests
+```
+from the PyFraME root directory.
+
