@@ -349,7 +349,7 @@ class InputWriters(object):
             mol_file.write(mol)
 
     @staticmethod
-    def PyFraME_potential(system, filename=None):
+    def pelib_potential(system, filename=None):
         """Write potential file for PyFraME"""
         if filename is None:
             filename = system.name
