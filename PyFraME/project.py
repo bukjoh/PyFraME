@@ -541,3 +541,17 @@ class Project(object):
                 except IndexError:
                     continue
             print('INFO: sum of partial charges after redistribution: {0:8.4f}'.format(charge))
+
+    def write_potential(self, system):
+        """Write potential file"""
+        system_dir = os.path.join(self.work_dir, system.name)
+        os.chdir(system_dir)
+        system.write_potential()
+        os.chdir(self.work_dir)
+
+    def write_core(self, system):
+        """Write core region to file"""
+        system_dir = os.path.join(self.work_dir, system.name)
+        os.chdir(system_dir)
+        system.write_core()
+        os.chdir(self.work_dir)
