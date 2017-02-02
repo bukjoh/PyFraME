@@ -1,4 +1,4 @@
-"""Blablabla"""
+"""Contains the Project class"""
 
 import os
 import shutil
@@ -20,7 +20,7 @@ __all__ = ['Project']
 
 
 class Project(object):
-    """Defines a project and all parameters associated with it"""
+    """Project class"""
     def __init__(self, **kwargs):
         if 'SCRATCH' in os.environ:
             self._scratch_dir = os.environ['SCRATCH']
@@ -73,6 +73,7 @@ class Project(object):
 
     @property
     def scratch_dir(self):
+        """Name of the scratch directory"""
         return self._scratch_dir
 
     @scratch_dir.setter
@@ -82,6 +83,7 @@ class Project(object):
 
     @property
     def work_dir(self):
+        """Name of the work directory"""
         return self._work_dir
 
     @work_dir.setter
@@ -91,6 +93,7 @@ class Project(object):
 
     @property
     def node_list(self):
+        """List of node names that will be used for calculations"""
         return self._node_list
 
     @node_list.setter
@@ -101,6 +104,7 @@ class Project(object):
 
     @property
     def jobs_per_node(self):
+        """Number of jobs to run on each node"""
         return self._jobs_per_node
 
     @jobs_per_node.setter
@@ -110,6 +114,7 @@ class Project(object):
 
     @property
     def memory_per_job(self):
+        """Amount of memory to use for each job"""
         return self._memory_per_job
 
     @memory_per_job.setter
@@ -119,7 +124,7 @@ class Project(object):
 
     @property
     def mpi_procs_per_job(self):
-        """Number of MPI processes per job"""
+        """Number of MPI processes that each job will use"""
         return self._mpi_procs_per_job
 
     @mpi_procs_per_job.setter
@@ -129,7 +134,7 @@ class Project(object):
 
     @property
     def omp_threads_per_job(self):
-        "Number of OpenMP threads per job"
+        """Number of OpenMP threads for each job (or each MPI process)"""
         return self._omp_threads_per_job
 
     @omp_threads_per_job.setter
@@ -148,6 +153,7 @@ class Project(object):
         self._comm_port = comm_port
 
     def print_info(self):
+        """Print Project settings"""
         print('INFO: work directory set to {0}'.format(self.work_dir))
         print('INFO: scratch directory set to {0}'.format(self.scratch_dir))
         print('INFO: running {0} job per node'.format(self.jobs_per_node))
@@ -159,6 +165,7 @@ class Project(object):
         print('INFO: using node(s): {0}'.format(self.node_list))
 
     def create_embedding_potential(self, system):
+        """Create embedding potential"""
         # TODO check if required properties are available
         assert isinstance(system, MolecularSystem)
         if not system.regions:
@@ -176,7 +183,6 @@ class Project(object):
         for region in system.regions.values():
             if region.use_standard_potentials:
                 continue
-            os.chdir(system_dir)
             writers = []
             combine_calc = False
             if region.use_mfcc:
