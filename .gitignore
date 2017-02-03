@@ -2,5 +2,6 @@ PyFraME.egg-info
 dist
 build
 .idea
-PyFraME/__pycache__
+pyframe/__pycache__
 tests/__pycache__
+*.pyc

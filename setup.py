@@ -24,8 +24,8 @@ st.setup(name='PyFraME',
                       'Topic :: Scientific/Engineering :: Physics'
                       ],
          install_requires=['numpy', 'scipy'],
-         packages=['PyFraME'],
+         packages=['pyframe'],
          package_data={'PyFraME': ['data/*.csv']},
          data_files=['VERSION'],
-         entry_points={'console_scripts': ['PyFraME = PyFraME.__main__:main']}
+         entry_points={'console_scripts': ['PyFraME = pyframe.__main__:main']}
          )
