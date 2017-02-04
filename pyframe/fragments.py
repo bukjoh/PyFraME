@@ -223,11 +223,11 @@ class Fragment(object):
 
     @property
     def coordinate_matrix(self):
-        return [atom.coordinate for atom in self.atoms]
+        return np.array([atom.coordinate for atom in self.atoms])
 
     @property
     def heavy_coordinate_matrix(self):
-        return [atom.coordinate for atom in self.atoms if atom.element != 'H']
+        return np.array([atom.coordinate for atom in self.atoms if atom.element != 'H'])
 
     def add_hydrogen_links(self, bond_threshold=1.2):
         for donor in self.bonded_fragments:
@@ -448,7 +448,7 @@ def find_bonded_fragments(acceptor, donors, bond_threshold=1.2):
 
 
 def find_nearest_atom(atom, fragment):
-    distances = scipy.spatial.distance.cdist(np.array(atom.coordinate), fragment.coordinate_matrix)
+    distances = scipy.spatial.distance.cdist(np.array(atom.coordinate, ndmin=2), fragment.coordinate_matrix)
     index = distances.argmin()
     return fragment.atoms[index]
 

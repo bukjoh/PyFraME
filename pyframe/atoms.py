@@ -1,5 +1,7 @@
 """Blablabla"""
 
+import numpy as np
+
 from .utils import element2mass
 
 __all__ = ['AtomList', 'Atom']
@@ -88,7 +90,7 @@ class Atom(object):
     def coordinate(self, coordinate):
         assert all(isinstance(coord, float) for coord in coordinate)
         assert len(coordinate) == 3
-        self._coordinate = coordinate
+        self._coordinate = np.array(coordinate)
 
     @property
     def element(self):
