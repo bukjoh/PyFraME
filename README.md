@@ -27,13 +27,17 @@ To run the test suite you need (note that currently there are very few tests):
 
 ## Installation
 
-To install PyFrame 
+To install PyFrame you can either download the source and install manually:
 ```
 git clone https://gitlab.com/FraME-projects/PyFraME.git
 cd PyFrame
-python setup.py install [--user]
+python setup.py install
 ```
-Note that this will install NumPy and Scipy (which can take a while) if they are not installed already.
+where you may need to add `--user` in the last line if you do not have root access / sudo rights, or install directly through the PyPI repository:
+```
+pip install PyFraME
+```
+Note that this will install NumPy and Scipy if they are not installed already (which can take a while).
 
 
 ## Tests
