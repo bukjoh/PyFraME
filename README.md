@@ -33,10 +33,7 @@ git clone https://gitlab.com/FraME-projects/PyFraME.git
 cd PyFrame
 python setup.py install
 ```
-where you may need to add `--user` in the last line if you do not have root access / sudo rights, or install directly through the PyPI repository:
-```
-pip install PyFraME
-```
+where you may need to add `--user` in the last line if you do not have root access / sudo rights.
 Note that this will install NumPy and Scipy if they are not installed already (which can take a while).
 
 
