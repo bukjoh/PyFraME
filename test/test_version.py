@@ -1,6 +1,9 @@
+# coding=utf-8
 """Test PyFraME.version.py"""
 
 import unittest
+
+import pyframe.version as version
 
 
 class TestVersion(unittest.TestCase):

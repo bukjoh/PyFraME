@@ -4,8 +4,8 @@ import unittest
 
 import numpy as np
 
-import PyFraME.atoms as atoms
-import PyFraME.utils as utils
+import pyframe.atoms as atoms
+import pyframe.utils as utils
 
 
 class TestUtils(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestUtils(unittest.TestCase):
             self.assertIsInstance(element, str)
             self.assertIsInstance(utils.element2charge[element], int)
 
-    def test_element2amss(self):
+    def test_element2mass(self):
         for element in utils.elements:
             self.assertIsInstance(element, str)
             self.assertIsInstance(utils.element2mass[element], float)
