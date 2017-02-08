@@ -35,7 +35,10 @@ python setup.py install
 ```
 where you may need to add `--user` in the last line if you do not have root access / sudo rights.
 Note that this will install NumPy and Scipy if they are not installed already (which can take a while).
-
+If python3 is not your default python version, change the last command to:
+```
+python3 setup.py install
+```
 
 ## Tests
 
@@ -43,4 +46,7 @@ To run the test suite type
 ```
 nosetests
 ```
-from the PyFraME root directory.
+from the PyFraME root directory. If python3 is not your default python version, type:
+```
+nosetests3
+```
