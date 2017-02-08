@@ -1,3 +1,4 @@
+# coding=utf-8
 """Blablabla"""
 
 import numpy as np

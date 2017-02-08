@@ -1,3 +1,4 @@
+# coding=utf-8
 """ The module 'system' contains the class 'MolecularSystem', which defines the moleculer system."""
 
 import os.path

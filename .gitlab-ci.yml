@@ -1,0 +1,10 @@
+image: python:3.3
+
+test:
+    script:
+        - python --version
+        - python3 --version
+        - pip --version
+        - pip3 --version
+        - pip install nose
+        - nosetests-3

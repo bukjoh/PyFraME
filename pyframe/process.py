@@ -1,4 +1,5 @@
-"""Blablabla"""
+# coding=utf-8
+"""Run jobs in parallel"""
 
 import os
 import sys

@@ -1,3 +1,4 @@
+# coding=utf-8
 """Blablabla"""
 
 __all__ = ['UnknownOptionError', 'PDBError', 'PropertyNotSetError']

@@ -1,4 +1,6 @@
-"""Version"""
+# coding=utf-8
+"""Read version from VERSION file"""
+
 import os
 
 root_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), os.pardir)
