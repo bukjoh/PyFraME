@@ -2,4 +2,4 @@ image: python:3.3
 
 test:
     script:
-        - nosetests-3.3
+        - nosetests
