@@ -2,4 +2,5 @@ image: python:3.3
 
 test:
     script:
+        - pip install numpy scipy nose
         - nosetests
