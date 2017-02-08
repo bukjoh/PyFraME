@@ -73,7 +73,7 @@ class Project(object):
 
     @property
     def scratch_dir(self):
-        """Name of the scratch directory"""
+        """Return the name of the scratch directory."""
         return self._scratch_dir
 
     @scratch_dir.setter
@@ -83,7 +83,7 @@ class Project(object):
 
     @property
     def work_dir(self):
-        """Name of the work directory"""
+        """Return the name of the work directory."""
         return self._work_dir
 
     @work_dir.setter
@@ -93,7 +93,7 @@ class Project(object):
 
     @property
     def node_list(self):
-        """List of node names that will be used for calculations"""
+        """Return the list of node names that will be used for calculations."""
         return self._node_list
 
     @node_list.setter
@@ -104,7 +104,7 @@ class Project(object):
 
     @property
     def jobs_per_node(self):
-        """Number of jobs to run on each node"""
+        """Return the number of jobs to run on each node."""
         return self._jobs_per_node
 
     @jobs_per_node.setter
@@ -114,7 +114,7 @@ class Project(object):
 
     @property
     def memory_per_job(self):
-        """Amount of memory to use for each job"""
+        """Return the amount of memory to use for each job."""
         return self._memory_per_job
 
     @memory_per_job.setter
@@ -124,7 +124,7 @@ class Project(object):
 
     @property
     def mpi_procs_per_job(self):
-        """Number of MPI processes that each job will use"""
+        """Return the number of MPI processes that each job will use."""
         return self._mpi_procs_per_job
 
     @mpi_procs_per_job.setter
@@ -134,7 +134,7 @@ class Project(object):
 
     @property
     def omp_threads_per_job(self):
-        """Number of OpenMP threads for each job (or each MPI process)"""
+        """Return the number of OpenMP threads for each job (or each MPI process)."""
         return self._omp_threads_per_job
 
     @omp_threads_per_job.setter
@@ -144,7 +144,7 @@ class Project(object):
 
     @property
     def comm_port(self):
-        """Communication port"""
+        """Return the communication port."""
         return self._comm_port
 
     @comm_port.setter
@@ -153,7 +153,7 @@ class Project(object):
         self._comm_port = comm_port
 
     def print_info(self):
-        """Print Project settings"""
+        """Print Project settings."""
         print('INFO: work directory set to {0}'.format(self.work_dir))
         print('INFO: scratch directory set to {0}'.format(self.scratch_dir))
         print('INFO: running {0} job per node'.format(self.jobs_per_node))
@@ -165,7 +165,7 @@ class Project(object):
         print('INFO: using node(s): {0}'.format(self.node_list))
 
     def create_embedding_potential(self, system):
-        """Create embedding potential"""
+        """Create embedding potential."""
         # TODO check if required properties are available
         assert isinstance(system, MolecularSystem)
         if not system.regions:
@@ -549,14 +549,14 @@ class Project(object):
             print('INFO: sum of partial charges after redistribution: {0:8.4f}'.format(charge))
 
     def write_potential(self, system):
-        """Write potential file"""
+        """Write potential file."""
         system_dir = os.path.join(self.work_dir, system.name)
         os.chdir(system_dir)
         system.write_potential()
         os.chdir(self.work_dir)
 
     def write_core(self, system):
-        """Write core region to file"""
+        """Write core region to file."""
         system_dir = os.path.join(self.work_dir, system.name)
         os.chdir(system_dir)
         system.write_core()

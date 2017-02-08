@@ -1,4 +1,4 @@
-"""Blablabla"""
+""" The module 'system' contains the class 'Molecularsystem', which defines the moleculer system."""
 
 import os.path
 
@@ -16,7 +16,7 @@ __all__ = ['MolecularSystem']
 
 class MolecularSystem(object):
 
-    """Defines a molecular system"""
+    """Define a molecular system."""
 
     def __init__(self, input_file, name=None, input_reader=None, bond_threshold=None):
         assert isinstance(input_file, str), 'Input file must be given as a string'
@@ -201,6 +201,13 @@ class MolecularSystem(object):
     #     self.fragments[new_fragment.identifier] = new_fragment
 
     def get_fragments_by_identifier(self, identifiers):
+        """Return a fragment dictionary based on a list of identifiers.
+
+        An identifier is a unique string that identifies a fragment.
+        This can for example be a combination of fragment number, chain id and fragment name
+        from a PDB file, such as '1_A_SOL'.
+ 
+        """
         assert isinstance(identifiers, list)
         assert all(isinstance(identifier, str) for identifier in identifiers)
         fragments = FragmentDict()
@@ -210,6 +217,11 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_name(self, names):
+        """Return a fragment dictionary based on a list of fragment names.
+
+        Each fragment name must be a string.
+
+        """
         assert isinstance(names, list)
         assert all(isinstance(name, str) for name in names)
         fragments = FragmentDict()
@@ -219,6 +231,11 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_number(self, numbers):
+        """Return a fragment dictionary based on a list of fragment numbers.
+
+        Each fragment number must be an integer.
+
+        """
         assert isinstance(numbers, list)
         assert all(isinstance(number, int) for number in numbers)
         fragments = FragmentDict()
@@ -238,6 +255,11 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_chain_id(self, chain_ids):
+        """Return a fragment dictionary based on a list of chain ids.
+
+        Each chain id must be a string.
+
+        """
         assert isinstance(chain_ids, list)
         assert all(isinstance(chain_id, str) for chain_id in chain_ids)
         fragments = FragmentDict()
@@ -247,6 +269,10 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_charge(self, charges):
+        """Returns a fragment dictionary based on a list of charges.
+
+        Each charge must be an integer.
+        """
         assert isinstance(charges, list)
         assert all(isinstance(charge, int) for charge in charges)
         fragments = FragmentDict()
@@ -256,6 +282,19 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_distance(self, distance, reference, use_center_of_mass=True, protect_molecules=True):
+        """Returns a fragment dictionary based on a distance criterion from a reference fragment dictionary.
+
+        The distance must be a floating-point number. The reference must be a fragment dictionary.
+
+        The variable 'use_center_of_mass' must be a Boolean and defaults to 'True'. If 'True', the centre of mass
+        of both the fragment and reference are used to evaluate the distance. If 'False', the distance between
+        individual atoms will be evaluated.
+
+        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all atoms with the
+        same identifier will be added to the output fragment dictionary if one of the atoms with that identifier
+        fullfills the distance criterion.
+
+        """
         assert isinstance(distance, float)
         assert isinstance(reference, FragmentDict)
         assert isinstance(use_center_of_mass, bool)
@@ -370,6 +409,11 @@ class MolecularSystem(object):
         self._regions[name] = Region(name, fragments, **kwargs)
 
     def set_core_region(self, fragments, **kwargs):
+        """Set the core region.
+
+        The variable 'fragments' may contain several fragment dictionaries.
+ 
+        """
         fragment = sum(fragments.values())
         self._core_region = CoreRegion(fragment, **kwargs)
 
@@ -387,6 +431,12 @@ class MolecularSystem(object):
             exit('ERROR: {0} does not exist'.format(writer))
 
     def write_potential(self, filename=None):
+        """Write the embedding potential for the molecular system to a file.
+        
+        The filename will be the variable 'filename' with the extension '.pot'.
+        The variable 'filename' defaults to the name of the the molecular system with the extension '.pot'.
+
+        """
         if self.potential is None:
             # TODO: replace exit with exception
             exit('ERROR: potential is not defined')
@@ -396,6 +446,12 @@ class MolecularSystem(object):
         # InputWriters.frame_potential(self, filename)
 
     def reset(self):
+        """Reset the molecular system.
+
+        The fragment dictionary of the molecular system is reset to its initial value.
+        The potential dictionary is emptied and the core region is removed.
+
+        """
         self._fragments = FragmentDict(self._fragments_backup)
         self._potential = PotentialDict()
         self._core_region = None
