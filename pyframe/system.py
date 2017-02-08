@@ -1,4 +1,4 @@
-""" The module 'system' contains the class 'Molecularsystem', which defines the moleculer system."""
+""" The module 'system' contains the class 'MolecularSystem', which defines the moleculer system."""
 
 import os.path
 
@@ -91,6 +91,15 @@ class MolecularSystem(object):
             fragment.bonded_fragments = find_bonded_fragments(fragment, fragments, self.bond_threshold)
 
     def split_fragment_by_identifier(self, identifier, new_names, fragment_definitions):
+        """Split a fragment with the specified identifier into several fragments with different names.
+
+        The identifier must be a string. 'new_names' must be a list of strings.
+        'fragment_definitions' must be a list with the same number of items as 'new_names'.
+        Each item in the 'fragment_definitions' list must be a list of strings representing atom names.
+        
+        Fragments with the specified identifier are split based on the specified fragment definitions.
+
+        """
         assert isinstance(identifier, str)
         assert isinstance(new_names, list)
         assert all(isinstance(name, str) for name in new_names)
@@ -135,6 +144,15 @@ class MolecularSystem(object):
             fragment.bonded_fragments = find_bonded_fragments(fragment, fragments_and_neighbours, self.bond_threshold)
 
     def split_fragment_by_name(self, name, new_names, fragment_definitions):
+        """Split a fragment with the specified name into several fragments with different names.
+
+        The value for 'name' must be a string. 'new_names' must be a list of strings.
+        'fragment_definitions' must be a list with the same number of items as 'new_names'.
+        Each item in the 'fragment_definitions' list must be a list of strings representing atom names.
+        
+        Fragments with the specified 'name' are split based on the specified fragment definitions.
+
+        """
         assert isinstance(name, str)
         assert isinstance(new_names, list)
         assert all(isinstance(new_name, str) for new_name in new_names)
@@ -269,7 +287,7 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_charge(self, charges):
-        """Returns a fragment dictionary based on a list of charges.
+        """Return a fragment dictionary based on a list of charges.
 
         Each charge must be an integer.
         """
@@ -282,7 +300,7 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_distance(self, distance, reference, use_center_of_mass=True, protect_molecules=True):
-        """Returns a fragment dictionary based on a distance criterion from a reference fragment dictionary.
+        """Return a fragment dictionary based on a distance criterion from a reference fragment dictionary.
 
         The distance must be a floating-point number. The reference must be a fragment dictionary.
 
@@ -329,6 +347,20 @@ class MolecularSystem(object):
 
     def get_fragments_by_distance_and_name(self, distance, names, reference, use_center_of_mass=True,
                                            protect_molecules=True):
+        """Return a fragment dictionary based on a distance criterion and a list of fragment names.
+
+        The distance must be a floating-point number. The reference must be a fragment dictionary.
+        Each fragment name must be a string.
+
+        The variable 'use_center_of_mass' must be a Boolean and defaults to 'True'. If 'True', the centre of mass
+        of both the fragment and reference are used to evaluate the distance. If 'False', the distance between
+        individual atoms will be evaluated.
+
+        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all atoms with the
+        same identifier will be added to the output fragment dictionary if one of the atoms with that identifier
+        fullfills the distance criterion.
+
+        """
         assert isinstance(distance, float)
         assert isinstance(names, list)
         assert all(isinstance(name, str) for name in names)
@@ -368,6 +400,20 @@ class MolecularSystem(object):
 
     def get_fragments_by_distance_and_chain_id(self, distance, chain_ids, reference, use_center_of_mass=True,
                                                protect_molecules=True):
+        """Return a fragment dictionary based on a distance criterion and a list of chain ids.
+
+        The distance must be a floating-point number. The reference must be a fragment dictionary.
+        Each chain id must be a string.
+
+        The variable 'use_center_of_mass' must be a Boolean and defaults to 'True'. If 'True', the centre of mass
+        of both the fragment and reference are used to evaluate the distance. If 'False', the distance between
+        individual atoms will be evaluated.
+
+        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all atoms with the
+        same identifier will be added to the output fragment dictionary if one of the atoms with that identifier
+        fullfills the distance criterion.
+
+        """
         assert isinstance(distance, float)
         assert isinstance(chain_ids, list)
         assert all(isinstance(name, str) for name in chain_ids)
@@ -406,18 +452,22 @@ class MolecularSystem(object):
         return fragments
 
     def add_region(self, name, fragments, **kwargs):
+        """Add a region to the molecular system."""
         self._regions[name] = Region(name, fragments, **kwargs)
 
     def set_core_region(self, fragments, **kwargs):
-        """Set the core region.
-
-        The variable 'fragments' may contain several fragment dictionaries.
- 
-        """
+        """Set the core region of the molucular system.."""
         fragment = sum(fragments.values())
         self._core_region = CoreRegion(fragment, **kwargs)
 
     def write_core(self, filename=None):
+        """Write a DALTON molecule file for the core region of the molecular system.
+
+        The core region must be set before this function can be called.
+        The filename will be the variable 'filename' with the extensiion '.mol'.
+        The attribute 'filename' is optional and defaults to the name of the molecular system plus '_core'.
+
+        """
         if self._core_region is None:
             # TODO: replace exit with exception
             exit('ERROR: core region is not defined')
