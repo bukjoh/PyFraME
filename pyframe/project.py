@@ -1,3 +1,4 @@
+# coding=utf-8
 """Contains the Project class"""
 
 import os
