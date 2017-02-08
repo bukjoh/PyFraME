@@ -16,7 +16,6 @@ __all__ = ['MolecularSystem']
 
 
 class MolecularSystem(object):
-
     """Define a molecular system."""
 
     def __init__(self, input_file, name=None, input_reader=None, bond_threshold=None):
@@ -301,17 +300,16 @@ class MolecularSystem(object):
         return fragments
 
     def get_fragments_by_distance(self, distance, reference, use_center_of_mass=True, protect_molecules=True):
-        """Return a fragment dictionary based on a distance criterion from a reference fragment dictionary.
+        """Return a fragment dictionary based on a distance criterion from a reference fragment.
 
-        The distance must be a floating-point number. The reference must be a fragment dictionary.
+        The distance must be a floating-point number. The reference must be a fragment.
 
         The variable 'use_center_of_mass' must be a Boolean and defaults to 'True'. If 'True', the centre of mass
         of both the fragment and reference are used to evaluate the distance. If 'False', the distance between
         individual atoms will be evaluated.
 
-        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all atoms with the
-        same identifier will be added to the output fragment dictionary if one of the atoms with that identifier
-        fullfills the distance criterion.
+        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all fragments that are
+        covalently bonded to the fragment that fulfills the distance criterion will be included.
 
         """
         assert isinstance(distance, float)
@@ -357,9 +355,8 @@ class MolecularSystem(object):
         of both the fragment and reference are used to evaluate the distance. If 'False', the distance between
         individual atoms will be evaluated.
 
-        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all atoms with the
-        same identifier will be added to the output fragment dictionary if one of the atoms with that identifier
-        fullfills the distance criterion.
+        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all fragments that are
+        covalently bonded to the fragment that fulfills the distance criterion will be included.
 
         """
         assert isinstance(distance, float)
@@ -410,9 +407,8 @@ class MolecularSystem(object):
         of both the fragment and reference are used to evaluate the distance. If 'False', the distance between
         individual atoms will be evaluated.
 
-        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all atoms with the
-        same identifier will be added to the output fragment dictionary if one of the atoms with that identifier
-        fullfills the distance criterion.
+        The variable 'protect_molecules' must be a Boolean and defaults to 'True'. If 'True', all fragments that are
+        covalently bonded to the fragment that fulfills the distance criterion will be included.
 
         """
         assert isinstance(distance, float)
@@ -462,7 +458,7 @@ class MolecularSystem(object):
         self._core_region = CoreRegion(fragment, **kwargs)
 
     def write_core(self, filename=None):
-        """Write a DALTON molecule file for the core region of the molecular system.
+        """Write a Dalton molecule file for the core region of the molecular system.
 
         The core region must be set before this function can be called.
         The filename will be the variable 'filename' with the extensiion '.mol'.

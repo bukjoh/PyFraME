@@ -22,6 +22,7 @@ __all__ = ['Project']
 
 class Project(object):
     """Project class"""
+
     def __init__(self, **kwargs):
         if 'SCRATCH' in os.environ:
             self._scratch_dir = os.environ['SCRATCH']
@@ -74,7 +75,7 @@ class Project(object):
 
     @property
     def scratch_dir(self):
-        """Return the name of the scratch directory."""
+        """Get or set the name of the scratch directory."""
         return self._scratch_dir
 
     @scratch_dir.setter
@@ -84,7 +85,7 @@ class Project(object):
 
     @property
     def work_dir(self):
-        """Return the name of the work directory."""
+        """Get or set the name of the work directory."""
         return self._work_dir
 
     @work_dir.setter
@@ -94,7 +95,7 @@ class Project(object):
 
     @property
     def node_list(self):
-        """Return the list of node names that will be used for calculations."""
+        """Get or set the list of node names that will be used for calculations."""
         return self._node_list
 
     @node_list.setter
@@ -105,7 +106,7 @@ class Project(object):
 
     @property
     def jobs_per_node(self):
-        """Return the number of jobs to run on each node."""
+        """Get or set the number of jobs to run on each node."""
         return self._jobs_per_node
 
     @jobs_per_node.setter
@@ -115,7 +116,7 @@ class Project(object):
 
     @property
     def memory_per_job(self):
-        """Return the amount of memory to use for each job."""
+        """Get or set the amount of memory to use for each job."""
         return self._memory_per_job
 
     @memory_per_job.setter
@@ -125,7 +126,7 @@ class Project(object):
 
     @property
     def mpi_procs_per_job(self):
-        """Return the number of MPI processes that each job will use."""
+        """Get or set the number of MPI processes that each job will use."""
         return self._mpi_procs_per_job
 
     @mpi_procs_per_job.setter
@@ -135,7 +136,7 @@ class Project(object):
 
     @property
     def omp_threads_per_job(self):
-        """Return the number of OpenMP threads for each job (or each MPI process)."""
+        """Get or set the number of OpenMP threads for each job (or each MPI process)."""
         return self._omp_threads_per_job
 
     @omp_threads_per_job.setter
@@ -145,7 +146,7 @@ class Project(object):
 
     @property
     def comm_port(self):
-        """Return the communication port."""
+        """Get or set the communication port."""
         return self._comm_port
 
     @comm_port.setter
@@ -154,7 +155,7 @@ class Project(object):
         self._comm_port = comm_port
 
     def print_info(self):
-        """Print Project settings."""
+        """Print settings."""
         print('INFO: work directory set to {0}'.format(self.work_dir))
         print('INFO: scratch directory set to {0}'.format(self.scratch_dir))
         print('INFO: running {0} job per node'.format(self.jobs_per_node))
