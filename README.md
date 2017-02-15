@@ -50,3 +50,8 @@ from the PyFraME root directory. If python3 is not your default python version, 
 ```
 nosetests3
 ```
+or
+```
+nosetest-3
+```
+depending on your specific setup.
