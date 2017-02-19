@@ -1,12 +1,32 @@
-# PyFraME: Python tool for Fragment-based Multiscale Embedding
+# PyFraME: Python tools for Fragment-based Multiscale Embedding
 
 ## Description
 
 PyFraME is a Python package that provides tools for setting up and running fragment-based multiscale embedding calculations.
+The workflow of such calculations is as follows:
+ 1. a part of the total molecular system is chosen as the core region which is typically treated a high level of theory
+ 2. the remainder is split into a number of regions each of which can be treated at different levels of theory
+ 3. each region (except the core) is divided into fragments that consist of either
+    - small molecules
+    - or parts of larger molecules that have been fragmented into smaller computationally manageable fragments
+ 4. a calculation is run on each fragment to obtain fragment parameters (if necessary)
+ 5. all fragment parameters of all regions are assembled and constitute the embedding potential
+ 6. a final calculation is run on the core region using the embedding potential to model the effect from the remainder of the molecular system
 
 
 ## How to cite
 
+ J. M. H. Olsen, *PyFraME: Python tools for Fragment-based Multiscale Embedding (version X.X.X)*, **2017**, https://gitlab.com/FraME-projects/PyFraME.
+
+Bibtex entry:
+```
+@misc{pyframe,
+	author = {J. M. H. Olsen},
+	title = {{PyFraME}: {P}ython tools for {F}ragment-based {M}ultiscale {E}mbedding (version X.X.X)},
+	year = {2017},
+	note = {https://gitlab.com/FraME-projects/PyFraME}
+}
+```
 
 
 ## Requirements
