@@ -3,7 +3,9 @@
 ## Description
 
 PyFraME is a Python package that provides tools for setting up and running fragment-based multiscale embedding calculations.
-The aim is to provide tools that can automatize the workflow of such calculations in a flexible manner. The typical workflow is as follows:
+The aim is to provide tools that can automatize the workflow of such calculations in a flexible manner.
+
+The typical workflow is as follows:
  1. a part of the total molecular system is chosen as the core region which is typically treated a high level of theory
  2. the remainder is split into a number of regions each of which can be treated at different levels of theory
  3. each region (except the core) is divided into fragments that consist of either
@@ -20,13 +22,11 @@ To cite PyFraME please use a format similar to the following
 
 "J. M. H. Olsen, *PyFraME: Python tools for Fragment-based Multiscale Embedding (version 0.1.0)*, **2017**, https://doi.org/10.5281/zenodo.293765"
 
-where the version and DOI should of course correspond to the actual version that was used.
-
-Bibtex entry:
+where the version and DOI should of course correspond to the actual version that was used. A possible BibTeX entry could be:
 ```
 @misc{pyframe,
 	author = {Olsen, J. M. H.},
-	title = {{PyFraME}: {P}ython tools for {F}ragment-based {M}ultiscale {E}mbedding (version X.X.X)},
+	title = {{PyFraME}: {P}ython tools for {F}ragment-based {M}ultiscale {E}mbedding (version 0.1.0)},
 	year = {2017},
 	note = {https://doi.org/10.5281/zenodo.293765}}
 ```
@@ -51,7 +51,7 @@ To run the test suite you need (note that currently there are very few tests):
 
 ## Installation
 
-The source can be downloaded from [GitLab](https://gitlab.com/FraME-projects/PyFraME) or [Zenodo deposit](http://dx.doi.org/10.5281/zenodo.293765). Alternatively, you can clone the repository
+The source can be downloaded from [GitLab](https://gitlab.com/FraME-projects/PyFraME) or [Zenodo deposit](https://doi.org/10.5281/zenodo.293765). Alternatively, it can be cloned from the repository
 ```
 git clone https://gitlab.com/FraME-projects/PyFraME.git
 ```
