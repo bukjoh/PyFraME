@@ -30,7 +30,7 @@ Bibtex entry:
 	year = {2017},
 	note = {https://doi.org/10.5281/zenodo.293765}}
 ```
-Alternatively, BibTeX and other formats can be generated here: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13276.svg)](https://doi.org/10.5281/zenodo.13276)
+Alternatively, BibTeX and other formats can be generated here: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.293765.svg)](https://doi.org/10.5281/zenodo.293765)
 
 
 ## Requirements
