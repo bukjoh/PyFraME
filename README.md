@@ -51,7 +51,7 @@ To run the test suite you need (note that currently there are very few tests):
 
 ## Installation
 
-The source can be downloaded from [GitLab](https://gitlab.com/FraME-projects/PyFraME) or [Zenodo deposit](https://doi.org/10.5281/zenodo.293765). Alternatively, it can be cloned from the repository
+The source can be downloaded from [GitLab](https://gitlab.com/FraME-projects/PyFraME) or [Zenodo](https://doi.org/10.5281/zenodo.293765). Alternatively, it can be cloned from the repository
 ```
 git clone https://gitlab.com/FraME-projects/PyFraME.git
 ```
