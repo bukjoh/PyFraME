@@ -46,9 +46,8 @@ class Project(object):
             self._scratch_dir = os.getcwd()
         self._work_dir = os.getcwd()
         if os.environ.get('PBS_NODEFILE'):
-            node_file = open(os.environ['PBS_NODEFILE'], 'r')
-            nodes = node_file.read().splitlines()
-            node_file.close()
+            with open(os.environ['PBS_NODEFILE'], 'r') as node_file:
+                nodes = node_file.read().splitlines()
         elif os.environ.get('SLURM_NODELIST'):
             cmd = 'scontrol show hostname $SLURM_NODELIST'
             nodes, error = run(cmd)
