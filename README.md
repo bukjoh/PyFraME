@@ -1,5 +1,9 @@
 # PyFraME: Python tools for Fragment-based Multiscale Embedding calculations
 
+Code coverage: [![codecov](https://codecov.io/gl/FraME-projects/PyFraME/branch/master/graph/badge.svg)](https://codecov.io/gl/FraME-projects/PyFraME)
+
+Archived copy of current release ([0.1.0](https://gitlab.com/FraME-projects/PyFraME/tags/v0.1.0)): [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.293765.svg)](https://doi.org/10.5281/zenodo.293765)
+
 ## Description
 
 PyFraME is a Python package that provides tools for setting up and running fragment-based multiscale embedding calculations.
