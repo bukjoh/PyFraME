@@ -2,6 +2,8 @@
 
 Code coverage: [![codecov](https://codecov.io/gl/FraME-projects/PyFraME/branch/master/graph/badge.svg)](https://codecov.io/gl/FraME-projects/PyFraME)
 
+Automated code review status: [![Code Issues](https://www.quantifiedcode.com/api/v1/project/873f9f2adbc54b9e992ca9854ce7e66a/badge.svg)](https://www.quantifiedcode.com/app/project/873f9f2adbc54b9e992ca9854ce7e66a)
+
 Archived copy of current release ([0.1.0](https://gitlab.com/FraME-projects/PyFraME/tags/v0.1.0)): [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.293765.svg)](https://doi.org/10.5281/zenodo.293765)
 
 ## Description
