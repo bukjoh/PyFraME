@@ -450,12 +450,15 @@ class MolecularSystem(object):
 
     def add_region(self, name, fragments, **kwargs):
         """Add a region to the molecular system."""
+        for fragment in fragments.values():
+            fragment.region = name
         self._regions[name] = Region(name, fragments, **kwargs)
 
     def set_core_region(self, fragments, **kwargs):
         """Set the core region of the molucular system.."""
-        fragment = sum(fragments.values())
-        self._core_region = CoreRegion(fragment, **kwargs)
+        for fragment in fragments.values():
+            fragment.region = 'core_region'
+        self._core_region = CoreRegion(fragments, **kwargs)
 
     def write_core(self, filename=None):
         """Write a Dalton molecule file for the core region of the molecular system.
