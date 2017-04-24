@@ -7,6 +7,4 @@ test:
         - pip install scipy
         - pip install nose
         - pip install coverage
-        - pip install codecov
         - nosetests --with-coverage
-        - codecov --token=83ec5fee-5f50-477f-9eb4-a2bed10becbe

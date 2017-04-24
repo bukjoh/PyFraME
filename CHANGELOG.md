@@ -3,9 +3,6 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
-### Added
-- Code coverage reports using [Codecov](https://codecov.io)
-
 ### Changed
 - Now hydrogen caps between core region and other regions are always used
 

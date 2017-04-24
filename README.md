@@ -1,6 +1,8 @@
 # PyFraME: Python tools for Fragment-based Multiscale Embedding calculations
 
-Code coverage: [![codecov](https://codecov.io/gl/FraME-projects/PyFraME/branch/master/graph/badge.svg)](https://codecov.io/gl/FraME-projects/PyFraME)
+Build status: [![build status](https://gitlab.com/FraME-projects/PyFraME/badges/master/build.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
+
+Code coverage: [![coverage report](https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
 
 Automated code review status: [![Code Issues](https://www.quantifiedcode.com/api/v1/project/873f9f2adbc54b9e992ca9854ce7e66a/badge.svg)](https://www.quantifiedcode.com/app/project/873f9f2adbc54b9e992ca9854ce7e66a)
 
