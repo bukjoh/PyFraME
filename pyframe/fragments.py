@@ -60,6 +60,7 @@ class Fragment(object):
         self._bonded_fragments = []
         self._capped_fragment = None
         self._concaps = FragmentDict()
+        self._region = None
         for key in kwargs.keys():
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
@@ -222,6 +223,14 @@ class Fragment(object):
         self._concaps = concaps
 
     @property
+    def region(self):
+        return self._region
+
+    @region.setter
+    def region(self, region_name: str):
+        self._region = region_name
+
+    @property
     def coordinate_matrix(self):
         return np.array([atom.coordinate for atom in self.atoms])
 
@@ -257,6 +266,16 @@ class Fragment(object):
         capped_fragment = self.copy()
         for donor in self.bonded_fragments:
             donor_copy = donor.copy()
+            if donor_copy.region == 'core_region':
+                # cap with hydrogens
+                bonded_atoms = find_bonded_atoms(capped_fragment, donor_copy, bond_threshold)
+                for acceptor_atom, donor_atom in bonded_atoms:
+                    if donor_atom.element != 'H':
+                        link_atom = convert2hydrogen(acceptor_atom, donor_atom)
+                        capped_fragment.atoms.append(link_atom)
+                    else:
+                        capped_fragment.atoms.append(donor_atom.copy())
+                continue
             identifiers = sorted([capped_fragment.identifier, donor_copy.identifier])
             identifier = '{0[0]}-{0[1]}'.format(identifiers)
             if identifier in self.concaps:
@@ -373,20 +392,21 @@ class Fragment(object):
         self.capped_fragment = capped_fragment
 
     def copy(self):
-        fragment = Fragment()
-        fragment.name = self.name
-        fragment.number = self.number
-        fragment.chain_id = self.chain_id
-        fragment.identifier = self.identifier
-        # fragment.spin_multiplicity = self.spin_multiplicity
+        fragment_copy = Fragment()
+        fragment_copy.name = self.name
+        fragment_copy.number = self.number
+        fragment_copy.chain_id = self.chain_id
+        fragment_copy.identifier = self.identifier
+        # fragment_copy.spin_multiplicity = self.spin_multiplicity
         if self.atoms:
             for atom in self.atoms:
-                fragment.atoms.append(atom.copy())
+                fragment_copy.atoms.append(atom.copy())
         if self.bonded_fragments:
-            fragment.bonded_fragments = []
+            fragment_copy.bonded_fragments = []
             for bonded_fragment in self.bonded_fragments:
-                fragment.bonded_fragments.append(bonded_fragment)
-        return fragment
+                fragment_copy.bonded_fragments.append(bonded_fragment)
+        fragment_copy.region = self.region
+        return fragment_copy
 
     def write_xyz(self, filename=None):
         if filename is None:

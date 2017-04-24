@@ -14,8 +14,8 @@ class CoreRegion(object):
 
     """Container for region attributes and methods"""
 
-    def __init__(self, fragment, **kwargs):
-        self._fragment = fragment
+    def __init__(self, fragments, **kwargs):
+        self._fragments = fragments
         self._program = 'dalton'
         self._method = 'DFT'
         self._xcfun = 'B3LYP'
@@ -29,12 +29,12 @@ class CoreRegion(object):
                 exit('ERROR: unknown region property "{0}"'.format(key))
 
     @property
-    def fragment(self):
-        return self._fragment
+    def fragments(self):
+        return self._fragments
 
-    @fragment.setter
-    def fragment(self, fragment):
-        self._fragment = fragment
+    @fragments.setter
+    def fragments(self, fragments):
+        self._fragments = fragments
 
     @property
     def program(self):
@@ -71,7 +71,7 @@ class CoreRegion(object):
     def basis(self, basis):
         if isinstance(basis, list):
             assert all(isinstance(bas, str) for bas in basis)
-            if len(basis) != self.fragment.number_of_atoms:
+            if len(basis) != self.fragments.number_of_atoms:
                 # TODO use exception
                 exit('ERROR: either specify one basis set or a list corresponding to number of '
                      'atoms in fragment')
@@ -91,9 +91,10 @@ class CoreRegion(object):
     def write_xyz(self, filename=None):
         if filename is None:
             filename = 'core_region'
-        elements = [atom.element for atom in self.fragment.atoms]
-        coordinates = [atom.coordinate for atom in self.fragment.atoms]
-        InputWriters.xyz(elements, coordinates, self.fragment.charge, filename)
+        elements = [atom.element for fragment in self.fragments.values() for atom in fragment.atoms]
+        coordinates = [atom.coordinate for fragment in self.fragments.values() for atom in fragment.atoms]
+        total_charge = sum([fragment.charge for fragment in self.fragments.values()])
+        InputWriters.xyz(elements, coordinates, total_charge, filename)
 
 #    def fit_caps(self):
 

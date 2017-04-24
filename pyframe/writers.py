@@ -263,7 +263,7 @@ class InputWriters(object):
         """Write Dalton molecule file for core region"""
         if filename is None:
             filename = system.name
-        core_fragment = system.core_region.fragment
+        core_fragment = sum(system.core_region.fragments.values())
         if system.core_region.use_caps:
             core_fragment.add_cap_links()
         else:
