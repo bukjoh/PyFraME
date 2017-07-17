@@ -8,3 +8,25 @@ test:
         - pip install nose
         - pip install coverage
         - nosetests --with-coverage --cover-erase --cover-package=pyframe
+
+
+image: python:3.5
+
+test:
+    script:
+        - pip install --upgrade pip
+        - pip install numpy
+        - pip install scipy
+        - pip install nose
+        - nosetests
+
+
+image: python:3.4
+
+test:
+    script:
+        - pip install --upgrade pip
+        - pip install numpy
+        - pip install scipy
+        - pip install nose
+        - nosetests
