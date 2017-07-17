@@ -1,6 +1,6 @@
-image: python:3.6
 
-test:
+test:3.6:
+    image: python:3.6
     script:
         - pip install --upgrade pip
         - pip install numpy
@@ -9,10 +9,8 @@ test:
         - pip install coverage
         - nosetests --with-coverage --cover-erase --cover-package=pyframe
 
-
-image: python:3.5
-
-test:
+test:3.5:
+    image: python:3.5
     script:
         - pip install --upgrade pip
         - pip install numpy
@@ -21,9 +19,8 @@ test:
         - nosetests
 
 
-image: python:3.4
-
-test:
+test:3.4:
+    image: python:3.4
     script:
         - pip install --upgrade pip
         - pip install numpy
