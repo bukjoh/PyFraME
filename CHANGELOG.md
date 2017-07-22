@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - There is now a check for empty output files from fragment calculations to prevent deletion of subdirectories of failed fragment calculations
 - Now hydrogen caps between core region and other regions are always used
 
+### Fixed
+- Using Dalton LoProp with multipole orders lower than two no longer fails
+
 ## [0.1.0] - 2017-02-20
 
 ### Added
