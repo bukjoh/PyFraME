@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Now hydrogen caps between core region and other regions are always used
 
 ### Fixed
+- Bug in MOLCAS LoProp ('Fragment' object has no attribute 'xyz')
 - Using Dalton LoProp with multipole orders lower than two no longer fails
 
 ## [0.1.0] - 2017-02-20
