@@ -41,10 +41,8 @@ class InputWriters(object):
             exit('ERROR: only DFT or HF supported for Dalton LoProp')
         inp += '**INTEGRAL\n'
         inp += '.NOSUP\n'
-        if region.multipole_order >= 1:
-            inp += '.DIPLEN\n'
-        if region.multipole_order >= 2:
-            inp += '.SECMOM\n'
+        inp += '.DIPLEN\n'
+        inp += '.SECMOM\n'
         inp += '**RESPONSE\n'
         inp += '*LINEAR\n'
         inp += '.DIPLEN\n'
@@ -77,10 +75,8 @@ class InputWriters(object):
             exit('ERROR: only DFT or HF supported for Dalton LoProp')
         inp += '**INTEGRAL\n'
         inp += '.NOSUP\n'
-        if region.multipole_order >= 1:
-            inp += '.DIPLEN\n'
-        if region.multipole_order >= 2:
-            inp += '.SECMOM\n'
+        inp += '.DIPLEN\n'
+        inp += '.SECMOM\n'
         inp += '**END OF\n'
         with open('{0}.dal'.format(filename), 'w') as input_file:
             input_file.write(inp)
