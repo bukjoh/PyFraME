@@ -239,7 +239,8 @@ class Project(object):
             process_jobs(directories, filenames, self.node_list, self.jobs_per_node, self.comm_port)
             for filename, directory in zip(filenames, directories):
                 if os.path.isfile(filename.replace('.sh', '.out')):
-                    shutil.rmtree(directory)
+                    if os.path.getsize(filename.replace('.sh', '.out')) > 0:
+                        shutil.rmtree(directory)
         atom2site = {}
         site2atom = {}
         site_index = 1
