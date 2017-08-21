@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 - Bug in MOLCAS LoProp ('Fragment' object has no attribute 'xyz')
 - Using Dalton LoProp with multipole orders lower than two no longer fails
+- Bug in charge redistribution where negative surplus charge would not be redistributed
 
 ## [0.1.0] - 2017-02-20
 

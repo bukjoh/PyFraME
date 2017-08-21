@@ -533,7 +533,7 @@ class Project(object):
                 continue
         print('INFO: sum of partial charges: {0:8.4f}'.format(charge))
         surplus_charge = formal_charge - charge
-        if surplus_charge > 0.0:
+        if abs(surplus_charge) > 0.0:
             print('INFO: surplus charge: {0:8.4f}'.format(surplus_charge))
             print('INFO: redistributing surplus charge to all sites')
             surplus_charge /= number_of_sites
