@@ -53,11 +53,11 @@ class Atom(object):
     """Container for atom attributes and methods"""
 
     def __init__(self, **kwargs):
-        self._name = ''
-        self._number = None
-        self._element = ''
-        self._charge = None
-        self._coordinate = None
+        self.name = ''
+        self.number = None
+        self.element = ''
+        self.charge = None
+        self.coordinate = None
         self._mass = None
         for key in kwargs.keys():
             if hasattr(self, key):
@@ -75,55 +75,15 @@ class Atom(object):
         return msg
 
     @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, name):
-        assert isinstance(name, str)
-        self._name = name
-
-    @property
-    def coordinate(self):
-        return self._coordinate
-
-    @coordinate.setter
-    def coordinate(self, coordinate):
-        assert all(isinstance(coord, float) for coord in coordinate)
-        assert len(coordinate) == 3
-        self._coordinate = np.array(coordinate)
-
-    @property
-    def element(self):
-        return self._element
-
-    @element.setter
-    def element(self, element):
-        assert isinstance(element, str)
-        self._element = element
-        self._mass = element2mass[self.element]
-
-    @property
-    def charge(self):
-        return self._charge
-
-    @charge.setter
-    def charge(self, charge):
-        assert isinstance(charge, float)
-        self._charge = charge
-
-    @property
     def mass(self):
+        if self._mass is None:
+            self._mass = element2mass[self.element]
         return self._mass
 
-    @property
-    def number(self):
-        return self._number
-
-    @number.setter
-    def number(self, number):
-        assert isinstance(number, int)
-        self._number = number
+    @mass.setter
+    def mass(self, mass):
+        assert isinstance(mass, float)
+        self._mass = mass
 
     def copy(self):
         return Atom(name=self.name, coordinate=self.coordinate, element=self.element,

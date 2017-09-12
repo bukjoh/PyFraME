@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Changed
 - There is now a check for empty output files from fragment calculations to prevent deletion of subdirectories of failed fragment calculations
 - Now hydrogen caps between core region and other regions are always used
+- Efficiency-related changes:
+    - compute angles, distances, distance matrices using Numba jit decorator (introduces Numba dependency and removes SciPy dependency)
+    - removed some unnecessary property decorators
 
 ### Fixed
 - Bug in MOLCAS LoProp ('Fragment' object has no attribute 'xyz')

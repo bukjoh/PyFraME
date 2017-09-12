@@ -30,7 +30,7 @@ class TestUtils(unittest.TestCase):
         a = np.array([1.0, 0.0, 0.0])
         b = np.array([0.0, 1.0, 0.0])
         c = np.array([0.0, 0.0, 0.0])
-        angle_rad = utils.get_angle(a, b, c)
+        angle_rad = utils.compute_angle(a, b, c)
         angle_deg = np.rad2deg(angle_rad)
         self.assertIsInstance(angle_rad, float)
         self.assertAlmostEqual(angle_deg, 45.0)

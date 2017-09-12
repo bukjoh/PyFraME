@@ -1,29 +1,18 @@
-
-test:3.6:
+test-3.6:
     image: python:3.6
     script:
         - pip install --upgrade pip
         - pip install numpy
-        - pip install scipy
+        - pip install numba
         - pip install nose
         - pip install coverage
         - nosetests --with-coverage --cover-erase --cover-package=pyframe
 
-test:3.5:
+test-3.5:
     image: python:3.5
     script:
         - pip install --upgrade pip
         - pip install numpy
-        - pip install scipy
-        - pip install nose
-        - nosetests
-
-
-test:3.4:
-    image: python:3.4
-    script:
-        - pip install --upgrade pip
-        - pip install numpy
-        - pip install scipy
+        - pip install numba
         - pip install nose
         - nosetests

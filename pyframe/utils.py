@@ -1,11 +1,12 @@
 # coding=utf-8
 """Blablabla"""
 
+from numba import jit, float64
 import numpy as np
-import scipy.spatial.distance
 
-__all__ = ['BOHR2AA', 'AA2BOHR', 'element2radius', 'element2charge', 'element2mass', 'get_minimum_distance',
-           'get_com_distance', 'get_bond_length', 'scale_bond_length', 'get_angle']
+__all__ = ['BOHR2AA', 'AA2BOHR', 'element2radius', 'element2charge', 'element2mass', 'compute_angle',
+           'compute_distance', 'compute_distance_matrix', 'get_minimum_distance',
+           'get_bond_length', 'scale_bond_length']
 
 BOHR2AA = 0.5291772108
 AA2BOHR = 1.0 / BOHR2AA
@@ -128,12 +129,40 @@ element2mass = {'Ru': 101.904348, 'Re': 186.955744, 'Rf': 261.10869, 'Ra': 226.0
                 'Au': 196.966543, 'At': 209.987126, 'In': 114.903875}
 
 
-def get_angle(a, b, c):
-    """Calculates angle between points a, b and c"""
-    ab = np.linalg.norm(a - b)
-    ac = np.linalg.norm(a - c)
-    bc = np.linalg.norm(b - c)
+@jit(float64(float64[:], float64[:], float64[:]))
+def compute_angle(a, b, c):
+    """Compute angle between points a, b and c"""
+    ab = compute_distance(a, b)
+    ac = compute_distance(a, c)
+    bc = compute_distance(b, c)
     return np.arccos((ab**2 - ac**2 + bc**2) / (2.0 * ab * bc))
+
+
+@jit(float64(float64[:], float64[:]))
+def compute_distance(a, b):
+    """Compute distance between point a and b"""
+    assert len(a) == len(b)
+    distance = 0.0
+    for i in range(len(a)):
+        distance += (b[i] - a[i])**2
+    return np.sqrt(distance)
+
+
+@jit(float64[:,:](float64[:,:], float64[:,:]))
+def compute_distance_matrix(A, B):
+    """Compute distance matrix between matrices A nd B"""
+    distance_matrix = np.zeros((len(A), len(B)))
+    for i in range(len(A)):
+        for j in range(len(B)):
+            distance_matrix[i,j] = compute_distance(A[i], B[j])
+    return distance_matrix
+
+
+def get_minimum_distance(first_fragment, second_fragment):
+    """Calculates minimum atom-atom distance between two fragments"""
+    distances = compute_distance_matrix(first_fragment.coordinate_matrix, second_fragment.coordinate_matrix)
+    min_dist = distances.min()
+    return min_dist
 
 
 def get_bond_length(a, b):
@@ -145,14 +174,3 @@ def scale_bond_length(acceptor_atom, donor_atom):
     factor = get_bond_length(acceptor_atom.element, donor_atom.element)
     factor /= np.linalg.norm(difference_coordinate)
     return acceptor_atom.coordinate - factor * difference_coordinate
-
-
-def get_com_distance(first_fragment, second_fragment):
-    return np.linalg.norm(first_fragment.center_of_mass - second_fragment.center_of_mass)
-
-
-def get_minimum_distance(first_fragment, second_fragment):
-    """Calculates minimum atom-atom distance between two fragments"""
-    distances = scipy.spatial.distance.cdist(first_fragment.coordinate_matrix, second_fragment.coordinate_matrix)
-    min_dist = distances.min()
-    return min_dist

@@ -43,7 +43,7 @@ Alternatively, BibTeX and other formats can be generated here: [![DOI](https://z
 To use PyFraME you need:
  - [Python 3](http://www.python.org)
  - [NumPy](http://www.numpy.org/)
- - [SciPy](http://scipy.org/)
+ - [Numba](https://numba.pydata.org)
 
 For certain functionality you will need one or more of the following:
  - [Dalton](http://www.daltonprogram.org)
@@ -65,7 +65,7 @@ The package is installed by running
 python setup.py install
 ```
 from the PyFraME root directory. Yu may wish to add `--user` in the last line if you do not have root access / sudo rights.
-Note that this will install NumPy and SciPy if they are not installed already (which can take a while).
+Note that this will install NumPy and Numba if they are not installed already (which can take a while).
 If python3 is not your default python version, change the last command to:
 ```
 python3 setup.py install
