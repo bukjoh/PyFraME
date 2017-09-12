@@ -25,7 +25,7 @@ st.setup(name='PyFraME',
                       'Topic :: Scientific/Engineering :: Chemistry',
                       'Topic :: Scientific/Engineering :: Physics'
                       ],
-         install_requires=['numpy', 'scipy'],
+         install_requires=['numpy', 'numba'],
          packages=['pyframe'],
          package_data={'pyframe': ['data/*.csv']},
          data_files=['VERSION'],

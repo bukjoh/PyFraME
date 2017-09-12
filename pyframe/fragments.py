@@ -4,12 +4,10 @@
 import collections
 
 import numpy as np
-import scipy.spatial.distance
 
 from .atoms import AtomList, Atom
 from .writers import InputWriters
-from .utils import get_bond_length, scale_bond_length
-
+from .utils import compute_distance_matrix, get_bond_length, scale_bond_length, compute_distance
 
 __all__ = ['FragmentDict', 'Fragment', 'find_nearest_atom', 'find_bonded_fragments',
            'find_bonded_atoms', 'find_bonded_heavy_atoms', 'find_bonded_hydrogens']
@@ -50,17 +48,16 @@ class Fragment(object):
     """Container for fragment attributes and methods"""
 
     def __init__(self, **kwargs):
-        self._name = ''
-        self._number = None
-        self._chain_id = ''
-        self._identifier = ''
+        self.name = ''
+        self.number = None
+        self.chain_id = ''
+        self.identifier = ''
         # self._spin_multiplicity = None
-        # self._mass = None
-        self._atoms = AtomList()
-        self._bonded_fragments = []
-        self._capped_fragment = None
-        self._concaps = FragmentDict()
-        self._region = None
+        self.atoms = AtomList()
+        self.bonded_fragments = []
+        self.capped_fragment = None
+        self.concaps = FragmentDict()
+        self.region = None
         for key in kwargs.keys():
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
@@ -117,62 +114,6 @@ class Fragment(object):
             return self.__add__(other)
 
     @property
-    def name(self):
-        return self._name
-
-    @name.setter
-    def name(self, name):
-        assert isinstance(name, str)
-        self._name = name
-
-    @property
-    def number(self):
-        return self._number
-
-    @number.setter
-    def number(self, number):
-        assert isinstance(number, int)
-        self._number = number
-
-    @property
-    def chain_id(self):
-        return self._chain_id
-
-    @chain_id.setter
-    def chain_id(self, chain_id):
-        assert isinstance(chain_id, str)
-        self._chain_id = chain_id
-
-    @property
-    def identifier(self):
-        return self._identifier
-
-    @identifier.setter
-    def identifier(self, identifier):
-        assert isinstance(identifier, str)
-        self._identifier = identifier
-
-    # @property
-    # def spin_multiplicity(self):
-    #     return self._spin_multiplicity
-    #
-    # @spin_multiplicity.setter
-    # def spin_multiplicity(self, spin_multiplicity):
-    #     assert isinstance(spin_multiplicity, int)
-    #     assert spin_multiplicity > 0
-    #     self._spin_multiplicity = spin_multiplicity
-
-    @property
-    def atoms(self):
-        return self._atoms
-
-    @atoms.setter
-    def atoms(self, atoms):
-        assert isinstance(atoms, AtomList)
-        assert all(isinstance(atom, Atom) for atom in atoms)
-        self._atoms = atoms
-
-    @property
     def charge(self):
         charge = 0.0
         for atom in self.atoms:
@@ -185,50 +126,13 @@ class Fragment(object):
 
     @property
     def center_of_mass(self):
-        center_of_mass = np.array([0.0, 0.0, 0.0])
+        center_of_mass = np.zeros(3)
         total_mass = 0.0
         for atom in self.atoms:
             total_mass += atom.mass
             center_of_mass += atom.mass * atom.coordinate
         center_of_mass /= total_mass
         return center_of_mass
-
-    @property
-    def bonded_fragments(self):
-        return self._bonded_fragments
-
-    @bonded_fragments.setter
-    def bonded_fragments(self, bonded_fragments):
-        assert isinstance(bonded_fragments, list)
-        assert all(isinstance(fragment, Fragment) for fragment in bonded_fragments)
-        self._bonded_fragments = bonded_fragments
-
-    @property
-    def capped_fragment(self):
-        return self._capped_fragment
-
-    @capped_fragment.setter
-    def capped_fragment(self, capped_fragment):
-        assert isinstance(capped_fragment, Fragment)
-        self._capped_fragment = capped_fragment
-
-    @property
-    def concaps(self):
-        return self._concaps
-
-    @concaps.setter
-    def concaps(self, concaps):
-        assert isinstance(concaps, FragmentDict)
-        assert all(isinstance(fragment, Fragment) for fragment in concaps)
-        self._concaps = concaps
-
-    @property
-    def region(self):
-        return self._region
-
-    @region.setter
-    def region(self, region_name: str):
-        self._region = region_name
 
     @property
     def coordinate_matrix(self):
@@ -434,12 +338,14 @@ def convert2hydrogen(acceptor_atom, donor_atom):
     hydrogen.element = 'H'
     hydrogen.charge = 0.0
     hydrogen.name += 'link'
-    hydrogen.coordinate = scale_bond_length(acceptor_atom, hydrogen)
+    hydrogen.coordinate = np.array(scale_bond_length(acceptor_atom, hydrogen))
     return hydrogen
 
 
 def find_bonded_fragments(acceptor, donors, bond_threshold=1.2):
-
+    """Find all fragments that are bonded to acceptor fragment"""
+    acceptor_coordinate_matrix = acceptor.heavy_coordinate_matrix
+    acceptor_atoms = [atom for atom in acceptor.atoms if atom.element != 'H']
     bonded_fragments = []
     if acceptor.name in WATER_NAMES:
         return bonded_fragments
@@ -448,10 +354,9 @@ def find_bonded_fragments(acceptor, donors, bond_threshold=1.2):
             continue
         if donor.name in WATER_NAMES:
             continue
-        distances = scipy.spatial.distance.cdist(acceptor.heavy_coordinate_matrix, donor.heavy_coordinate_matrix)
+        distances = compute_distance_matrix(acceptor_coordinate_matrix, donor.heavy_coordinate_matrix)
         first, second = np.unravel_index(distances.argmin(), distances.shape)
         distance = distances[first][second]
-        acceptor_atoms = [atom for atom in acceptor.atoms if atom.element != 'H']
         donor_atoms = [atom for atom in donor.atoms if atom.element != 'H']
         acceptor_atom = acceptor_atoms[first]
         donor_atom = donor_atoms[second]
@@ -468,7 +373,7 @@ def find_bonded_fragments(acceptor, donors, bond_threshold=1.2):
 
 
 def find_nearest_atom(atom, fragment):
-    distances = scipy.spatial.distance.cdist(np.array(atom.coordinate, ndmin=2), fragment.coordinate_matrix)
+    distances = compute_distance_matrix(np.array(atom.coordinate, ndmin=2), fragment.coordinate_matrix)
     index = distances.argmin()
     return fragment.atoms[index]
 
@@ -477,7 +382,7 @@ def find_bonded_atoms(acceptor, donor, bond_threshold=1.2):
     bonded_atoms = []
     if acceptor.number_of_atoms == 0 or donor.number_of_atoms == 0:
         return bonded_atoms
-    distances = scipy.spatial.distance.cdist(acceptor.coordinate_matrix, donor.coordinate_matrix)
+    distances = compute_distance_matrix(acceptor.coordinate_matrix, donor.coordinate_matrix)
     for i, row in enumerate(distances):
         for j, r in enumerate(row):
             if r > 5.4:
@@ -493,7 +398,7 @@ def find_bonded_heavy_atoms(acceptor, donor, bond_threshold=1.2):
     bonded_heavy_atoms = []
     if acceptor.number_of_atoms == 0 or donor.number_of_atoms == 0:
         return bonded_heavy_atoms
-    distances = scipy.spatial.distance.cdist(acceptor.coordinate_matrix, donor.coordinate_matrix)
+    distances = compute_distance_matrix(acceptor.coordinate_matrix, donor.coordinate_matrix)
     for i, row in enumerate(distances):
         for j, r in enumerate(row):
             if r > 5.4:
@@ -511,7 +416,7 @@ def find_bonded_hydrogens(acceptor, donor, bond_threshold=1.2):
     bonded_hydrogens = []
     if acceptor.number_of_atoms == 0 or donor.number_of_atoms == 0:
         return bonded_hydrogens
-    distances = scipy.spatial.distance.cdist(acceptor.coordinate_matrix, donor.coordinate_matrix)
+    distances = compute_distance_matrix(acceptor.coordinate_matrix, donor.coordinate_matrix)
     for i, row in enumerate(distances):
         for j, r in enumerate(row):
             if r > 3.0:

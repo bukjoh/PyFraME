@@ -8,7 +8,7 @@ from .fragments import FragmentDict, find_bonded_fragments
 from .regions import CoreRegion, RegionDict, Region
 from .potentials import PotentialDict
 from .readers import InputReaders, read_input_file
-from .utils import get_com_distance, get_minimum_distance
+from .utils import compute_distance, get_minimum_distance
 from .writers import InputWriters
 
 
@@ -320,7 +320,7 @@ class MolecularSystem(object):
         if use_center_of_mass:
             for fragment in list(self.fragments.values()):
                 for reference_fragment in reference.values():
-                    if get_com_distance(fragment, reference_fragment) <= distance:
+                    if compute_distance(fragment.center_of_mass, reference_fragment.center_of_mass) <= distance:
                         if fragment.identifier in self.fragments:
                             fragments[fragment.identifier] = self.fragments.pop(fragment.identifier)
         else:
@@ -370,7 +370,7 @@ class MolecularSystem(object):
                 if fragment.name not in names:
                     continue
                 for reference_fragment in reference.values():
-                    if get_com_distance(fragment, reference_fragment) <= distance:
+                    if compute_distance(fragment.center_of_mass, reference_fragment.center_of_mass) <= distance:
                         if fragment.identifier in self.fragments:
                             fragments[fragment.identifier] = self.fragments.pop(fragment.identifier)
         else:
@@ -422,7 +422,7 @@ class MolecularSystem(object):
                 if fragment.chain_id not in chain_ids:
                     continue
                 for reference_fragment in reference.values():
-                    if get_com_distance(fragment, reference_fragment) <= distance:
+                    if compute_distance(fragment.center_of_mass, reference_fragment.center_of_mass) <= distance:
                         if fragment.identifier in self.fragments:
                             fragments[fragment.identifier] = self.fragments.pop(fragment.identifier)
         else:
