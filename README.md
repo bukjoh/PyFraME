@@ -2,6 +2,7 @@
 
 [![build status](https://gitlab.com/FraME-projects/PyFraME/badges/master/build.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
 [![coverage report](https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
+[![codebeat badge](https://codebeat.co/badges/c1156175-6f7a-45dc-8dfd-897b23398a8b)](https://codebeat.co/projects/gitlab-com-frame-projects-pyframe-master)
 
 Archived copy of current release ([0.1.0](https://gitlab.com/FraME-projects/PyFraME/tags/v0.1.0)): [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.293765.svg)](https://doi.org/10.5281/zenodo.293765)
 
