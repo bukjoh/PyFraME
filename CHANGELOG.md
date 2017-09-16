@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Efficiency-related changes:
     - compute angles, distances, distance matrices using Numba jit decorator (introduces Numba dependency and removes SciPy dependency)
     - removed some unnecessary property decorators
+- Refactored the atoms module (faster and safer)
 
 ### Fixed
 - Bug in MOLCAS LoProp ('Fragment' object has no attribute 'xyz')
