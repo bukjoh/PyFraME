@@ -6,7 +6,9 @@ test-3.6:
         - pip install numba
         - pip install nose
         - pip install coverage
+        - pip install codecov
         - NUMBA_DISABLE_JIT=1 nosetests --with-coverage --cover-erase --cover-package=pyframe
+        - codecov --token=5c2b4cbc-5626-4d17-877d-b29bf16032b3
 
 test-3.5:
     image: python:3.5
