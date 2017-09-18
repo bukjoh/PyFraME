@@ -8,11 +8,12 @@ import numpy as np
 
 from .fragments import FragmentDict, Fragment
 from .atoms import AtomList, Atom
+from .potentials import PotentialDict, Potential
 from .utils import BOHR2AA, AA2BOHR, elements
 from .errors import PDBError
 
 
-__all__ = ['OutputReaders', 'InputReaders', 'read_potential_file', 'read_input_file']
+__all__ = ['OutputReaders', 'InputReaders', 'read_potential_file', 'read_pelib_potential', 'read_input_file']
 
 
 def read_potential_file(potential_file):
@@ -43,7 +44,50 @@ def read_potential_file(potential_file):
                 except:
                     raise
                 potential[line[0]][line[1]][props[i]] = values
-        return potential
+    return potential
+
+
+def read_pelib_potential(filename):
+    potential = PotentialDict()
+    with open(filename) as input_file:
+        line = input_file.readline()
+        while line:
+            if '@COORDINATES' in line:
+                num_sites = int(input_file.readline())
+                unit = str(input_file.readline().strip())
+                for i in range(num_sites):
+                    site = Potential()
+                    temp = input_file.readline().split()
+                    site.element = temp[0]
+                    if unit == 'AU':
+                        site.coordinate = [float(value)*BOHR2AA for value in temp[1:4]]
+                    elif unit == 'AA':
+                        site.coordinate = [float(value) for value in temp[1:4]]
+                    else:
+                        raise ValueError
+                    potential[i+1] = site
+            if 'ORDER' in line:
+                temp = line.split()
+                if len(temp) == 2:
+                    multipole_order = int(temp[1])
+                    num_multipoles = int(input_file.readline())
+                    for i in range(num_multipoles):
+                        temp = input_file.readline().split()
+                        site_num = int(temp[0])
+                        multipole = [float(value) for value in temp[1:]]
+                        setattr(potential[site_num], 'M{0}'.format(multipole_order), multipole)
+                elif len(temp) == 3:
+                    polarizability_order = [int(value) for value in temp[1:]]
+                    num_polarizabilities = int(input_file.readline())
+                    for i in range(num_polarizabilities):
+                        temp = input_file.readline().split()
+                        site_num = int(temp[0])
+                        polarizability = [float(value) for value in temp[1:]]
+                        setattr(potential[site_num], 'P{0[0]}{0[1]}'.format(polarizability_order), polarizability)
+                else:
+                    raise ValueError
+            line = input_file.readline()
+    return potential
 
 
 def read_input_file(input_file, input_reader):
