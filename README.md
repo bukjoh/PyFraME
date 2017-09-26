@@ -2,6 +2,8 @@
 
 [![build status](https://gitlab.com/FraME-projects/PyFraME/badges/master/build.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
 [![coverage report](https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/8cfac142c47040e0a9b2d318ee11becf)](https://www.codacy.com/app/foeroyingur/PyFraME?utm_source=gitlab.com&amp;utm_medium=referral&amp;utm_content=FraME-projects/PyFraME&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/8cfac142c47040e0a9b2d318ee11becf)](https://www.codacy.com/app/foeroyingur/PyFraME?utm_source=gitlab.com&utm_medium=referral&utm_content=FraME-projects/PyFraME&utm_campaign=Badge_Coverage)
 
 Archived copy of current release ([0.1.0](https://gitlab.com/FraME-projects/PyFraME/tags/v0.1.0)): [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.293765.svg)](https://doi.org/10.5281/zenodo.293765)
 
