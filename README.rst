@@ -66,15 +66,15 @@ Requirements
 
 To use PyFraME you need:
 
-* `Python 3 <http://www.python.org>`_
+* `Python 3 <http://www.python.org/>`_
 * `NumPy <http://www.numpy.org/>`_
-* `Numba <https://numba.pydata.org>`_
+* `Numba <https://numba.pydata.org/>`_
 
 For certain functionality you will need one or more of the following:
 
-* `Dalton <http://www.daltonprogram.org>`_
+* `Dalton <http://www.daltonprogram.org/>`_
 * `LoProp for Dalton <https://github.com/vahtras/loprop>`_
-* `Molcas 8 <http://www.molcas.org>`_
+* `Molcas 8 <http://www.molcas.org/>`_
 
 To run the test suite you need:
 
@@ -89,8 +89,12 @@ Installation
 
 The source can be downloaded from
 `GitLab <https://gitlab.com/FraME-projects/PyFraME>`_ or
-`Zenodo <https://doi.org/10.5281/zenodo.293765>`_. Alternatively, it
-can be cloned from the repository::
+`Zenodo <https://doi.org/10.5281/zenodo.293765>`_. Alternatively, it can be
+installed from `PyPI <https://pypi.org/>`_::
+
+    pip install pyframe
+
+Alternatively, it can be cloned from the repository::
 
     git clone https://gitlab.com/FraME-projects/PyFraME.git
 
@@ -100,11 +104,8 @@ The package is installed by running::
 
 from the PyFraME root directory. You may wish to add ``--user`` in the
 last line if you do not have root access / sudo rights. Note that this
-will install NumPy and Numba if they are not installed already (which
-can take a while). If python3 is not your default python version, change
-the last command to::
+will install NumPy and Numba if they are not installed already.
 
-    python3 setup.py install
 
 Tests
 -----
@@ -113,14 +114,8 @@ To run the test suite type::
 
     nosetests
 
-from the PyFraME root directory. If python3 is not your default python
-version, type::
-
-    nosetests3
-
 or::
 
-    nosetest-3
+    pytest
 
-depending on your specific setup.
-
+from the PyFraME root directory.
