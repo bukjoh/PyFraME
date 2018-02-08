@@ -1,0 +1,3 @@
+include tests/permanganate/*
+include tests/insulin/*
+include tests/PNA_in_CCl4/*
