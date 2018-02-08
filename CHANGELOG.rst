@@ -1,12 +1,15 @@
 Change Log
 ==========
 
-The format is based on `Keep a Changelog <http://keepachangelog.com/>`__
+The format is based on `Keep a Changelog <http://keepachangelog.com/>`_
 and this project adheres to `Semantic
-Versioning <http://semver.org/>`__.
+Versioning <http://semver.org/>`_.
 
 [Unreleased]
 ------------
+
+[0.1.1] - 2018-02-08
+--------------------
 
 Changed
 ~~~~~~~
