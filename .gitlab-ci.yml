@@ -6,9 +6,7 @@ test-3.6:
         - pip install numba
         - pip install nose
         - pip install coverage
-        - pip install codacy-coverage
         - NUMBA_DISABLE_JIT=1 nosetests --with-coverage --cover-erase --cover-xml --cover-package=pyframe
-        - python-codacy-coverage -r tests/coverage.xml
 
 test-3.5:
     image: python:3.5

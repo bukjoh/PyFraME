@@ -5,10 +5,6 @@ PyFraME: Python tools for Fragment-based Multiscale Embedding calculations
    :target: https://gitlab.com/FraME-projects/PyFraME/commits/master
 .. image:: https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg
    :target: https://gitlab.com/FraME-projects/PyFraME/commits/master
-.. image:: https://api.codacy.com/project/badge/Grade/8cfac142c47040e0a9b2d318ee11becf
-   :target: https://www.codacy.com/app/foeroyingur/PyFraME?utm_source=gitlab.com&amp;utm_medium=referral&amp;utm_content=FraME-projects/PyFraME&amp;utm_campaign=Badge_Grade
-.. image:: https://api.codacy.com/project/badge/Coverage/8cfac142c47040e0a9b2d318ee11becf
-   :target: https://www.codacy.com/app/foeroyingur/PyFraME?utm_source=gitlab.com&amp;utm_medium=referral&amp;utm_content=FraME-projects/PyFraME&amp;utm_campaign=Badge_Coverage
 
 Archived copies: |DOI|
 
