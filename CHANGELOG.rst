@@ -12,6 +12,8 @@ Added
 ~~~~~
 
 -  Moved the suggested BibTeX snippet into the `CITATION file <https://gitlab.com/FraME-projects/PyFraME/blob/master/CITATION>`_
+-  Added sodium and chloride charge and isotropic polarizability to solvent
+   embedding potential
 
 [0.1.1] - 2018-02-08
 --------------------
