@@ -129,15 +129,6 @@ element2mass = {'Ru': 101.904348, 'Re': 186.955744, 'Rf': 261.10869, 'Ra': 226.0
                 'Au': 196.966543, 'At': 209.987126, 'In': 114.903875}
 
 
-@jit(float64(float64[:], float64[:], float64[:]))
-def compute_angle(a, b, c):
-    """Compute angle between points a, b and c"""
-    ab = compute_distance(a, b)
-    ac = compute_distance(a, c)
-    bc = compute_distance(b, c)
-    return np.arccos((ab**2 - ac**2 + bc**2) / (2.0 * ab * bc))
-
-
 @jit(float64(float64[:], float64[:]))
 def compute_distance(a, b):
     """Compute distance between point a and b"""
@@ -146,6 +137,15 @@ def compute_distance(a, b):
     for i in range(len(a)):
         distance += (b[i] - a[i])**2
     return np.sqrt(distance)
+
+
+@jit(float64(float64[:], float64[:], float64[:]))
+def compute_angle(a, b, c):
+    """Compute angle between points a, b and c"""
+    ab = compute_distance(a, b)
+    ac = compute_distance(a, c)
+    bc = compute_distance(b, c)
+    return np.arccos((ab**2 - ac**2 + bc**2) / (2.0 * ab * bc))
 
 
 @jit(float64[:,:](float64[:,:], float64[:,:]))
