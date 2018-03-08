@@ -55,7 +55,7 @@ class IntegrationTests(unittest.TestCase):
         system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
         core = system.get_fragments_by_name(names=['4NP'])
         system.set_core_region(core)
-        solvent = system.get_fragments_by_name(names=['WAT', 'Na+', 'Cl-'])
+        solvent = system.get_fragments_by_name(names=['WAT', 'Na+', 'Cl-', 'Mg2+', 'Ca2+', 'Zn2+', 'K+', 'Br-'])
         system.add_region(name='solvent', fragments=solvent, use_standard_potentials=True, standard_potential_model='SEP')
         project.create_embedding_potential(system)
         project.write_core(system)
