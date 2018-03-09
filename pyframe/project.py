@@ -183,6 +183,7 @@ class Project(object):
         readers = collections.defaultdict(list)
         for region in system.regions.values():
             if region.use_standard_potentials:
+                region.create_mfcc_fragments()
                 continue
             writers = []
             combine_calc = False
@@ -248,26 +249,60 @@ class Project(object):
             if region.use_standard_potentials:
                 potential = read_potential_file(region.standard_potential_model)
                 for fragment in region.fragments.values():
-                    exclusion_list = []
                     for atom in fragment.atoms:
                         site = Potential()
+                        system.potential[site_index] = site
+                        atom2site[atom.number] = site_index
+                        site2atom[site_index] = atom.number
                         site.coordinate = atom.coordinate
                         site.element = atom.element
+                        site_index += 1
+                for fragment in region.fragments.values():
+                    for atom in fragment.atoms:
+                        site = system.potential[atom2site[atom.number]]
                         for key, value in potential[fragment.name][atom.name].items():
                             if not hasattr(site, key):
                                 # TODO replace with exception
                                 exit('ERROR: {0} is not implemented'.format(key))
                             setattr(site, key, value)
-                        system.potential[site_index] = site
-                        exclusion_list.append(site_index)
-                        atom2site[atom.number] = site_index
-                        site2atom[site_index] = atom.number
-                        site_index += 1
-                    for index in exclusion_list:
-                        other_indices = []
-                        other_indices.extend(exclusion_list)
-                        other_indices.pop(other_indices.index(index))
-                        system.potential[index].exclusion_list.extend(other_indices)
+                if region.standard_potential_exclusion_type == 'mfcc':
+                    for fragment in region.fragments.values():
+                        for atom in fragment.atoms:
+                            exclusion_list = []
+                            for other_atom in fragment.capped_fragment.atoms:
+                                if 'link' in other_atom.name:
+                                    continue
+                                if other_atom.number not in atom2site:
+                                    continue
+                                exclusion_list.append(atom2site[other_atom.number])
+                            for neighbour in fragment.bonded_fragments:
+                                if neighbour.identifier not in region.fragments:
+                                    continue
+                                if atom.number in neighbour.capped_fragment.atoms:
+                                    if 'link' in neighbour.capped_fragment.atoms.get(atom.number).name:
+                                        continue
+                                    for other_atom in neighbour.capped_fragment.atoms:
+                                        if 'link' in other_atom.name:
+                                            continue
+                                        if other_atom.number not in atom2site:
+                                            continue
+                                        exclusion_list.append(atom2site[other_atom.number])
+                            exclusion_list = sorted(list(set(exclusion_list)))
+                            exclusion_list.pop(exclusion_list.index(atom2site[atom.number]))
+                            system.potential[atom2site[atom.number]].exclusion_list = exclusion_list
+                elif region.standard_potential_exclusion_type == 'fragment':
+                    for fragment in region.fragments.values():
+                        for atom in fragment.atoms:
+                            exclusion_list = []
+                            for other_atom in fragment.capped_fragment.atoms:
+                                if 'link' in other_atom.name:
+                                    continue
+                                if other_atom.number not in atom2site:
+                                    continue
+                                exclusion_list.append(atom2site[other_atom.number])
+                            exclusion_list = sorted(list(set(exclusion_list)))
+                            exclusion_list.pop(exclusion_list.index(atom2site[atom.number]))
+                            system.potential[atom2site[atom.number]].exclusion_list = exclusion_list
             elif region.use_mfcc:
                 for fragment in region.fragments.values():
                     for atom in fragment.atoms:
@@ -314,6 +349,7 @@ class Project(object):
                             #     # TODO handle if coordinates are in different order
                             #     exit('ERROR: the ordering of the sites is not correct')
                             if atom.number not in fragment.atoms:
+                                # TODO make optional
                                 # if 'M0' not in params:
                                 #     continue
                                 # in_region = False
@@ -517,12 +553,19 @@ class Project(object):
                             other_indices.pop(other_indices.index(index))
                             system.potential[index].exclusion_list.extend(other_indices)
         os.chdir(self.work_dir)
-        charge = 0.0
+        formal_charge = 0.0
         for region in system.regions.values():
             for fragment in region.fragments.values():
-                charge += fragment.charge
-        print('INFO: total formal charge: {0:8.4f}'.format(charge))
-        formal_charge = charge
+                formal_charge += fragment.charge
+        print('INFO: total formal charge: {0:12.8f}'.format(formal_charge))
+        for region in system.regions.values():
+            for fragment in region.fragments.values():
+                fragment_charge = 0.0
+                for atom in fragment.atoms:
+                    site = system.potential[atom2site[atom.number]]
+                    fragment_charge += site.M0[0]
+                if abs(fragment_charge - float(round(fragment_charge))) > 1.0e-8:
+                    print('WARNING: sum of partial charges of {0} is: {1:12.8f}'.format(fragment.identifier, fragment_charge))
         charge = 0.0
         number_of_sites = 0
         for site in system.potential.values():
@@ -531,24 +574,25 @@ class Project(object):
                 number_of_sites += 1
             except IndexError:
                 continue
-        print('INFO: sum of partial charges: {0:8.4f}'.format(charge))
+        print('INFO: sum of partial charges: {0:12.8f}'.format(charge))
         surplus_charge = formal_charge - charge
-        if abs(surplus_charge) > 0.0:
-            print('INFO: surplus charge: {0:8.4f}'.format(surplus_charge))
-            print('INFO: redistributing surplus charge to all sites')
-            surplus_charge /= number_of_sites
-            for site in system.potential.values():
-                try:
-                    site.M0[0] += surplus_charge
-                except IndexError:
-                    continue
-            charge = 0.0
-            for site in system.potential.values():
-                try:
-                    charge += site.M0[0]
-                except IndexError:
-                    continue
-            print('INFO: sum of partial charges after redistribution: {0:8.4f}'.format(charge))
+        if abs(surplus_charge) > 1.0e-8:
+            print('INFO: surplus charge: {0:12.8f}'.format(surplus_charge))
+            print('WARNING: this may indicate that an error has occurred')
+            #print('INFO: redistributing surplus charge to all sites')
+            #surplus_charge /= number_of_sites
+            #for site in system.potential.values():
+            #    try:
+            #        site.M0[0] += surplus_charge
+            #    except IndexError:
+            #        continue
+            #charge = 0.0
+            #for site in system.potential.values():
+            #    try:
+            #        charge += site.M0[0]
+            #    except IndexError:
+            #        continue
+            #print('INFO: sum of partial charges after redistribution: {0:12.8f}'.format(charge))
 
     def write_potential(self, system):
         """Write potential file."""

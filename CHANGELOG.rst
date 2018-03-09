@@ -16,6 +16,9 @@ Added
    embedding potential
 -  Added calcium, magnesium, potassium, zinc and bromine charge and isotropic
    polarizability to solvent embedding potential
+-  New option to choose exclusion type for standard potentials, currently it
+   can be either 'fragment', which excludes all interactions within a fragment,
+   or 'mfcc', which is the MFCC type exclusions.
 
 [0.1.1] - 2018-02-08
 --------------------

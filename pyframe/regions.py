@@ -152,7 +152,8 @@ class Region(object):
         self._exchange_repulsion_basis = '6-31+G*'
         self._exchange_repulsion_factors = [0.8, 0.0, 0.0]
         # standard potentials options
-        self._standard_potential_model = 'ff94'
+        self._standard_potential_model = 'sep'
+        self._standard_potential_exclusion_type = 'fragment'
         # lennard jones options
         # mfcc options
         self._mfcc_order = 2
@@ -503,6 +504,15 @@ class Region(object):
     def standard_potential_model(self, standard_potential_model):
         assert isinstance(standard_potential_model, str)
         self._standard_potential_model = standard_potential_model.lower()
+
+    @property
+    def standard_potential_exclusion_type(self):
+        return self._standard_potential_exclusion_type
+
+    @standard_potential_exclusion_type.setter
+    def standard_potential_exclusion_type(self, standard_potential_exclusion_type):
+        assert isinstance(standard_potential_exclusion_type, str)
+        self._standard_potential_exclusion_type = standard_potential_exclusion_type.lower()
 
     @property
     def use_lennard_jones(self):
