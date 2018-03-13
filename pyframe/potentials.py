@@ -30,8 +30,11 @@ class Potential(object):
         self._M6 = []
         self._P00 = []
         self._P01 = []
+        self._P02 = []
+        self._P03 = []
         self._P11 = []
         self._P12 = []
+        self._P13 = []
         self._P22 = []
         self._P23 = []
         self._P33 = []
@@ -108,7 +111,7 @@ class Potential(object):
     def M3(self, M3):
         assert isinstance(M3, list)
         assert all(isinstance(component, float) for component in M3)
-        assert len(M3) == 15
+        assert len(M3) == 10
         self._M3 = M3
 
     @property
@@ -119,7 +122,7 @@ class Potential(object):
     def M4(self, M4):
         assert isinstance(M4, list)
         assert all(isinstance(component, float) for component in M4)
-        assert len(M4) == 21
+        assert len(M4) == 15
         self._M4 = M4
 
     @property
@@ -130,7 +133,7 @@ class Potential(object):
     def M5(self, M5):
         assert isinstance(M5, list)
         assert all(isinstance(component, float) for component in M5)
-        assert len(M5) == 28
+        assert len(M5) == 21
         self._M5 = M5
 
     @property
@@ -141,7 +144,7 @@ class Potential(object):
     def M6(self, M6):
         assert isinstance(M6, list)
         assert all(isinstance(component, float) for component in M6)
-        assert len(M6) == 36
+        assert len(M6) == 28
         self._M6 = M6
 
     @property
@@ -167,6 +170,28 @@ class Potential(object):
         self._P01 = P01
 
     @property
+    def P02(self):
+        return self._P02
+
+    @P02.setter
+    def P02(self, P02):
+        assert isinstance(P02, list)
+        assert all(isinstance(component, float) for component in P02)
+        assert len(P02) == 6
+        self._P02 = P02
+
+    @property
+    def P03(self):
+        return self._P03
+
+    @P03.setter
+    def P03(self, P03):
+        assert isinstance(P03, list)
+        assert all(isinstance(component, float) for component in P03)
+        assert len(P03) == 10
+        self._P03 = P03
+
+    @property
     def P11(self):
         return self._P11
 
@@ -187,6 +212,17 @@ class Potential(object):
         assert all(isinstance(component, float) for component in P12)
         assert len(P12) == 10
         self._P12 = P12
+
+    @property
+    def P13(self):
+        return self._P13
+
+    @P13.setter
+    def P13(self, P13):
+        assert isinstance(P13, list)
+        assert all(isinstance(component, float) for component in P13)
+        assert len(P13) == 15
+        self._P13 = P13
 
     @property
     def P22(self):

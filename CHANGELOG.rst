@@ -20,6 +20,14 @@ Added
    can be either 'fragment', which excludes all interactions within a fragment,
    or 'mfcc', which is the MFCC type exclusions.
 
+Fixed
+~~~~~
+
+-  Fixed wrong asserts which would have caused errors if octopoles or higher
+   were requested
+-  All polarizabilities up to octopole-octopole are now present
+
+
 [0.1.1] - 2018-02-08
 --------------------
 
