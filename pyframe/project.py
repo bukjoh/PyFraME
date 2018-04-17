@@ -569,13 +569,15 @@ class Project(object):
                 formal_charge += fragment.charge
         print('INFO: total formal charge: {0:12.8f}'.format(formal_charge))
         for region in system.regions.values():
-            for fragment in region.fragments.values():
-                fragment_charge = 0.0
-                for atom in fragment.atoms:
-                    site = system.potential[atom2site[atom.number]]
-                    fragment_charge += site.M0[0]
-                if abs(fragment_charge - float(round(fragment_charge))) > 1.0e-8:
-                    print('WARNING: sum of partial charges of {0} is: {1:12.8f}'.format(fragment.identifier, fragment_charge))
+            if region.use_standard_potentials:
+                for fragment in region.fragments.values():
+                    fragment_charge = 0.0
+                    for atom in fragment.atoms:
+                        site = system.potential[atom2site[atom.number]]
+                        fragment_charge += site.M0[0]
+                    if abs(fragment_charge - float(round(fragment_charge))) > 1.0e-8:
+                        print('WARNING: sum of partial charges of {0} is: {1:12.8f}'.format(fragment.identifier,
+                                                                                            fragment_charge))
         charge = 0.0
         number_of_sites = 0
         for site in system.potential.values():
