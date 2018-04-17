@@ -258,12 +258,22 @@ class Project(object):
                         site.element = atom.element
                         site_index += 1
                 for fragment in region.fragments.values():
+                    try:
+                        potential[fragment.name]
+                    except KeyError:
+                        # TODO replace with exception
+                        exit('ERROR: fragment {0} is not available in {1}.'.format(fragment.name, region.standard_potential_model))
                     for atom in fragment.atoms:
+                        try:
+                            potential[fragment.name][atom.name]
+                        except KeyError:
+                            # TODO replace with exception
+                            exit('ERROR: atom {0} in fragment {1} is not available in {2}.'.format(atom.name, fragment.name, region.standard_potential_model))
                         site = system.potential[atom2site[atom.number]]
                         for key, value in potential[fragment.name][atom.name].items():
                             if not hasattr(site, key):
                                 # TODO replace with exception
-                                exit('ERROR: {0} is not implemented'.format(key))
+                                exit('ERROR: {0} parameter is not implemented'.format(key))
                             setattr(site, key, value)
                 if region.standard_potential_exclusion_type == 'mfcc':
                     for fragment in region.fragments.values():
