@@ -8,6 +8,7 @@ import filecmp
 import pyframe
 import pyframe.readers
 
+
 class IntegrationTests(unittest.TestCase):
 
     def test_permanganate(self):
@@ -119,6 +120,36 @@ class IntegrationTests(unittest.TestCase):
         protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
         system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
                           standard_potential_model='PEP', standard_potential_exclusion_type='mfcc')
+        project.create_embedding_potential(system)
+        project.write_potential(system)
+        project.write_potential(system)
+        self.assertTrue(os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test)))
+        self.assertTrue(filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test)))
+        os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+
+    def test_insulin_ff94(self):
+        test = 'insulin_ff94'
+        tests_dir = '{0}'.format(os.path.dirname(__file__))
+        project = pyframe.Project(work_dir='{0}'.format(tests_dir))
+        system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
+        protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
+        system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
+                          standard_potential_model='ff94')
+        project.create_embedding_potential(system)
+        project.write_potential(system)
+        project.write_potential(system)
+        self.assertTrue(os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test)))
+        self.assertTrue(filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test)))
+        os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+
+    def test_insulin_ff03(self):
+        test = 'insulin_ff03'
+        tests_dir = '{0}'.format(os.path.dirname(__file__))
+        project = pyframe.Project(work_dir='{0}'.format(tests_dir))
+        system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
+        protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
+        system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
+                          standard_potential_model='ff03')
         project.create_embedding_potential(system)
         project.write_potential(system)
         project.write_potential(system)

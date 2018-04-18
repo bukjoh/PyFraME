@@ -19,6 +19,7 @@ Added
 -  New option to choose exclusion type for standard potentials, currently it
    can be either 'fragment', which excludes all interactions within a fragment,
    or 'mfcc', which is the MFCC type exclusions.
+-  Added AMBER ff94 and ff03 standard potentials
 
 Fixed
 ~~~~~
