@@ -29,6 +29,7 @@ class InputWriters(object):
         InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.multipole_basis, filename)
         inp = '**DALTON INPUT\n'
         inp += '.RUN RESPONSE\n'
+        inp += '.DIRECT\n'
         inp += '**WAVE FUNCTIONS\n'
         inp += '.INTERFACE\n'
         if region.multipole_method == 'DFT':
@@ -63,6 +64,7 @@ class InputWriters(object):
         InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.multipole_basis, filename)
         inp = '**DALTON INPUT\n'
         inp += '.RUN WAVE FUNCTION\n'
+        inp += '.DIRECT\n'
         inp += '**WAVE FUNCTIONS\n'
         inp += '.INTERFACE\n'
         if region.multipole_method == 'DFT':
@@ -94,6 +96,7 @@ class InputWriters(object):
         InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.multipole_basis, filename)
         inp = '**DALTON INPUT\n'
         inp += '.RUN RESPONSE\n'
+        inp += '.DIRECT\n'
         inp += '**WAVE FUNCTIONS\n'
         inp += '.INTERFACE\n'
         if region.multipole_method == 'DFT':

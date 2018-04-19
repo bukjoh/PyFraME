@@ -27,6 +27,8 @@ Fixed
 -  Fixed wrong asserts which would have caused errors if octopoles or higher
    were requested
 -  All polarizabilities up to octopole-octopole are now present
+-  Errors when using CAM-B3LYP in serial Dalton calculations (which now always
+   use `.DIRECT`)
 
 
 [0.1.1] - 2018-02-08
