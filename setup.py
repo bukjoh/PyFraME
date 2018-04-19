@@ -6,7 +6,7 @@ root_dir = path.abspath(path.dirname(__file__))
 with open(path.join(root_dir, 'pyframe/VERSION'), encoding='utf-8') as version_file:
     version = version_file.read().strip()
 
-with open(path.join(root_dir, 'README.rst'), encoding='utf-8') as readme:
+with open(path.join(root_dir, 'README.md'), encoding='utf-8') as readme:
     long_description = readme.read()
 
 st.setup(name='PyFraME',
