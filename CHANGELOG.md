@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Errors when using CAM-B3LYP in serial Dalton calculations (which now
   always use `.DIRECT`)
 
+### Changed
+
+- Running the test suite now requires pytest (unittests can be run by typing `pytest --pyargs pyframe`)
+
 ## 0.1.1 - 2018-02-08
 
 ### Changed

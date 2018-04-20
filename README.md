@@ -63,10 +63,6 @@ For certain functionality you will need one or more of the following:
 
 To run the test suite you need:
 
-* [nose](http://nose.readthedocs.io)
-
-or
-
 * [pytest](http://pytest.org)
 
 Installation
@@ -74,16 +70,16 @@ Installation
 
 The source can be downloaded from
 [GitLab](https://gitlab.com/FraME-projects/PyFraME) or
-[Zenodo](https://doi.org/10.5281/zenodo.775113). Alternatively, it can be
-installed from [PyPI](https://pypi.org/):
+[Zenodo](https://doi.org/10.5281/zenodo.775113), or installed directly
+from [PyPI](https://pypi.org/), as follows
 
     pip install pyframe
 
-Alternatively, it can be cloned from the repository:
+To clone the repository, run the following command
 
     git clone https://gitlab.com/FraME-projects/PyFraME.git
 
-The package is installed by running:
+The package can then be installed by typing
 
     python setup.py install
 
@@ -92,15 +88,15 @@ last line if you do not have root access / sudo rights. Note that this
 will install NumPy and Numba if they are not installed already.
 
 
-Tests
------
+Testing
+-------
 
-To run the test suite type:
-
-    nosetests
-
-or
+To execute the full test suite (unittests and integration tests) run
 
     pytest
 
-from the PyFraME root directory.
+from the PyFraME root directory, or, if you installed from PyPI, the
+unittests can be executed by typing
+
+    pytest --pyargs pyframe
+

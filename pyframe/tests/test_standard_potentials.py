@@ -323,7 +323,7 @@ fragment_dict = {'HOH': ['O', 'H', 'H'], 'ACE': ['CH3', 'HH31', 'HH32', 'HH33', 
 
 
 def test_fragment_charge():
-    data_dir = '{0}/../pyframe/data'.format(os.path.dirname(__file__))
+    data_dir = '{0}/../data'.format(os.path.dirname(__file__))
     for pot_file in os.listdir(data_dir):
         file_name, file_ext = os.path.splitext(pot_file)
         potential = pyframe.readers.read_potential_file(file_name)
@@ -335,7 +335,4 @@ def test_fragment_charge():
             if fragment_name in potential:
                 for atom_name in atom_names:
                     fragment_charge += potential[fragment_name][atom_name]['M0']
-                try:
-                    assert abs(fragment_charge - float(round(fragment_charge))) < 1.0e-5
-                except AssertionError:
-                    raise AssertionError('Fragment {0} in {1} has non-integer charge'.format(fragment_name, file_name))
+                assert abs(fragment_charge - float(round(fragment_charge))) < 1.0e-5

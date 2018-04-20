@@ -4,9 +4,9 @@ test-3.6:
         - pip install --upgrade pip
         - pip install numpy
         - pip install numba
-        - pip install nose
-        - pip install coverage
-        - NUMBA_DISABLE_JIT=1 nosetests --with-coverage --cover-erase --cover-xml --cover-package=pyframe
+        - pip install pytest
+        - pip install pytest-cov
+        - NUMBA_DISABLE_JIT=1 pytest --cov-config .coveragerc --cov-fail-under=50 --cov-report term-missing --cov=pyframe
 
 test-3.5:
     image: python:3.5
@@ -14,8 +14,8 @@ test-3.5:
         - pip install --upgrade pip
         - pip install numpy
         - pip install numba
-        - pip install nose
-        - nosetests
+        - pip install pytest
+        - py.test
 
 codequality:
     image: docker:latest
