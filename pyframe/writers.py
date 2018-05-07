@@ -541,7 +541,8 @@ class ScriptWriters(object):
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
         script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
+        if 'LD_LIBRARY_PATH' in os.environ:
+            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
         script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
         script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
         script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
@@ -567,7 +568,8 @@ class ScriptWriters(object):
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
         script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
+        if 'LD_LIBRARY_PATH' in os.environ:
+            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
         script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
         script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
         script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
@@ -593,7 +595,8 @@ class ScriptWriters(object):
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
         script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
+        if 'LD_LIBRARY_PATH' in os.environ:
+            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
         script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
         script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
         script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
@@ -619,7 +622,8 @@ class ScriptWriters(object):
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
         script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
+        if 'LD_LIBRARY_PATH' in os.environ:
+            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
         script += 'export MOLCAS={0}\n'.format(os.environ['MOLCAS'])
         if 'MOLCAS_LICENSE' in os.environ:
             script += 'export MOLCAS_LICENSE={0}\n'.format(os.environ['MOLCAS_LICENSE'])

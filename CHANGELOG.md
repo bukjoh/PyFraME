@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - All polarizabilities up to octopole-octopole are now present
 - Errors when using CAM-B3LYP in serial Dalton calculations (which now
   always use `.DIRECT`)
+- Error when LD_LIBRARY_PATH environment variable was not set
 
 ### Changed
 
