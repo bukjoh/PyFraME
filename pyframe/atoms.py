@@ -90,7 +90,10 @@ class Atom(object):
             if not isinstance(value, str):
                 raise TypeError
             elif value not in elements:
-                raise ValueError
+                if value.title() in elements:
+                    value = value.title()
+                else:
+                    raise ValueError
             self.mass = element2mass[value]
             self.radius = element2radius[value]
         elif attribute == 'charge':

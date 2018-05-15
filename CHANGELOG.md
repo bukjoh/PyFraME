@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   interactions within a fragment, or 'mfcc', which is the MFCC type
   exclusions.
 - Added AMBER ff94 and ff03 standard potentials
+- Improve element recognition
 
 ### Fixed
 
