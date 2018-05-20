@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   exclusions.
 - Added AMBER ff94 and ff03 standard potentials
 - Improve element recognition
+- Surplus charge of a region treated using MFCC is now redistributed 
+  among all sites in the affected region, ensuring that the sum of 
+  partial charges is equal to the formal charge of the region
+
 
 ### Fixed
 

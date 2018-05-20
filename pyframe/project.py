@@ -578,6 +578,27 @@ class Project(object):
                     if abs(fragment_charge - float(round(fragment_charge))) > 1.0e-8:
                         print('WARNING: sum of partial charges of {0} is: {1:12.8f}'.format(fragment.identifier,
                                                                                             fragment_charge))
+            elif region.use_mfcc:
+                region_formal_charge = 0
+                region_num_atoms = 0 
+                region_charge = 0.0
+                #get reported formal charge and actual sum of partial charges
+                for fragment in region.fragments.values():
+                    region_formal_charge += fragment.charge    
+                    fragment_charge = 0.0
+                    for atom in fragment.atoms:
+                        site = system.potential[atom2site[atom.number]]
+                        fragment_charge += site.M0[0]
+                        region_num_atoms += 1
+                    region_charge += fragment_charge
+                #redistribute the surplus charge across all atoms of the region
+                surplus_charge = region_charge - region_formal_charge
+                print('INFO: surplus charge: {0:12.8f} in region {1} has been redistributed'.format(surplus_charge,
+                                                                                                    region.name))
+                for fragment in region.fragments.values():
+                    for atom in fragment.atoms:
+                        site = system.potential[atom2site[atom.number]]
+                        site.M0[0] -= surplus_charge / region_num_atoms
         charge = 0.0
         number_of_sites = 0
         for site in system.potential.values():
@@ -591,20 +612,6 @@ class Project(object):
         if abs(surplus_charge) > 1.0e-8:
             print('INFO: surplus charge: {0:12.8f}'.format(surplus_charge))
             print('WARNING: this may indicate that an error has occurred')
-            #print('INFO: redistributing surplus charge to all sites')
-            #surplus_charge /= number_of_sites
-            #for site in system.potential.values():
-            #    try:
-            #        site.M0[0] += surplus_charge
-            #    except IndexError:
-            #        continue
-            #charge = 0.0
-            #for site in system.potential.values():
-            #    try:
-            #        charge += site.M0[0]
-            #    except IndexError:
-            #        continue
-            #print('INFO: sum of partial charges after redistribution: {0:12.8f}'.format(charge))
 
     def write_potential(self, system):
         """Write potential file."""
