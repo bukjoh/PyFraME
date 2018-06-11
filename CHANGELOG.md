@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Errors when using CAM-B3LYP in serial Dalton calculations (which now
   always use `.DIRECT`)
 - Error when LD_LIBRARY_PATH environment variable was not set
+- Fixed erroneous exclusion lists when different parts of a molecule,
+  e.g. protein, are placed in different regions
 
 ### Changed
 

@@ -246,17 +246,18 @@ class Project(object):
         site2atom = {}
         site_index = 1
         for region in system.regions.values():
+            for fragment in region.fragments.values():
+                for atom in fragment.atoms:
+                    site = Potential()
+                    system.potential[site_index] = site
+                    atom2site[atom.number] = site_index
+                    site2atom[site_index] = atom.number
+                    site.coordinate = atom.coordinate
+                    site.element = atom.element
+                    site_index += 1
+        for region in system.regions.values():
             if region.use_standard_potentials:
                 potential = read_potential_file(region.standard_potential_model)
-                for fragment in region.fragments.values():
-                    for atom in fragment.atoms:
-                        site = Potential()
-                        system.potential[site_index] = site
-                        atom2site[atom.number] = site_index
-                        site2atom[site_index] = atom.number
-                        site.coordinate = atom.coordinate
-                        site.element = atom.element
-                        site_index += 1
                 for fragment in region.fragments.values():
                     try:
                         potential[fragment.name]
@@ -286,8 +287,6 @@ class Project(object):
                                     continue
                                 exclusion_list.append(atom2site[other_atom.number])
                             for neighbour in fragment.bonded_fragments:
-                                if neighbour.identifier not in region.fragments:
-                                    continue
                                 if atom.number in neighbour.capped_fragment.atoms:
                                     if 'link' in neighbour.capped_fragment.atoms.get(atom.number).name:
                                         continue
@@ -316,15 +315,6 @@ class Project(object):
             elif region.use_mfcc:
                 for fragment in region.fragments.values():
                     for atom in fragment.atoms:
-                        site = Potential()
-                        system.potential[site_index] = site
-                        atom2site[atom.number] = site_index
-                        site2atom[site_index] = atom.number
-                        site.coordinate = atom.coordinate
-                        site.element = atom.element
-                        site_index += 1
-                for fragment in region.fragments.values():
-                    for atom in fragment.atoms:
                         exclusion_list = []
                         for other_atom in fragment.capped_fragment.atoms:
                             if 'link' in other_atom.name:
@@ -333,8 +323,6 @@ class Project(object):
                                 continue
                             exclusion_list.append(atom2site[other_atom.number])
                         for neighbour in fragment.bonded_fragments:
-                            if neighbour.identifier not in region.fragments:
-                                continue
                             if atom.number in neighbour.capped_fragment.atoms:
                                 if 'link' in neighbour.capped_fragment.atoms.get(atom.number).name:
                                     continue
@@ -500,21 +488,13 @@ class Project(object):
             else:
                 if region.atomic_polarizabilities and region.atomic_multipoles:
                     for fragment in region.fragments.values():
-                        exclusion_list = []
                         for atom in fragment.atoms:
-                            site = Potential()
-                            system.potential[site_index] = site
-                            atom2site[atom.number] = site_index
-                            site2atom[site_index] = atom.number
-                            site.coordinate = atom.coordinate
-                            site.element = atom.element
-                            exclusion_list.append(site_index)
-                            site_index += 1
-                        for index in exclusion_list:
-                            other_indices = []
-                            other_indices.extend(exclusion_list)
-                            other_indices.pop(other_indices.index(index))
-                            system.potential[index].exclusion_list.extend(other_indices)
+                            exclusion_list = []
+                            for other_atom in fragment.atoms:
+                                exclusion_list.append(atom2site[other_atom.number])
+                            exclusion_list = sorted(list(set(exclusion_list)))
+                            exclusion_list.pop(exclusion_list.index(atom2site[atom.number]))
+                            system.potential[atom2site[atom.number]].exclusion_list = exclusion_list
                     for fragment in region.fragments.values():
                         for reader in readers[fragment.identifier]:
                             filename = '{0}_{1}'.format(fragment.identifier, reader)
@@ -530,6 +510,10 @@ class Project(object):
                                         exit('ERROR: {0} is not implemented'.format(key))
                                     setattr(site, key, value)
                 else:
+                    # TODO replace with exception
+                    exit('ERROR: only atom-centered properties are supported')
+                    # TODO separate site creation and place it together with
+                    #      other types of site creation in previous region loop
                     for fragment in region.fragments.values():
                         exclusion_list = []
                         for reader in readers[fragment.identifier]:

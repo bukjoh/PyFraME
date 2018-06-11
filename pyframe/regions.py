@@ -283,8 +283,7 @@ class Region(object):
     @atomic_multipoles.setter
     def atomic_multipoles(self, atomic_multipoles):
         assert isinstance(atomic_multipoles, bool)
-        if self.use_mfcc:
-            assert atomic_multipoles
+        assert atomic_multipoles
         self._atomic_multipoles = atomic_multipoles
 
     @property
@@ -357,8 +356,7 @@ class Region(object):
     @atomic_polarizabilities.setter
     def atomic_polarizabilities(self, atomic_polarizabilities):
         assert isinstance(atomic_polarizabilities, bool)
-        if self.use_mfcc:
-            assert atomic_polarizabilities
+        assert atomic_polarizabilities
         self._atomic_polarizabilities = atomic_polarizabilities
 
     @property

@@ -109,7 +109,6 @@ def test_insulin_pep_fragment():
                       standard_potential_model='PEP', standard_potential_exclusion_type='fragment')
     project.create_embedding_potential(system)
     project.write_potential(system)
-    project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
@@ -124,7 +123,6 @@ def test_insulin_pep_mfcc():
     system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
                       standard_potential_model='PEP', standard_potential_exclusion_type='mfcc')
     project.create_embedding_potential(system)
-    project.write_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
@@ -141,7 +139,6 @@ def test_insulin_ff94():
                       standard_potential_model='ff94')
     project.create_embedding_potential(system)
     project.write_potential(system)
-    project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
@@ -157,6 +154,23 @@ def test_insulin_ff03():
                       standard_potential_model='ff03')
     project.create_embedding_potential(system)
     project.write_potential(system)
+    assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+
+def test_4val():
+    test = '4VAL'
+    tests_dir = '{0}'.format(os.path.dirname(__file__))
+    project = pyframe.Project(work_dir='{0}'.format(tests_dir))
+    system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
+    mfcc = system.get_fragments_by_chain_id(chain_ids=['A'])
+    system.add_region(name='mfcc', fragments=mfcc, use_mfcc=True,
+                      use_multipoles=True, multipole_order=2,
+                      use_polarizabilities=True)
+    pfp = system.get_fragments_by_chain_id(chain_ids=['B'])
+    system.add_region(name='pfp', fragments=pfp, use_standard_potentials=True,
+                      standard_potential_model='PEP')
+    project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
