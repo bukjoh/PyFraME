@@ -551,7 +551,7 @@ class Region(object):
     #     print('WARNING: consistency check not implement yet')
     #     pass
 
-    def create_mfcc_fragments(self, bond_threshold=1.2):
+    def create_mfcc_fragments(self, bond_threshold=1.15):
         assert isinstance(bond_threshold, float)
         for fragment in self.fragments.values():
             fragment.create_mfcc_fragments(self.mfcc_order, bond_threshold)

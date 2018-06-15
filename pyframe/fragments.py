@@ -142,7 +142,7 @@ class Fragment(object):
     def heavy_coordinate_matrix(self):
         return np.array([atom.coordinate for atom in self.atoms if atom.element != 'H'])
 
-    def add_hydrogen_links(self, bond_threshold=1.2):
+    def add_hydrogen_links(self, bond_threshold=1.15):
         for donor in self.bonded_fragments:
             bonded_atoms = find_bonded_atoms(self, donor, bond_threshold)
             for acceptor_atom, donor_atom in bonded_atoms:
@@ -154,7 +154,7 @@ class Fragment(object):
                 else:
                     self.atoms.append(donor.atoms.pop(donor_atom.number))
 
-    def add_cap_links(self, bond_threshold=1.2):
+    def add_cap_links(self, bond_threshold=1.15):
         for donor in self.bonded_fragments:
             bonded_atoms = find_bonded_atoms(self, donor, bond_threshold)
             for acceptor_atom, donor_atom in bonded_atoms:
@@ -163,7 +163,7 @@ class Fragment(object):
                 donor_atom.name += 'cap'
                 self.atoms.append(donor.atoms.pop(donor_atom.number))
 
-    def create_mfcc_fragments(self, order=2, bond_threshold=1.2):
+    def create_mfcc_fragments(self, order=2, bond_threshold=1.15):
         assert isinstance(order, int)
         assert order >= 0
         assert isinstance(bond_threshold, float)
@@ -342,7 +342,7 @@ def convert2hydrogen(acceptor_atom, donor_atom):
     return hydrogen
 
 
-def find_bonded_fragments(acceptor, donors, bond_threshold=1.2):
+def find_bonded_fragments(acceptor, donors, bond_threshold=1.15):
     """Find all fragments that are bonded to acceptor fragment"""
     acceptor_coordinate_matrix = acceptor.heavy_coordinate_matrix
     acceptor_atoms = [atom for atom in acceptor.atoms if atom.element != 'H']
@@ -378,7 +378,7 @@ def find_nearest_atom(atom, fragment):
     return fragment.atoms[index]
 
 
-def find_bonded_atoms(acceptor, donor, bond_threshold=1.2):
+def find_bonded_atoms(acceptor, donor, bond_threshold=1.15):
     bonded_atoms = []
     if acceptor.number_of_atoms == 0 or donor.number_of_atoms == 0:
         return bonded_atoms
@@ -394,7 +394,7 @@ def find_bonded_atoms(acceptor, donor, bond_threshold=1.2):
     return bonded_atoms
 
 
-def find_bonded_heavy_atoms(acceptor, donor, bond_threshold=1.2):
+def find_bonded_heavy_atoms(acceptor, donor, bond_threshold=1.15):
     bonded_heavy_atoms = []
     if acceptor.number_of_atoms == 0 or donor.number_of_atoms == 0:
         return bonded_heavy_atoms
@@ -412,7 +412,7 @@ def find_bonded_heavy_atoms(acceptor, donor, bond_threshold=1.2):
     return bonded_heavy_atoms
 
 
-def find_bonded_hydrogens(acceptor, donor, bond_threshold=1.2):
+def find_bonded_hydrogens(acceptor, donor, bond_threshold=1.15):
     bonded_hydrogens = []
     if acceptor.number_of_atoms == 0 or donor.number_of_atoms == 0:
         return bonded_hydrogens

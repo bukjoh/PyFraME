@@ -42,6 +42,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Running the test suite now requires pytest (unittests can be run by typing `pytest --pyargs pyframe`)
+- The default bond detection threshold factor has been set to 1.15 instead of 1.2
 
 ## 0.1.1 - 2018-02-08
 

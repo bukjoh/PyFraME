@@ -26,7 +26,7 @@ class MolecularSystem(object):
         self._core_region = None
         self._regions = RegionDict()
         self._name = None
-        self._bond_threshold = 1.2
+        self._bond_threshold = 1.15
         file_path, filename = os.path.split(input_file)
         filename, file_ext = os.path.splitext(filename)
         if name:
@@ -96,7 +96,7 @@ class MolecularSystem(object):
         The identifier must be a string. 'new_names' must be a list of strings.
         'fragment_definitions' must be a list with the same number of items as 'new_names'.
         Each item in the 'fragment_definitions' list must be a list of strings representing atom names.
-        
+
         Fragments with the specified identifier are split based on the specified fragment definitions.
 
         """
@@ -149,7 +149,7 @@ class MolecularSystem(object):
         The value for 'name' must be a string. 'new_names' must be a list of strings.
         'fragment_definitions' must be a list with the same number of items as 'new_names'.
         Each item in the 'fragment_definitions' list must be a list of strings representing atom names.
-        
+
         Fragments with the specified 'name' are split based on the specified fragment definitions.
 
         """
