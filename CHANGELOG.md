@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   exclusions.
 - Added AMBER ff94 and ff03 standard potentials
 - Improve element recognition
-- Surplus charge of a region treated using MFCC is now redistributed 
-  among all sites in the affected region, ensuring that the sum of 
+- Surplus charge of a region treated using MFCC is now redistributed
+  among all sites in the affected region, ensuring that the sum of
   partial charges is equal to the formal charge of the region
 - Added averaged lipid embedding parameters from S. Witzke et al.
   J. Comput. Chem. 38 (2017) 601-611.
@@ -36,6 +36,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Error when LD_LIBRARY_PATH environment variable was not set
 - Fixed erroneous exclusion lists when different parts of a molecule,
   e.g. protein, are placed in different regions
+- Radius of Li, Na, Mg, K, and Ca (used in bond detection) adjusted to
+  the effective ionic radius by R. D. Shannon, Acta. Cryst. A32 (1976), 751
 
 ### Changed
 
