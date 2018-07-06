@@ -1,3 +1,12 @@
+test-3.7:
+    image: python:3.7
+    script:
+        - pip install --upgrade pip
+        - pip install numpy
+        - pip install numba
+        - pip install pytest
+        - py.test
+
 test-3.6:
     image: python:3.6
     script:
