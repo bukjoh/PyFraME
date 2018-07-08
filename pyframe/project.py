@@ -287,6 +287,10 @@ class Project(object):
                                     continue
                                 exclusion_list.append(atom2site[other_atom.number])
                             for neighbour in fragment.bonded_fragments:
+                                # if neighbour is not in current region, we skip it
+                                # because MFCC does not cross into other regions
+                                if neighbour.identifier not in region.fragments:
+                                    continue
                                 if atom.number in neighbour.capped_fragment.atoms:
                                     if 'link' in neighbour.capped_fragment.atoms.get(atom.number).name:
                                         continue
@@ -323,6 +327,10 @@ class Project(object):
                                 continue
                             exclusion_list.append(atom2site[other_atom.number])
                         for neighbour in fragment.bonded_fragments:
+                            # if neighbour is not in current region, we skip it
+                            # because MFCC does not cross into other regions
+                            if neighbour.identifier not in region.fragments:
+                                continue
                             if atom.number in neighbour.capped_fragment.atoms:
                                 if 'link' in neighbour.capped_fragment.atoms.get(atom.number).name:
                                     continue
