@@ -347,7 +347,10 @@ class Project(object):
                     for reader in readers[capped_fragment.identifier]:
                         filename = '{0}_{1}'.format(capped_fragment.identifier, reader)
                         potential = getattr(OutputReaders, reader)(filename)
-                        assert len(potential.values()) == capped_fragment.number_of_atoms
+                        if len(potential.values()) != capped_fragment.number_of_atoms:
+                            # TODO replace with custom exception
+                            raise ValueError('ERROR: number of sites in {filename}.out does not'.format(filename=filename) +
+                                             ' match the number of atoms in fragment {identifier}.'.format(identifier=fragment.identifier))
                         for atom, params in zip(capped_fragment.atoms, potential.values()):
                             # for now we assume atomic parameters and same ordering
                             # assert 'coordinate' in params
@@ -392,7 +395,10 @@ class Project(object):
                         for reader in readers[capped_fragment.identifier]:
                             filename = '{0}_{1}'.format(capped_fragment.identifier, reader)
                             potential = getattr(OutputReaders, reader)(filename)
-                            assert len(potential.values()) == capped_fragment.number_of_atoms
+                            if len(potential.values()) != capped_fragment.number_of_atoms:
+                                # TODO replace with custom exception
+                                raise ValueError('ERROR: number of sites in {filename}.out does not'.format(filename=filename) +
+                                                 ' match the number of atoms in fragment {identifier}.'.format(identifier=neighbour.identifier))
                             for atom, params in zip(capped_fragment.atoms, potential.values()):
                                 if atom.number not in fragment.atoms:
                                     continue
@@ -424,7 +430,10 @@ class Project(object):
                         for reader in readers[concap.identifier]:
                             filename = '{0}_{1}'.format(concap.identifier, reader)
                             potential = getattr(OutputReaders, reader)(filename)
-                            assert len(potential.values()) == concap.number_of_atoms
+                            if len(potential.values()) != concap.number_of_atoms:
+                                # TODO replace with custom exception
+                                raise ValueError('ERROR: number of sites in {filename}.out does not'.format(filename=filename) +
+                                                 ' match the number of atoms in fragment {identifier}.'.format(identifier=concap.identifier))
                             for atom in concap.atoms:
                                 if atom.number not in fragment.atoms:
                                     continue
@@ -507,7 +516,10 @@ class Project(object):
                         for reader in readers[fragment.identifier]:
                             filename = '{0}_{1}'.format(fragment.identifier, reader)
                             potential = getattr(OutputReaders, reader)(filename)
-                            assert len(potential.values()) == fragment.number_of_atoms
+                            if len(potential.values()) != fragment.number_of_atoms:
+                                # TODO replace with custom exception
+                                raise ValueError('ERROR: number of sites in {filename}.out does not'.format(filename=filename) +
+                                                 ' match the number of atoms in fragment {identifier}.'.format(identifier=fragment.identifier))
                             for atom, params in zip(fragment.atoms, potential.values()):
                                 site = system.potential[atom2site[atom.number]]
                                 for key, value in params.items():
