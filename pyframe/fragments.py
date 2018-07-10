@@ -148,11 +148,12 @@ class Fragment(object):
             for acceptor_atom, donor_atom in bonded_atoms:
                 if 'link' in donor_atom.name:
                     continue
-                donor_atom.name += 'link'
                 if donor_atom.element != 'H':
-                    self.atoms.append(convert2hydrogen(acceptor_atom, donor_atom))
+                    link_atom = convert2hydrogen(acceptor_atom, donor_atom)
                 else:
-                    self.atoms.append(donor.atoms.pop(donor_atom.number))
+                    link_atom = donor.atoms.pop(donor_atom.number)
+                link_atom.name += 'link'
+                self.atoms.append(link_atom)
 
     def add_cap_links(self, bond_threshold=1.15):
         for donor in self.bonded_fragments:
@@ -160,8 +161,9 @@ class Fragment(object):
             for acceptor_atom, donor_atom in bonded_atoms:
                 if 'link' in donor_atom.name:
                     continue
-                donor_atom.name += 'cap'
-                self.atoms.append(donor.atoms.pop(donor_atom.number))
+                cap_atom = donor.atoms.pop(donor_atom.number)
+                cap_atom.name += 'cap'
+                self.atoms.append(cap_atom)
 
     def create_mfcc_fragments(self, order=2, bond_threshold=1.15):
         assert isinstance(order, int)
@@ -176,6 +178,7 @@ class Fragment(object):
                 for acceptor_atom, donor_atom in bonded_atoms:
                     if donor_atom.element != 'H':
                         link_atom = convert2hydrogen(acceptor_atom, donor_atom)
+                        link_atom.name += 'link'
                         capped_fragment.atoms.append(link_atom)
                     else:
                         capped_fragment.atoms.append(donor_atom.copy())
@@ -234,6 +237,7 @@ class Fragment(object):
             for acceptor_atom, donor_atom in bonded_atoms:
                 if donor_atom.element != 'H':
                     link_atom = convert2hydrogen(acceptor_atom, donor_atom)
+                    link_atom.name += 'link'
                     capped_fragment.atoms.append(link_atom)
                     if concap:
                         concap.atoms.append(link_atom)
@@ -288,6 +292,7 @@ class Fragment(object):
                 for acceptor_atom, donor_atom in bonded_atoms:
                     if donor_atom.element != 'H':
                         link_atom = convert2hydrogen(acceptor_atom, donor_atom)
+                        link_atom.name += 'link'
                         concap.atoms.append(link_atom)
                     else:
                         concap.atoms.append(donor_atom.copy())
@@ -337,7 +342,7 @@ def convert2hydrogen(acceptor_atom, donor_atom):
     hydrogen = donor_atom.copy()
     hydrogen.element = 'H'
     hydrogen.charge = 0.0
-    hydrogen.name += 'link'
+    hydrogen.name += '-H'
     hydrogen.coordinate = np.array(scale_bond_length(acceptor_atom, hydrogen))
     return hydrogen
 

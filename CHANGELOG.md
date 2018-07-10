@@ -38,6 +38,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   e.g. protein, are placed in different regions
 - Radius of Li, Na, Mg, K, and Ca (used in bond detection) adjusted to
   the effective ionic radius by R. D. Shannon, Acta. Cryst. A32 (1976), 751
+- Naming bug when adding hydrogen-link atoms where the donor-atom name
+  would erroneously have _link_ appended to it
 
 ### Changed
 
