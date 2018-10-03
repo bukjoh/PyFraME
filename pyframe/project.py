@@ -60,12 +60,17 @@ class Project(object):
         else:
             hostname = socket.gethostname()
             nodes = [hostname]
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+                sock.bind(('', 0))
+                self._comm_port = sock.getsockname()[1]
+        except OSError:
+            self._comm_port = 5000
         self._node_list = list(set(nodes))
         self._jobs_per_node = 1
         self._memory_per_job = 2048
         self._mpi_procs_per_job = 1
         self._omp_threads_per_job = 1
-        self._comm_port = 5000
         for key in kwargs.keys():
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])

@@ -47,6 +47,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - The default bond detection threshold factor has been set to 1.15 instead of 1.2
 - Improved error message when there is a mismatch between the number of sites in
   an output file compared to the number of sites in the fragment read in from input
+- Default is now to first try to find a free communication port
 
 ## 0.1.1 - 2018-02-08
 
