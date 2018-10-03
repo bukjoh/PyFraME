@@ -1,5 +1,5 @@
 @misc{pyframe,
       author = {Olsen, J. M. H.},
-      title = {{PyFraME}: {P}ython tools for {F}ragment-based {M}ultiscale {E}mbedding (version 0.1.0)},
-      year = {2017},
-      note = {https://doi.org/10.5281/zenodo.293765}}
+      title = {{PyFraME}: {P}ython tools for {F}ragment-based {M}ultiscale {E}mbedding (version 0.2.0)},
+      year = {2018},
+      note = {https://doi.org/10.5281/zenodo.1443314}}

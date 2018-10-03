@@ -5,6 +5,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## 0.2.0 - 2018-20-03
+
 ### Added
 
 - Moved the suggested BibTeX snippet into the [CITATION
@@ -25,7 +27,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added averaged lipid embedding parameters from S. Witzke et al.
   J. Comput. Chem. 38 (2017) 601-611.
 
-
 ### Fixed
 
 - Fixed wrong asserts which would have caused errors if octopoles or
@@ -33,7 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - All polarizabilities up to octopole-octopole are now present
 - Errors when using CAM-B3LYP in serial Dalton calculations (which now
   always use `.DIRECT`)
-- Error when LD_LIBRARY_PATH environment variable was not set
+- Error when LD\_LIBRARY\_PATH environment variable was not set
 - Fixed erroneous exclusion lists when different parts of a molecule,
   e.g. protein, are placed in different regions
 - Radius of Li, Na, Mg, K, and Ca (used in bond detection) adjusted to
