@@ -17,15 +17,6 @@ test-3.6:
         - pip install pytest-cov
         - NUMBA_DISABLE_JIT=1 pytest --cov-config .coveragerc --cov-fail-under=50 --cov-report term-missing --cov=pyframe
 
-test-3.5:
-    image: python:3.5
-    script:
-        - pip install --upgrade pip
-        - pip install numpy
-        - pip install numba
-        - pip install pytest
-        - py.test
-
 code_quality:
     image: docker:stable
     variables:

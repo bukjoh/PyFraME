@@ -21,12 +21,13 @@ st.setup(name='PyFraME',
          classifiers=['Intended Audience :: Science/Research',
                       'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                       'Natural Language :: English',
-                      'Programming Language :: Python :: 3',
+                      'Programming Language :: Python :: 3.6',
+                      'Programming Language :: Python :: 3.7',
                       'Topic :: Scientific/Engineering :: Chemistry',
                       'Topic :: Scientific/Engineering :: Physics'
                       ],
          install_requires=['numpy', 'numba'],
-         python_requires='>=3',
+         python_requires='>=3.6',
          packages=['pyframe', 'pyframe.tests'],
          package_data={'pyframe': ['data/*.csv', 'VERSION']}
          )
