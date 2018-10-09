@@ -11,7 +11,7 @@ with open(path.join(root_dir, 'README.md'), encoding='utf-8') as readme:
 
 st.setup(name='PyFraME',
          version=version,
-         description='PyFraME: Python tools for Fragment-based Multiscale Embedding',
+         description='PyFraME: Python framework for Fragment-based Multiscale Embedding',
          long_description=long_description,
          long_description_content_type='text/markdown',
          url='https://gitlab.com/FraME-projects/PyFraME',
@@ -27,6 +27,6 @@ st.setup(name='PyFraME',
                       ],
          install_requires=['numpy', 'numba'],
          python_requires='>=3',
-         packages=['pyframe'],
+         packages=['pyframe', 'pyframe.tests'],
          package_data={'pyframe': ['data/*.csv', 'VERSION']}
          )

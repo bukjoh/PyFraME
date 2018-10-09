@@ -1,5 +1,5 @@
-PyFraME: Python tools for Fragment-based Multiscale Embedding calculations
-==========================================================================
+PyFraME: Python framework for Fragment-based Multiscale Embedding calculations
+==============================================================================================================
 Copyright (C) 2017-2018  Jógvan Magnus Haugaard Olsen
 
 PyFraME is free software: you can redistribute it and/or modify
@@ -25,10 +25,9 @@ along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 Description
 -----------
 
-PyFraME is a Python package that provides tools for setting up 
+PyFraME is a Python package that provides a framework for
 fragment-based multiscale embedding calculations. The aim is to
-provide tools that can automatize the workflow of such calculations
-in a flexible manner.
+ automatize the workflow of such calculations in a flexible manner.
 
 The typical workflow is as follows:
 
@@ -54,7 +53,7 @@ How to cite
 
 To cite PyFraME please use a format similar to the following
 
-"J. M. H. Olsen, *PyFraME: Python tools for Fragment-based Multiscale
+"J. M. H. Olsen, *PyFraME: Python framework for Fragment-based Multiscale
 Embedding (version 0.2.0)*, **2018**,
 https://doi.org/10.5281/zenodo.1443314"
 
