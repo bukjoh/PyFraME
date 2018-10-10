@@ -5,9 +5,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Pipfile added for use with pipenv
+
 ### Changed
 
 - Minimum requirement changed to Python 3.6
+
 
 ## 0.2.0 - 2018-20-03
 
