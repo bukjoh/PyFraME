@@ -17,9 +17,10 @@ along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 
 [![PIPELINE](https://gitlab.com/FraME-projects/PyFraME/badges/master/build.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
 [![COVERAGE](https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
-[![License: GPL v3+](https://img.shields.io/badge/License-GPL%20v3+-red.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
+[![codecov](https://codecov.io/gl/FraME-projects/PyFraME/branch/master/graph/badge.svg)](https://codecov.io/gl/FraME-projects/PyFraME)
 [![PyPI](https://badge.fury.io/py/PyFraME.svg)](https://badge.fury.io/py/PyFraME)
+[![Python](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
+[![License: GPL v3+](https://img.shields.io/badge/License-GPL%20v3+-red.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.775113.svg)](https://doi.org/10.5281/zenodo.775113)
 
 

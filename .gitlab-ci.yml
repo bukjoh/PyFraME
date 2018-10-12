@@ -16,6 +16,7 @@ test-3.6:
         - pip install pytest
         - pip install pytest-cov
         - NUMBA_DISABLE_JIT=1 pytest --cov-config .coveragerc --cov-fail-under=50 --cov-report term-missing --cov=pyframe
+        - bash <(curl -s https://codecov.io/bash) -t 5c2b4cbc-5626-4d17-877d-b29bf16032b3
 
 code_quality:
     image: docker:stable
