@@ -24,7 +24,6 @@ import os
 import shutil
 import socket
 import tempfile
-import collections
 
 import numpy as np
 
@@ -204,7 +203,7 @@ class Project(object):
         directories = []
         filenames = []
         fragment_sizes = []
-        readers = collections.defaultdict(list)
+        readers = {}
         for region in system.regions.values():
             if region.use_standard_potentials:
                 region.create_mfcc_fragments()
@@ -240,6 +239,8 @@ class Project(object):
                 if not hasattr(InputWriters, writer) or not hasattr(ScriptWriters, writer):
                     # TODO replace with exception
                     exit('ERROR: input writer {0} does not exist'.format(writer))
+                for fragment in fragments.values():
+                    readers[fragment.identifier] = []
                 for fragment in fragments.values():
                     os.chdir(system_dir)
                     filename = fragment.identifier + '_' + writer

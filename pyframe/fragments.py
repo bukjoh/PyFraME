@@ -18,8 +18,6 @@
 # along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import collections
-
 import numpy as np
 
 from .atoms import AtomList, Atom
@@ -32,7 +30,7 @@ __all__ = ['FragmentDict', 'Fragment', 'find_nearest_atom', 'find_bonded_fragmen
 WATER_NAMES = ['SOL', 'HOH', 'H2O', 'WAT', 'T3P', 'T3H', 'T4P', 'T4E', 'T5P', 'TIP3', 'SPC']
 
 
-class FragmentDict(collections.OrderedDict):
+class FragmentDict(dict):
 
     """Fragment dictionary methods"""
 

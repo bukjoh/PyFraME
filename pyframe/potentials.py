@@ -18,12 +18,10 @@
 # along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import collections
-
 __all__ = ['PotentialDict', 'Potential']
 
 
-class PotentialDict(collections.OrderedDict):
+class PotentialDict(dict):
 
     """Fragment potential dictionary"""
 

@@ -18,8 +18,6 @@
 # along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-import collections
-
 from .fragments import FragmentDict
 from .writers import InputWriters
 
@@ -116,7 +114,7 @@ class CoreRegion(object):
 #    def fit_caps(self):
 
 
-class RegionDict(collections.OrderedDict):
+class RegionDict(dict):
     """Region dict methods"""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

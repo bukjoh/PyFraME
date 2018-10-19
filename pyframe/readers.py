@@ -19,7 +19,6 @@
 #
 
 import os.path
-import collections
 
 import numpy as np
 
@@ -47,7 +46,7 @@ def read_potential_file(potential_file):
         props = [prop.strip() for prop in props]
         lines = [line.strip().split(',') for line in pot_file.readlines()]
         lines = [[item.strip() for item in line] for line in lines]
-        potential = collections.OrderedDict()
+        potential = {}
         for line in lines:
             potential[line[0]] = {}
         for line in lines:
@@ -285,7 +284,7 @@ class OutputReaders(object):
     @staticmethod
     def dalton_loprop(filename):
         """Reads output from Dalton LoProp calculations"""
-        potential = collections.OrderedDict()
+        potential = {}
         with open('{0}.out'.format(filename)) as loprop:
             index = 1
             for line in loprop:
@@ -351,7 +350,7 @@ class OutputReaders(object):
     @staticmethod
     def molcas_loprop(filename):
         """Reads output from MOLCAS LoProp calculations (MpProp file)"""
-        potential = collections.OrderedDict()
+        potential = {}
         index = 1
         with open('{0}.out'.format(filename), 'r') as loprop:
             line = loprop.readline()
