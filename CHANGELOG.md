@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Pipfile added for use with pipenv
 - Print license (`pyframe.print_license()`)
+- Added [contributing guidelines](https://gitlab.com/FraME-projects/PyFraME/blob/master/CONTRIBUTING.MD)
 
 ### Changed
 
