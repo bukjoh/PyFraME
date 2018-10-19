@@ -57,7 +57,7 @@ class MolecularSystem(object):
         if input_reader:
             self._fragments = read_input_file(input_file, input_reader)
         else:
-            reader = 'read_{0}'.format(file_ext.strip('.'))
+            reader = '{0}'.format(file_ext.strip('.'))
             if hasattr(InputReaders, reader):
                 self._fragments = read_input_file(input_file, getattr(InputReaders, reader))
             else:

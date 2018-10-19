@@ -326,7 +326,7 @@ def test_fragment_charge():
     data_dir = '{0}/../data'.format(os.path.dirname(__file__))
     for pot_file in os.listdir(data_dir):
         file_name, file_ext = os.path.splitext(pot_file)
-        potential = pyframe.readers.read_potential_file(file_name)
+        potential = pyframe.readers.read_standard_potential(file_name)
         for fragment_name, atom_names in fragment_dict.items():
             fragment_charge = 0.0
             if file_name == 'sep':

@@ -30,7 +30,7 @@ import numpy as np
 from .system import MolecularSystem
 from .fragments import find_nearest_atom
 from .potentials import Potential
-from .readers import OutputReaders, read_potential_file
+from .readers import OutputReaders, read_standard_potential
 from .writers import InputWriters, ScriptWriters
 from .process import run, process_jobs
 from .errors import UnknownOptionError
@@ -282,7 +282,7 @@ class Project(object):
                     site_index += 1
         for region in system.regions.values():
             if region.use_standard_potentials:
-                potential = read_potential_file(region.standard_potential_model)
+                potential = read_standard_potential(region.standard_potential_model)
                 for fragment in region.fragments.values():
                     try:
                         potential[fragment.name]

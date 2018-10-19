@@ -29,10 +29,10 @@ from .utils import BOHR2AA, AA2BOHR, elements
 from .errors import PDBError
 
 
-__all__ = ['OutputReaders', 'InputReaders', 'read_potential_file', 'read_pelib_potential', 'read_input_file']
+__all__ = ['OutputReaders', 'InputReaders', 'read_standard_potential', 'read_pelib_potential', 'read_input_file']
 
 
-def read_potential_file(potential_file):
+def read_standard_potential(potential_file):
 
     potential_path = os.path.join(os.path.dirname(__file__), 'data')
     with open('{0}/{1}.csv'.format(potential_path, potential_file), 'r') as pot_file:
@@ -113,7 +113,7 @@ def read_input_file(input_file, input_reader):
 class InputReaders(object):
 
     @staticmethod
-    def read_pdb(filename, fragment_dict, fragment_class, atom_list, atom_class):
+    def pdb(filename, fragment_dict, fragment_class, atom_list, atom_class):
         """Read PDB input file and return fragment objects in fragments dictionary"""
         with open(filename, 'r') as input_file:
             fragments = fragment_dict()
@@ -200,7 +200,7 @@ class InputReaders(object):
         return fragments
 
     @staticmethod
-    def read_pqr(filename, fragment_dict, fragment_class, atom_list, atom_class):
+    def pqr(filename, fragment_dict, fragment_class, atom_list, atom_class):
         """Read PQR input file and return fragment objects in fragments dictionary"""
         with open(filename, 'r') as input_file:
             fragments = fragment_dict()
