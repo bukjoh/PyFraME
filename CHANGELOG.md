@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Pipfile added for use with pipenv
+- Print license (`pyframe.print_license()`)
 
 ### Changed
 
