@@ -1,8 +1,2 @@
-PyFraME.egg-info
-dist
-build
 .idea
-pyframe/__pycache__
-tests/__pycache__
-*.pyc
-.pytest_cache/
+__pycache__
