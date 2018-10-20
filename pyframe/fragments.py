@@ -91,35 +91,20 @@ class Fragment(object):
 
     def __add__(self, other):
         new_fragment = self.copy()
-        # new_fragment.identifier += '-{0}'.format(other.identifier)
-        # TODO handle spin multiplicity
-        # if self.spin_multiplicity is not None or other.spin_multiplicity is not None:
-        #     exit('ERROR: cannot handle spin multiplicity')
         for atom in other.atoms:
             new_fragment.atoms.append(atom.copy())
-        new_fragment.bonded_fragments = []
-        for bonded_fragment in self.bonded_fragments:
-            if bonded_fragment.identifier == other.identifier:
+        bonded_fragments = []
+        for bonded_fragment in self.bonded_fragments + other.bonded_fragments:
+            if bonded_fragment.identifier in [self.identifier, other.identifier]:
                 continue
             overlap = False
             for bonded_atom in bonded_fragment.atoms:
-                if bonded_atom.number in other.atoms:
+                if bonded_atom.number in new_fragment.atoms:
                     overlap = True
                     break
             if overlap:
                 continue
-            new_fragment.bonded_fragments.append(bonded_fragment)
-        for bonded_fragment in other.bonded_fragments:
-            if bonded_fragment.identifier == self.identifier:
-                continue
-            overlap = False
-            for bonded_atom in bonded_fragment.atoms:
-                if bonded_atom.number in self.atoms:
-                    overlap = True
-                    break
-            if overlap:
-                continue
-            new_fragment.bonded_fragments.append(bonded_fragment)
+            bonded_fragments.append(bonded_fragment)
         return new_fragment
 
     def __radd__(self, other):

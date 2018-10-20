@@ -238,3 +238,24 @@ def test_popc():
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+
+
+def test_vvv():
+    test = 'VVV'
+    tests_dir = f'{os.path.dirname(__file__)}'
+    project = pyframe.Project(work_dir=f'{tests_dir}')
+    system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
+    core = system.get_fragments_by_identifier(['1_VAL', '3_VAL'])
+    system.set_core_region(core)
+    protein = system.get_fragments_by_identifier(['2_VAL'])
+    system.add_region(name='protein', fragments=protein, use_mfcc=True, use_multipoles=True,
+                      use_polarizabilities=True, multipole_order=2)
+    project.create_embedding_potential(system)
+    project.write_potential(system)
+    assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    project.write_core(system)
+    assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
