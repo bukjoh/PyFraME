@@ -16,7 +16,7 @@ You should have received a copy of the GNU General Public License
 along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 
 [![PIPELINE](https://gitlab.com/FraME-projects/PyFraME/badges/master/build.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
-[![COVERAGE](https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
+[![COVERAGE](https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg?job=test-3.6)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
 [![codecov](https://codecov.io/gl/FraME-projects/PyFraME/branch/master/graph/badge.svg)](https://codecov.io/gl/FraME-projects/PyFraME)
 [![PyPI](https://badge.fury.io/py/PyFraME.svg)](https://badge.fury.io/py/PyFraME)
 [![Python](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
