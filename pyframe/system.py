@@ -21,6 +21,7 @@
 """ The module 'system' contains the class 'MolecularSystem', which defines the moleculer system."""
 
 import os.path
+from typing import List
 
 from .atoms import AtomList
 from .fragments import FragmentDict, find_bonded_fragments
@@ -267,25 +268,20 @@ class MolecularSystem(object):
                 fragments[fragment.identifier] = self.fragments.pop(fragment.identifier)
         return fragments
 
-    def get_fragments_by_number(self, numbers):
-        """Return a fragment dictionary based on a list of fragment numbers.
+    def get_fragments_by_number(self, numbers: List[int]) -> FragmentDict:
+        """Get fragments with the given numbers and return them in a dictionary.
 
-        Each fragment number must be an integer.
+        Arguments
+        ---------
+        numbers
+            List of fragment numbers (e.g. `[1, *range(3, 11), 15]`).
 
+        Returns
+        -------
+        fragments
+            Fragment dictionary containing the fragments that correspond to the input argument.
         """
-        assert isinstance(numbers, list)
-        assert all(isinstance(number, int) for number in numbers)
         fragments = FragmentDict()
-        if any('-' in number for number in numbers):
-            expanded_numbers = []
-            for number in numbers:
-                if '-' in number:
-                    no_range = number.split('-')
-                    for value in range(int(no_range[0]), int(no_range[1]) + 1):
-                        expanded_numbers.append(value)
-                else:
-                    expanded_numbers.append(number)
-            numbers = list(set(expanded_numbers))
         for fragment in list(self.fragments.values()):
             if fragment.number in numbers:
                 fragments[fragment.identifier] = self.fragments.pop(fragment.identifier)
