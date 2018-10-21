@@ -7,7 +7,14 @@ import filecmp
 
 import pyframe
 import pyframe.readers
+from pyframe.readers import PDBError
 
+
+def test_pdb_error():
+    test = 'pdb_error'
+    tests_dir = '{0}'.format(os.path.dirname(__file__))
+    with pytest.raises(PDBError):
+        pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test))
 
 def test_permanganate():
     test = 'permanganate'

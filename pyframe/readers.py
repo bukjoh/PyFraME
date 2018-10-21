@@ -26,10 +26,10 @@ from .fragments import FragmentDict, Fragment
 from .atoms import AtomList, Atom
 from .potentials import PotentialDict, Potential
 from .utils import BOHR2AA, AA2BOHR, elements
-from .errors import PDBError
 
 
-__all__ = ['OutputReaders', 'InputReaders', 'read_standard_potential', 'read_pelib_potential', 'read_input_file']
+__all__ = ['OutputReaders', 'InputReaders', 'read_standard_potential', 'read_pelib_potential', 'read_input_file',
+           'PDBError']
 
 
 def read_standard_potential(potential_file):
@@ -430,3 +430,14 @@ class OutputReaders(object):
     @staticmethod
     def molcas_loprop_multipoles(*args):
         return OutputReaders.molcas_loprop(*args)
+
+
+class PDBError(Exception):
+    """Exception for errors in PDB file."""
+
+    def __init__(self, prop, line):
+        self.prop = prop
+        self.line = line
+
+    def __str__(self):
+        return 'unable to read {0} from:\n{1}'.format(self.prop, self.line)

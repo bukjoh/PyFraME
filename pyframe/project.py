@@ -24,7 +24,6 @@ import os
 import shutil
 import socket
 import tempfile
-
 import numpy as np
 
 from .system import MolecularSystem
@@ -33,7 +32,6 @@ from .potentials import Potential
 from .readers import OutputReaders, read_standard_potential
 from .writers import InputWriters, ScriptWriters
 from .process import run, process_jobs
-from .errors import UnknownOptionError
 
 __all__ = ['Project']
 
@@ -93,7 +91,7 @@ class Project(object):
             if hasattr(self, key):
                 setattr(self, key, kwargs[key])
             else:
-                raise UnknownOptionError(key)
+                raise TypeError(key)
 
     @property
     def scratch_dir(self):
