@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Minimum requirement changed to Python 3.6
+- Allow extracting fragments with a single item, e.g. system.get_fragments_by_chain_id('P'), where it was required to always use lists before
 
 
 ## 0.2.0 - 2018-20-03

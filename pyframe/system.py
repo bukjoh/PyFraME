@@ -21,7 +21,7 @@
 """ The module 'system' contains the class 'MolecularSystem', which defines the moleculer system."""
 
 import os.path
-from typing import List
+from typing import List, Union
 
 from .atoms import AtomList
 from .fragments import FragmentDict, find_bonded_fragments
@@ -246,6 +246,8 @@ class MolecularSystem(object):
         from a PDB file, such as '1_A_SOL'.
  
         """
+        if isinstance(identifiers, str):
+            identifiers = [identifiers]
         assert isinstance(identifiers, list)
         assert all(isinstance(identifier, str) for identifier in identifiers)
         fragments = FragmentDict()
@@ -260,6 +262,8 @@ class MolecularSystem(object):
         Each fragment name must be a string.
 
         """
+        if isinstance(names, str):
+            names = [names]
         assert isinstance(names, list)
         assert all(isinstance(name, str) for name in names)
         fragments = FragmentDict()
@@ -268,7 +272,7 @@ class MolecularSystem(object):
                 fragments[fragment.identifier] = self.fragments.pop(fragment.identifier)
         return fragments
 
-    def get_fragments_by_number(self, numbers: List[int]) -> FragmentDict:
+    def get_fragments_by_number(self, numbers: Union[int, List[int]]) -> FragmentDict:
         """Get fragments with the given numbers and return them in a dictionary.
 
         Arguments
@@ -281,6 +285,8 @@ class MolecularSystem(object):
         fragments
             Fragment dictionary containing the fragments that correspond to the input argument.
         """
+        if isinstance(numbers, int):
+            numbers = [numbers]
         fragments = FragmentDict()
         for fragment in list(self.fragments.values()):
             if fragment.number in numbers:
@@ -293,6 +299,8 @@ class MolecularSystem(object):
         Each chain id must be a string.
 
         """
+        if isinstance(chain_ids, str):
+            chain_ids = [chain_ids]
         assert isinstance(chain_ids, list)
         assert all(isinstance(chain_id, str) for chain_id in chain_ids)
         fragments = FragmentDict()
@@ -306,6 +314,8 @@ class MolecularSystem(object):
 
         Each charge must be an integer.
         """
+        if isinstance(charges, int):
+            charges = [charges]
         assert isinstance(charges, list)
         assert all(isinstance(charge, int) for charge in charges)
         fragments = FragmentDict()
@@ -375,6 +385,8 @@ class MolecularSystem(object):
 
         """
         assert isinstance(distance, float)
+        if isinstance(names, str):
+            names = [names]
         assert isinstance(names, list)
         assert all(isinstance(name, str) for name in names)
         assert isinstance(reference, FragmentDict)
@@ -427,6 +439,8 @@ class MolecularSystem(object):
 
         """
         assert isinstance(distance, float)
+        if isinstance(chain_ids, str):
+            chain_ids = [chain_ids]
         assert isinstance(chain_ids, list)
         assert all(isinstance(name, str) for name in chain_ids)
         assert isinstance(reference, FragmentDict)

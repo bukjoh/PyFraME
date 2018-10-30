@@ -21,7 +21,7 @@ def test_permanganate():
     tests_dir = '{0}'.format(os.path.dirname(__file__))
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
-    core = system.get_fragments_by_name(names=['LIG'])
+    core = system.get_fragments_by_name('LIG')
     system.set_core_region(core)
     solvent = system.get_fragments_by_name(names=['HOH'])
     system.add_region(name='solvent', fragments=solvent, use_standard_potentials=True, standard_potential_model='TIP3P')
@@ -63,7 +63,8 @@ def test_4np_in_water():
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     core = system.get_fragments_by_name(names=['4NP'])
     system.set_core_region(core)
-    ions = system.get_fragments_by_number(numbers=[2, *range(3, 8), 8, 10, 9])
+    ions = system.get_fragments_by_number(numbers=[2, *range(3, 8), 8, 9]) 
+    ions += system.get_fragments_by_number(10)
     system.add_region(name='ions', fragments=ions, use_standard_potentials=True, standard_potential_model='SEP')
     tip3p = system.get_fragments_by_number(numbers=[*range(11, 16)])
     system.add_region(name='tip3p', fragments=tip3p, use_standard_potentials=True, standard_potential_model='TIP3P')
@@ -175,7 +176,7 @@ def test_4val():
     tests_dir = '{0}'.format(os.path.dirname(__file__))
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
-    mfcc = system.get_fragments_by_chain_id(chain_ids=['A'])
+    mfcc = system.get_fragments_by_chain_id('A')
     system.add_region(name='mfcc', fragments=mfcc, use_mfcc=True,
                       use_multipoles=True, multipole_order=2,
                       use_polarizabilities=True)
@@ -258,7 +259,7 @@ def test_vvv():
     system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
     core = system.get_fragments_by_identifier(['1_VAL', '3_VAL'])
     system.set_core_region(core)
-    protein = system.get_fragments_by_identifier(['2_VAL'])
+    protein = system.get_fragments_by_identifier('2_VAL')
     system.add_region(name='protein', fragments=protein, use_mfcc=True, use_multipoles=True,
                       use_polarizabilities=True, multipole_order=2)
     project.create_embedding_potential(system)
