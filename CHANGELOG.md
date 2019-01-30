@@ -11,11 +11,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Print license (`pyframe.print_license()`)
 - Added [contributing guidelines](https://gitlab.com/FraME-projects/PyFraME/blob/master/CONTRIBUTING.MD)
 
+### Fixed
+
+- Settings, i.e. method, basis set, etc., when computing polarizabilities separately from multipoles using Dalton LoProp have been fixed
+
 ### Changed
 
 - Minimum requirement changed to Python 3.6
 - Allow extracting fragments with a single item, e.g. system.get_fragments_by_chain_id('P'), where it was required to always use lists before
-- Updated pfp protein parameters to latest version
+- Updated PFP protein parameters
 
 
 ## 0.2.0 - 2018-20-03

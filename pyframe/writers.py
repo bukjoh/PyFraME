@@ -108,16 +108,16 @@ class InputWriters(object):
             filename = fragment.identifier + '_loprop'
         elements = [atom.element for atom in fragment.atoms]
         coordinates = [atom.coordinate for atom in fragment.atoms]
-        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.multipole_basis, filename)
+        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.polarizability_basis, filename)
         inp = '**DALTON INPUT\n'
         inp += '.RUN RESPONSE\n'
         inp += '.DIRECT\n'
         inp += '**WAVE FUNCTIONS\n'
         inp += '.INTERFACE\n'
-        if region.multipole_method == 'DFT':
+        if region.polarizability_method == 'DFT':
             inp += '.DFT\n'
-            inp += '{0}\n'.format(region.multipole_xcfun)
-        elif region.multipole_method == 'HF':
+            inp += '{0}\n'.format(region.polarizability_xcfun)
+        elif region.polarizability_method == 'HF':
             inp += '.HF\n'
         else:
             # TODO replace with exception
