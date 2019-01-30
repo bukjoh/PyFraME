@@ -341,7 +341,7 @@ class OutputReaders(object):
 
     @staticmethod
     def dalton_loprop_polarizability(*args):
-        return OutputReaders.molcas_loprop(*args)
+        return OutputReaders.dalton_loprop(*args)
 
     @staticmethod
     def dalton_loprop_multipoles(*args):

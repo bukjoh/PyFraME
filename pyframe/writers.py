@@ -599,7 +599,7 @@ class ScriptWriters(object):
         script += 'mv {0}.SIRIFC SIRIFC\n'.format(filename)
         script += 'mv {0}.AOPROPER AOPROPER\n'.format(filename)
         script += 'mv {0}.RSPVEC RSPVEC\n'.format(filename)
-        script += 'loprop -v -t . -A -a 2 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
+        script += 'loprop -v -t . -A -a 2 -l 1 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
         script += 'rm -f AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC\n'
         with open('{0}.sh'.format(filename), 'w') as script_file:
             script_file.write(script)
