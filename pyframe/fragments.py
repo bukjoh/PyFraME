@@ -95,7 +95,7 @@ class Fragment(object):
             new_fragment.atoms.append(atom.copy())
         bonded_fragments = []
         for bonded_fragment in self.bonded_fragments + other.bonded_fragments:
-            if bonded_fragment.identifier in [self.identifier, other.identifier]:
+            if bonded_fragment in bonded_fragments:
                 continue
             overlap = False
             for bonded_atom in bonded_fragment.atoms:
@@ -105,6 +105,7 @@ class Fragment(object):
             if overlap:
                 continue
             bonded_fragments.append(bonded_fragment)
+        new_fragment.bonded_fragments = bonded_fragments
         return new_fragment
 
     def __radd__(self, other):

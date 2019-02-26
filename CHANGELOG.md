@@ -13,12 +13,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
-- Settings, i.e. method, basis set, etc., when computing polarizabilities separately from multipoles using Dalton LoProp have been fixed
+- Settings, i.e. method, basis set, etc., when computing polarizabilities
+  separately from multipoles using Dalton LoProp have been fixed
+- Fixed bug that in some cases resulted in corrupt core regions when it consisted of two
+  fragments or more
 
 ### Changed
 
 - Minimum requirement changed to Python 3.6
-- Allow extracting fragments with a single item, e.g. system.get_fragments_by_chain_id('P'), where it was required to always use lists before
+- Allow extracting fragments with a single item, e.g. system.get\_fragments\_by\_chain\_id('P'),
+  where it was required to always use lists before
 - Updated PFP protein parameters
 
 

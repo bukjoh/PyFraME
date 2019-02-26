@@ -271,3 +271,20 @@ def test_vvv():
     assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
+
+
+def test_gfp():
+    test = 'GFP'
+    tests_dir = f'{os.path.dirname(__file__)}'
+    project = pyframe.Project(work_dir=f'{tests_dir}')
+    system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
+    core = system.get_fragments_by_identifier(identifiers=['63_CRO', '40_LEU', '141_TYR', '161_PHE', '60_THR',
+                                                           '59_VAL', '62_LEU', '64_VAL', '144_HID', '218_GLH',
+                                                           '92_ARG', '199_THR', '201_SER', '90_GLN', '65_GLN',
+                                                           '467_WAT', '303_WAT', '263_WAT', '364_WAT', '340_WAT',
+                                                           '349_WAT', '518_WAT'])
+    system.set_core_region(core)
+    project.write_core(system)
+    assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
