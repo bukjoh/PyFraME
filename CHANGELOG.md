@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Pipfile added for use with pipenv
 - Print license (`pyframe.print_license()`)
 - Added [contributing guidelines](https://gitlab.com/FraME-projects/PyFraME/blob/master/CONTRIBUTING.MD)
+- Cost-effective polarizable protein potential (CP3) (see: https://doi.org/10.26434/chemrxiv.8126912)
 
 ### Fixed
 
@@ -23,8 +24,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Minimum requirement changed to Python 3.6
 - Allow extracting fragments with a single item, e.g. system.get\_fragments\_by\_chain\_id('P'),
   where it was required to always use lists before
-- Updated PFP protein parameters
-
 
 ## 0.2.0 - 2018-20-03
 
