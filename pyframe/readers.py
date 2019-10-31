@@ -19,13 +19,14 @@
 #
 
 import os.path
+import warnings
 
 import numpy as np
 
 from .fragments import FragmentDict, Fragment
 from .atoms import AtomList, Atom
 from .potentials import PotentialDict, Potential
-from .utils import BOHR2AA, AA2BOHR, elements
+from .utils import BOHR2AA, AA2BOHR, elements, amino_acid_names
 
 
 __all__ = ['OutputReaders', 'InputReaders', 'read_standard_potential', 'read_pelib_potential', 'read_input_file',
@@ -157,10 +158,19 @@ class InputReaders(object):
                                                     float(line[46:54])])
                     except:
                         raise PDBError('coordinate', line)
-                    try:
+                    if str(line[76:78]).strip():
                         atom.element = str(line[76:78]).strip()
-                    except:
-                        raise PDBError('element', line)
+                    else:
+                        warnings.warn('No element was present in the pdb file. Guessing element based on atom name. Check the output carefully.')
+                        if atom.name[0:2].title() in elements:
+                            if fragment.name in amino_acid_names:
+                                atom.element = atom.name[0].title()
+                            else:
+                                atom.element = atom.name[0:2].title()
+                        elif atom.name[0].title() in elements:
+                            atom.element = atom.name[0].title()
+                        else:
+                            raise PDBError('element', line)
                     if not str(line[78:80]).strip():
                         atom.charge = 0.0
                     elif str(line[79]).strip() in ['-', '+']:
@@ -244,10 +254,19 @@ class InputReaders(object):
                                                     float(line[46:54])])
                     except:
                         raise PDBError('coordinate', line)
-                    try:
+                    if str(line[76:78]).strip():
                         atom.element = str(line[76:78]).strip()
-                    except:
-                        raise PDBError('element', line)
+                    else:
+                        warnings.warn('No element was present in the pdb file. Guessing element based on atom name. Check the output carefully.')
+                        if atom.name[0:2].title() in elements:
+                            if fragment.name in amino_acid_names:
+                                atom.element = atom.name[0].title()
+                            else:
+                                atom.element = atom.name[0:2].title()
+                        elif atom.name[0].title() in elements:
+                            atom.element = atom.name[0].title()
+                        else:
+                            raise PDBError('element', line)
                     try:
                         atom.charge = float(line[54:60])
                     except:

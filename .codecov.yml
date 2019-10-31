@@ -17,7 +17,7 @@ coverage:
         base: auto
     changes:
       default:
-        enabled: yes
+        enabled: no
         target: auto
         threshold: null
         base: auto

@@ -13,7 +13,7 @@ from pyframe.readers import PDBError
 def test_pdb_error():
     test = 'pdb_error'
     tests_dir = '{0}'.format(os.path.dirname(__file__))
-    with pytest.raises(PDBError):
+    with pytest.warns(UserWarning):
         pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test))
 
 def test_permanganate():
@@ -301,3 +301,14 @@ def test_terminal_autodetect():
             project.write_potential(system)
             assert os.path.isfile(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
             assert filecmp.cmp(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot', f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot.ref')
+
+def test_pdbreader_element_guess():
+    test = 'pdbreader_element_guess'
+    tests_dir = f'{os.path.dirname(__file__)}'
+    project = pyframe.Project(work_dir=f'{tests_dir}/{test}')
+    with pytest.warns(UserWarning):
+        system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/GLY_noelement.pdb')
+    ref_elements = ['N', 'H', 'C', 'H', 'H', 'C', 'O']
+    for atom, ref_element in zip(system.fragments['1_GLY'].atoms, ref_elements):
+        assert atom.element == ref_element
+
