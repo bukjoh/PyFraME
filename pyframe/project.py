@@ -282,19 +282,34 @@ class Project(object):
             if region.use_standard_potentials:
                 potential = read_standard_potential(region.standard_potential_model)
                 for fragment in region.fragments.values():
+                    fragment_prefix = ''
+                    if fragment.name in potential and np.all([atom.name in potential[fragment.name] for atom in fragment.atoms]):
+                        fragment_prefix = ''
+                    elif 'N' + fragment.name in potential and np.all([atom.name in potential['N' + fragment.name] for atom in fragment.atoms]):
+                        fragment_prefix = 'N'
+                    elif 'n' + fragment.name in potential and np.all([atom.name in potential['n' + fragment.name] for atom in fragment.atoms]):
+                        fragment_prefix = 'n'
+                    elif 'C' + fragment.name in potential and np.all([atom.name in potential['C' + fragment.name] for atom in fragment.atoms]):
+                        fragment_prefix = 'C'
+                    elif 'c' + fragment.name in potential and np.all([atom.name in potential['c' + fragment.name] for atom in fragment.atoms]):
+                        fragment_prefix = 'c'
+                    elif 'A' + fragment.name in potential and np.all([atom.name in potential['A' + fragment.name] for atom in fragment.atoms]):
+                        fragment_prefix = 'A'
+                    elif 'B' + fragment.name in potential and np.all([atom.name in potential['B' + fragment.name] for atom in fragment.atoms]):
+                        fragment_prefix = 'B'
                     try:
-                        potential[fragment.name]
+                        potential[fragment_prefix + fragment.name]
                     except KeyError:
                         # TODO replace with exception
                         exit('ERROR: fragment {0} is not available in {1}.'.format(fragment.name, region.standard_potential_model))
                     for atom in fragment.atoms:
                         try:
-                            potential[fragment.name][atom.name]
+                            potential[fragment_prefix + fragment.name][atom.name]
                         except KeyError:
                             # TODO replace with exception
                             exit('ERROR: atom {0} in fragment {1} is not available in {2}.'.format(atom.name, fragment.name, region.standard_potential_model))
                         site = system.potential[atom2site[atom.number]]
-                        for key, value in potential[fragment.name][atom.name].items():
+                        for key, value in potential[fragment_prefix + fragment.name][atom.name].items():
                             if not hasattr(site, key):
                                 # TODO replace with exception
                                 exit('ERROR: {0} parameter is not implemented'.format(key))

@@ -288,3 +288,16 @@ def test_gfp():
     assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
+
+def test_terminal_autodetect():
+    test = 'terminal_autodetect'
+    tests_dir = f'{os.path.dirname(__file__)}'
+    project = pyframe.Project(work_dir=f'{tests_dir}/{test}')
+    for aa in ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE','LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL']:
+        for prefix in ['', 'N', 'C']:
+            system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{prefix}{aa}.pdb')
+            system.add_region(name='protein', fragments=system.fragments, use_standard_potentials=True, standard_potential_model='cp3')
+            project.create_embedding_potential(system)
+            project.write_potential(system)
+            assert os.path.isfile(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
+            assert filecmp.cmp(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot', f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot.ref')
