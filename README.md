@@ -77,7 +77,7 @@ To use PyFraME you need:
 
 * [Python 3](http://www.python.org/downloads/)
 * [NumPy](http://www.numpy.org/)
-* [Numba](https://numba.pydata.org/)
+* [SciPy](http://www.scipy.org/)
 
 For certain functionality you will need one or more of the following:
 

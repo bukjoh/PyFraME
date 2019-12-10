@@ -18,7 +18,7 @@
 # along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 #
 
-from numba import jit, float64
+import scipy.spatial
 import numpy as np
 
 __all__ = ['BOHR2AA', 'AA2BOHR', 'element2radius', 'element2charge', 'element2mass', 'compute_angle',
@@ -148,17 +148,12 @@ element2mass = {'Ru': 101.904348, 'Re': 186.955744, 'Rf': 261.10869, 'Ra': 226.0
                 'Au': 196.966543, 'At': 209.987126, 'In': 114.903875}
 
 
-@jit(float64(float64[:], float64[:]))
 def compute_distance(a, b):
     """Compute distance between point a and b"""
     assert len(a) == len(b)
-    distance = 0.0
-    for i in range(len(a)):
-        distance += (b[i] - a[i])**2
-    return np.sqrt(distance)
+    return np.linalg.norm(a-b)
 
 
-@jit(float64(float64[:], float64[:], float64[:]))
 def compute_angle(a, b, c):
     """Compute angle between points a, b and c"""
     ab = compute_distance(a, b)
@@ -167,14 +162,9 @@ def compute_angle(a, b, c):
     return np.arccos((ab**2 - ac**2 + bc**2) / (2.0 * ab * bc))
 
 
-@jit(float64[:,:](float64[:,:], float64[:,:]))
 def compute_distance_matrix(A, B):
     """Compute distance matrix between matrices A nd B"""
-    distance_matrix = np.zeros((len(A), len(B)))
-    for i in range(len(A)):
-        for j in range(len(B)):
-            distance_matrix[i,j] = compute_distance(A[i], B[j])
-    return distance_matrix
+    return scipy.spatial.distance.cdist(A, B, 'euclidean')
 
 
 def get_minimum_distance(first_fragment, second_fragment):

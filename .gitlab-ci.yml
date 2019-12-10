@@ -9,7 +9,7 @@ test-3.7:
   script:
     - pip install --upgrade pip
     - pip install numpy
-    - pip install numba
+    - pip install scipy
     - pip install pytest
     - pytest
 
@@ -19,10 +19,10 @@ test-3.6:
   script:
     - pip install --upgrade pip
     - pip install numpy
-    - pip install numba
+    - pip install scipy
     - pip install pytest
     - pip install pytest-cov
-    - NUMBA_DISABLE_JIT=1 pytest
+    - pytest
       --cov-config .coveragerc
       --cov-fail-under=50
       --cov-report term-missing

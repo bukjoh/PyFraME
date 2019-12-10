@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Minimum requirement changed to Python 3.6
 - Allow extracting fragments with a single item, e.g. system.get\_fragments\_by\_chain\_id('P'),
   where it was required to always use lists before
+- Remove use of Numba and instead use SciPy and NumPy only
 
 ## 0.2.0 - 2018-20-03
 
