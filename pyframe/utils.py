@@ -37,7 +37,7 @@ elements = ('H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'A
             'Ra', 'Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf', 'Es', 'Fm', 'Md',
             'No', 'Lr', 'Rf', 'Db', 'Sg', 'Bh', 'Hs', 'Mt')
 
-amino_acid_names = [prefix + name for name in ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE','LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','ACE','NME'] for prefix in ['', 'N', 'n', 'C', 'c', 'A', 'B']]
+amino_acid_names = [prefix + name for name in ['ALA','ARG','ASN', 'ASH', 'ASP', 'CYM', 'CYS', 'CYX', 'GLH', 'GLN','GLU','GLY', 'HID', 'HIE', 'HIS','ILE','LEU', 'LYN','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL','ACE','NME'] for prefix in ['', 'N', 'n', 'C', 'c', 'A', 'B']]
 
 masses = (1.007825, 4.002603, 7.016005, 9.012183, 11.009305, 12.000000, 14.003074, 15.994915,
           18.998403, 19.992439, 22.989770, 23.985045, 26.981541, 27.976928, 30.973763, 31.972072,
