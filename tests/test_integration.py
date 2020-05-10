@@ -4,6 +4,7 @@
 import pytest
 import os
 import filecmp
+import h5py
 
 import pyframe
 import pyframe.readers
@@ -15,6 +16,7 @@ def test_pdb_error():
     tests_dir = '{0}'.format(os.path.dirname(__file__))
     with pytest.warns(UserWarning):
         pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test))
+
 
 def test_permanganate():
     test = 'permanganate'
@@ -63,7 +65,7 @@ def test_4np_in_water():
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     core = system.get_fragments_by_name(names=['4NP'])
     system.set_core_region(core)
-    ions = system.get_fragments_by_number(numbers=[2, *range(3, 8), 8, 9]) 
+    ions = system.get_fragments_by_number(numbers=[2, *range(3, 8), 8, 9])
     ions += system.get_fragments_by_number(10)
     system.add_region(name='ions', fragments=ions, use_standard_potentials=True, standard_potential_model='SEP')
     tip3p = system.get_fragments_by_number(numbers=[*range(11, 16)])
@@ -251,28 +253,6 @@ def test_popc():
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
-
-def test_vvv():
-    test = 'VVV'
-    tests_dir = f'{os.path.dirname(__file__)}'
-    project = pyframe.Project(work_dir=f'{tests_dir}')
-    system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
-    core = system.get_fragments_by_identifier(['1_VAL', '3_VAL'])
-    system.set_core_region(core)
-    protein = system.get_fragments_by_identifier('2_VAL')
-    system.add_region(name='protein', fragments=protein, use_mfcc=True, use_multipoles=True,
-                      use_polarizabilities=True, multipole_order=2)
-    project.create_embedding_potential(system)
-    project.write_potential(system)
-    assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
-    assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
-    os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
-    project.write_core(system)
-    assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
-    assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
-    os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
-
-
 def test_gfp():
     test = 'GFP'
     tests_dir = f'{os.path.dirname(__file__)}'
@@ -284,6 +264,125 @@ def test_gfp():
                                                            '467_WAT', '303_WAT', '263_WAT', '364_WAT', '340_WAT',
                                                            '349_WAT', '518_WAT'])
     system.set_core_region(core)
+    project.write_core(system)
+    assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
+
+
+def test_pde_simple_water():
+    test = 'pde_simple_water'
+    tests_dir = f'{os.path.dirname(__file__)}'
+    project = pyframe.Project(work_dir=f'{tests_dir}', mpi_procs_per_job=1, jobs_per_node=1)
+    system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
+    environment = system.get_fragments_by_name(['WAT'])
+    core = system.get_fragments_by_name(['COR'])
+    system.set_core_region(core, basis='STO-3G')
+    system.add_region(name='environment', fragments=environment, use_mfcc=False, use_multipoles=False,
+                      use_polarizabilities=True, use_fragment_densities=True, use_exchange_repulsion=True,
+                      polarizability_method='HF',
+                      fragment_density_method='HF',
+                      exchange_repulsion_method='HF',
+                      polarizability_basis='loprop-6-31+G*', fragment_density_basis='STO-3G',
+                      exchange_repulsion_basis='STO-3G', exchange_repulsion_factor=1.0)
+    project.create_embedding_potential(system)
+    project.write_potential(system)
+    assert os.path.isfile(f'{tests_dir}/{test}/{test}.pot')
+    assert filecmp.cmp(f'{tests_dir}/{test}/{test}.pot', f'{tests_dir}/{test}/{test}.pot.ref')
+    os.remove(f'{tests_dir}/{test}/{test}.pot')
+    assert os.path.isfile(f'{tests_dir}/{test}/{test}.h5')
+    h5 = h5py.File(f'{tests_dir}/{test}/{test}.h5', 'r')
+    h5ref = h5py.File(f'{tests_dir}/{test}/{test}.h5.ref', 'r')
+    assert len(h5.keys()) == len(h5ref.keys())
+    for key, ref_key in zip(h5.keys(), h5ref.keys()):
+        assert key == ref_key
+        assert h5[key].dtype == h5ref[ref_key].dtype
+        assert h5[key].shape == h5ref[ref_key].shape
+        assert h5[key].size == h5ref[ref_key].size
+        if h5[key].size > 1:
+            for value, ref_value in zip(h5[key], h5ref[ref_key]):
+                assert pytest.approx(value) == ref_value
+        else:
+            assert pytest.approx(h5[key][()]) == h5ref[ref_key][()]
+    h5.close()
+    h5ref.close()
+    os.remove(f'{tests_dir}/{test}/{test}.h5')
+    project.write_core(system)
+    assert os.path.isfile(f'{tests_dir}/{test}/{test}.mol')
+    assert filecmp.cmp(f'{tests_dir}/{test}/{test}.mol', f'{tests_dir}/{test}/{test}.mol.ref')
+    os.remove(f'{tests_dir}/{test}/{test}.mol')
+
+
+def test_pde_two_water_helium():
+    test = 'pde_two_water_helium'
+    tests_dir = f'{os.path.dirname(__file__)}'
+    project = pyframe.Project(work_dir=f'{tests_dir}', mpi_procs_per_job=1, jobs_per_node=1)
+    system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
+    environment = system.get_fragments_by_name(['WAT'])
+    core = system.get_fragments_by_name(['HEL'])
+    system.set_core_region(core, basis='6-31+G*')
+    system.add_region(name='environment', fragments=environment, use_mfcc=False, use_multipoles=False,
+                      use_polarizabilities=True, use_fragment_densities=True, use_exchange_repulsion=True,
+                      polarizability_basis='loprop-6-31+G*', fragment_density_basis='loprop-6-31+G*',
+                      exchange_repulsion_basis='loprop-6-31+G*', exchange_repulsion_factor=1.0)
+    project.create_embedding_potential(system)
+    project.write_potential(system)
+    assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    assert os.path.isfile(f'{tests_dir}/{test}/{test}.h5')
+    h5 = h5py.File(f'{tests_dir}/{test}/{test}.h5', 'r')
+    h5ref = h5py.File(f'{tests_dir}/{test}/{test}.h5.ref', 'r')
+    assert len(h5.keys()) == len(h5ref.keys())
+    for key, ref_key in zip(h5.keys(), h5ref.keys()):
+        assert key == ref_key
+        assert h5[key].dtype == h5ref[ref_key].dtype
+        assert h5[key].shape == h5ref[ref_key].shape
+        assert h5[key].size == h5ref[ref_key].size
+        if h5[key].size > 1:
+            for value, ref_value in zip(h5[key], h5ref[ref_key]):
+                assert pytest.approx(value) == ref_value
+        else:
+            assert pytest.approx(h5[key][()]) == h5ref[ref_key][()]
+    os.remove(f'{tests_dir}/{test}/{test}.h5')
+    project.write_core(system)
+    assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
+
+
+def test_pde_GG_acetone():
+    test = 'pde_GG_acetone'
+    tests_dir = f'{os.path.dirname(__file__)}'
+    project = pyframe.Project(work_dir=f'{tests_dir}', mpi_procs_per_job=1, jobs_per_node=1)
+    system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
+    peptide = system.get_fragments_by_chain_id(['A'])
+    ligand = system.get_fragments_by_chain_id(['B'])
+    system.set_core_region(ligand)
+    system.add_region(name='peptide', fragments=peptide, use_mfcc=True, use_multipoles=False,
+                      use_polarizabilities=True, use_fragment_densities=True, use_exchange_repulsion=True,
+                      polarizability_basis='6-31G', fragment_density_basis='6-31G',
+                      exchange_repulsion_basis='6-31G')
+    project.create_embedding_potential(system)
+    project.write_potential(system)
+    assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
+    os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    assert os.path.isfile(f'{tests_dir}/{test}/{test}.h5')
+    h5 = h5py.File(f'{tests_dir}/{test}/{test}.h5', 'r')
+    h5ref = h5py.File(f'{tests_dir}/{test}/{test}.h5.ref', 'r')
+    assert len(h5.keys()) == len(h5ref.keys())
+    for key, ref_key in zip(h5.keys(), h5ref.keys()):
+        assert key == ref_key
+        assert h5[key].dtype == h5ref[ref_key].dtype
+        assert h5[key].shape == h5ref[ref_key].shape
+        assert h5[key].size == h5ref[ref_key].size
+        if h5[key].size > 1:
+            for value, ref_value in zip(h5[key], h5ref[ref_key]):
+                assert pytest.approx(value) == ref_value
+        else:
+            assert pytest.approx(h5[key][()]) == h5ref[ref_key][()]
+    os.remove(f'{tests_dir}/{test}/{test}.h5')
     project.write_core(system)
     assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
@@ -301,6 +400,7 @@ def test_terminal_autodetect():
             project.write_potential(system)
             assert os.path.isfile(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
             assert filecmp.cmp(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot', f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot.ref')
+            os.remove(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
 
 def test_pdbreader_element_guess():
     test = 'pdbreader_element_guess'
@@ -311,4 +411,3 @@ def test_pdbreader_element_guess():
     ref_elements = ['N', 'H', 'C', 'H', 'H', 'C', 'O']
     for atom, ref_element in zip(system.fragments['1_GLY'].atoms, ref_elements):
         assert atom.element == ref_element
-

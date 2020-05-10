@@ -25,6 +25,7 @@ import shutil
 import socket
 import tempfile
 import numpy as np
+import h5py
 
 from .system import MolecularSystem
 from .fragments import find_nearest_atom
@@ -248,7 +249,7 @@ class Project(object):
                     if not os.path.isdir(filename):
                         os.mkdir(filename)
                     os.chdir(filename)
-                    getattr(InputWriters, writer)(fragment, region, filename)
+                    getattr(InputWriters, writer)(fragment, region, system.core_region, filename)
                     getattr(ScriptWriters, writer)(filename, system_dir, temp_dir, self.mpi_procs_per_job,
                                                    self.omp_threads_per_job, self.memory_per_job)
                     directories.append(os.path.join(system_dir, filename))
@@ -620,20 +621,20 @@ class Project(object):
                     if abs(fragment_charge - float(round(fragment_charge))) > 1.0e-8:
                         print('WARNING: sum of partial charges of {0} is: {1:12.8f}'.format(fragment.identifier,
                                                                                             fragment_charge))
-            elif region.use_mfcc:
+            elif region.use_mfcc and region.use_multipoles:
                 region_formal_charge = 0
-                region_num_atoms = 0 
+                region_num_atoms = 0
                 region_charge = 0.0
-                #get reported formal charge and actual sum of partial charges
+                # get reported formal charge and actual sum of partial charges
                 for fragment in region.fragments.values():
-                    region_formal_charge += fragment.charge    
+                    region_formal_charge += fragment.charge
                     fragment_charge = 0.0
                     for atom in fragment.atoms:
                         site = system.potential[atom2site[atom.number]]
                         fragment_charge += site.M0[0]
                         region_num_atoms += 1
                     region_charge += fragment_charge
-                #redistribute the surplus charge across all atoms of the region
+                # redistribute the surplus charge across all atoms of the region
                 surplus_charge = region_charge - region_formal_charge
                 print('INFO: surplus charge: {0:12.8f} in region {1} has been redistributed'.format(surplus_charge,
                                                                                                     region.name))
@@ -654,6 +655,127 @@ class Project(object):
         if abs(surplus_charge) > 1.0e-8:
             print('INFO: surplus charge: {0:12.8f}'.format(surplus_charge))
             print('WARNING: this may indicate that an error has occurred')
+
+        # TODO temporary (but probably ends up being permanent) hack to run PDE calculations
+        temp_dir = tempfile.mkdtemp(prefix='PyFraME_', dir=self.scratch_dir)
+        system_dir = os.path.join(self.work_dir, system.name)
+        if not os.path.isdir(system_dir):
+            os.makedirs(system_dir)
+        os.chdir(system_dir)
+        system.write_potential(filename='temp')
+        directories = []
+        filenames = []
+        fragment_sizes = []
+        readers = {}
+        for region in system.regions.values():
+            if not region.use_fragment_densities:
+                continue
+            writers = []
+            combine_calc = False
+            if region.use_mfcc:
+                fragments = region.mfcc_fragments
+            else:
+                fragments = region.fragments
+            if region.use_fragment_densities and region.use_exchange_repulsion:
+                same_program = (region.fragment_density_program == region.exchange_repulsion_program)
+                same_model = (region.fragment_density_model == region.exchange_repulsion_model)
+                same_method = (
+                        region.fragment_density_method == region.exchange_repulsion_method and region.fragment_density_xcfun == region.exchange_repulsion_xcfun)
+                same_basis = (region.fragment_density_basis == region.exchange_repulsion_basis)
+                combine_calc = (same_program and same_model and same_method and same_basis)
+            # TODO handle fragment density only and exchange repulsion only
+            if region.use_fragment_densities and region.use_polarizabilities and combine_calc:
+                writers.append(f'{region.fragment_density_program}_{region.fragment_density_model}')
+            else:
+                raise NotImplementedError('Fragment density and exchange repulsion settings must be the same')
+            for writer in writers:
+                if not hasattr(InputWriters, writer) or not hasattr(ScriptWriters, writer):
+                    # TODO replace with exception
+                    exit('ERROR: input writer {0} does not exist'.format(writer))
+                for fragment in fragments.values():
+                    readers[fragment.identifier] = []
+                for fragment in fragments.values():
+                    os.chdir(system_dir)
+                    filename = fragment.identifier + '_' + writer
+                    readers[fragment.identifier].append(writer)
+                    if os.path.isfile(filename + '.h5'):
+                        continue
+                    if not os.path.isdir(filename):
+                        os.mkdir(filename)
+                    os.chdir(filename)
+                    getattr(InputWriters, writer)(fragment, region, system.core_region, filename)
+                    getattr(ScriptWriters, writer)(filename, system_dir, temp_dir, self.mpi_procs_per_job,
+                                                   self.omp_threads_per_job, self.memory_per_job)
+                    directories.append(os.path.join(system_dir, filename))
+                    filenames.append('{0}.sh'.format(filename))
+                    fragment_sizes.append(fragment.number_of_atoms)
+                    os.chdir(system_dir)
+        shutil.rmtree(temp_dir)
+        os.chdir(system_dir)
+        if directories and filenames:
+            fragment_sizes, directories, filenames = zip(*sorted(zip(fragment_sizes, directories, filenames),
+                                                                 reverse=True))
+            process_jobs(directories, filenames, self.node_list, self.jobs_per_node, self.comm_port)
+            for filename, directory in zip(filenames, directories):
+                if os.path.isfile(filename.replace('.sh', '.h5')):
+                    if os.path.getsize(filename.replace('.sh', '.h5')) > 0:
+                        shutil.rmtree(directory)
+        os.remove('temp.pot')
+        # PDE post process
+        fd_fragments = []
+        fd_prefactors = []
+        repulsion_factors = []
+        # get regions with PDE
+        for region in system.regions.values():
+            if not region.use_fragment_densities:
+                continue
+            if region.use_fragment_densities:
+                if region.use_mfcc:
+                    for fragment in region.fragments.values():
+                        fd_fragments.append(fragment.capped_fragment)
+                        fd_prefactors.append(1.0)
+                        repulsion_factors.append(region.exchange_repulsion_factor)
+                        for concap in fragment.concaps.values():
+                            if concap in fd_fragments:
+                                continue
+                            fd_fragments.append(concap)
+                            fd_prefactors.append(-1.0)
+                            repulsion_factors.append(region.exchange_repulsion_factor)
+                else:
+                    fd_fragments += region.fragments.values()
+                    fd_prefactors += [1.0] * len(fd_fragments)
+                    repulsion_factors += [region.exchange_repulsion_factor] * len(fd_fragments)
+        # get info for final h5 (dimensions of fock matrix etc.)
+        nucel_energy = 0.0
+        nuclear_coordinates = []
+        nuclear_charges = []
+        if fd_fragments:
+            # get dimension info for final h5
+            with h5py.File(f'{fd_fragments[0].identifier}_dalton_pde.h5', 'r') as fragment_h5:
+                num_bas = fragment_h5['core_fragment']['num_bas'][0]
+                repulsion_matrix = np.zeros(num_bas*(num_bas+1)//2)
+                electrostatic_matrix = np.zeros(num_bas*(num_bas+1)//2)
+                num_pols = fragment_h5['fragment']['num_pols'][0]
+                fd_static_field = np.zeros(3*num_pols)
+            # assemble final h5
+            for fragment, prefactor, repulsion_scale_factor in zip(fd_fragments, fd_prefactors, repulsion_factors):
+                with h5py.File(f'{fragment.identifier}_dalton_pde.h5', 'r') as fragment_h5:
+                    nuclear_coordinates += fragment_h5['fragment']['coordinates']
+                    nuclear_charges += [prefactor * charge for charge in fragment_h5['fragment']['charges']]
+                    nucel_energy += prefactor * fragment_h5['core_fragment']['nuclear-electron energy'][()]
+                    electrostatic_matrix += prefactor * fragment_h5['core_fragment']['electrostatic matrix'][()]
+                    repulsion_matrix += prefactor * repulsion_scale_factor * fragment_h5['core_fragment']['exchange-repulsion matrix'][()]
+                    fd_static_field += prefactor * fragment_h5['fragment']['electric fields'][()]
+            with h5py.File(f'{system.name}.h5', 'w') as combined_h5:
+                combined_h5['num_bas'] = num_bas
+                combined_h5['electrostatic matrix'] = electrostatic_matrix
+                combined_h5['exchange-repulsion matrix'] = repulsion_matrix
+                combined_h5['num_nuclei'] = np.int32(len(nuclear_charges))
+                combined_h5['nuclear charges'] = nuclear_charges
+                combined_h5['nuclear coordinates'] = nuclear_coordinates
+                combined_h5['nuclear-electron energy'] = nucel_energy
+                combined_h5['num_fields'] = num_pols
+                combined_h5['electric fields'] = fd_static_field
 
     def write_potential(self, system):
         """Write potential file."""

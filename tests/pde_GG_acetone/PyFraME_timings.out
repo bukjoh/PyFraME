@@ -1,0 +1,18 @@
+1_A_GLY_dalton_loprop_polarizability.sh:
+ Wall time 109.59 seconds
+
+2_A_GLY_dalton_loprop_polarizability.sh:
+ Wall time 149.00 seconds
+
+1_A_GLY-2_A_GLY_dalton_loprop_polarizability.sh:
+ Wall time 68.55 seconds
+
+1_A_GLY_dalton_pde.sh:
+ Wall time 39.80 seconds
+
+2_A_GLY_dalton_pde.sh:
+ Wall time 54.41 seconds
+
+1_A_GLY-2_A_GLY_dalton_pde.sh:
+ Wall time 27.97 seconds
+

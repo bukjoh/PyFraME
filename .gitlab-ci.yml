@@ -9,6 +9,7 @@ test-3.7:
   script:
     - pip install --upgrade pip
     - pip install numpy
+    - pip install h5py
     - pip install scipy
     - pip install pytest
     - pytest
@@ -19,6 +20,7 @@ test-3.6:
   script:
     - pip install --upgrade pip
     - pip install numpy
+    - pip install h5py
     - pip install scipy
     - pip install pytest
     - pip install pytest-cov

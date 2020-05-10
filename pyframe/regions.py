@@ -155,17 +155,17 @@ class Region(object):
         self._isotropic_polarizabilities = False
         # fragment_densities options
         self._fragment_density_program = 'dalton'
-        # self._fragment_density_model = 'fd'
+        self._fragment_density_model = 'pde'
         self._fragment_density_method = 'DFT'
         self._fragment_density_xcfun = 'B3LYP'
         self._fragment_density_basis = '6-31+G*'
         # exchange_repulsion options
         self._exchange_repulsion_program = 'dalton'
-        # self._exchange_repulsion_model = 'hc'
+        self._exchange_repulsion_model = 'pde'
         self._exchange_repulsion_method = 'DFT'
         self._exchange_repulsion_xcfun = 'B3LYP'
         self._exchange_repulsion_basis = '6-31+G*'
-        self._exchange_repulsion_factors = [0.8, 0.0, 0.0]
+        self._exchange_repulsion_factor = 0.8
         # standard potentials options
         self._standard_potential_model = 'sep'
         self._standard_potential_exclusion_type = 'fragment'
@@ -401,14 +401,14 @@ class Region(object):
         assert isinstance(fragment_density_program, str)
         self._fragment_density_program = fragment_density_program.lower()
 
-    # @property
-    # def fragment_density_model(self):
-    #     return self._fragment_density_model
-    #
-    # @fragment_density_model.setter
-    # def fragment_density_model(self, fragment_density_model):
-    #     assert isinstance(fragment_density_model, str)
-    #     self._fragment_density_model = fragment_density_model.lower()
+    @property
+    def fragment_density_model(self):
+        return self._fragment_density_model
+
+    @fragment_density_model.setter
+    def fragment_density_model(self, fragment_density_model):
+        assert isinstance(fragment_density_model, str)
+        self._fragment_density_model = fragment_density_model.lower()
 
     @property
     def fragment_density_method(self):
@@ -453,16 +453,16 @@ class Region(object):
     @exchange_repulsion_program.setter
     def exchange_repulsion_program(self, exchange_repulsion_program):
         assert isinstance(exchange_repulsion_program, str)
-        self._exchange_repulsion_program = exchange_repulsion_program
+        self._exchange_repulsion_program = exchange_repulsion_program.lower()
 
-    # @property
-    # def exchange_repulsion_model(self):
-    #     return self._exchange_repulsion_model
-    #
-    # @exchange_repulsion_model.setter
-    # def exchange_repulsion_model(self, exchange_repulsion_model):
-    #     assert isinstance(exchange_repulsion_model, str)
-    #     self._exchange_repulsion_model = exchange_repulsion_model
+    @property
+    def exchange_repulsion_model(self):
+        return self._exchange_repulsion_model.lower()
+
+    @exchange_repulsion_model.setter
+    def exchange_repulsion_model(self, exchange_repulsion_model):
+        assert isinstance(exchange_repulsion_model, str)
+        self._exchange_repulsion_model = exchange_repulsion_model
 
     @property
     def exchange_repulsion_method(self):
@@ -492,13 +492,13 @@ class Region(object):
         self._exchange_repulsion_basis = basis
 
     @property
-    def exchange_repulsion_factors(self):
-        return self._exchange_repulsion_factors
+    def exchange_repulsion_factor(self):
+        return self._exchange_repulsion_factor
 
-    @exchange_repulsion_factors.setter
-    def exchange_repulsion_factors(self, exchange_repulsion_factors):
-        assert all(isinstance(factor, float) for factor in exchange_repulsion_factors)
-        self._exchange_repulsion_factors = exchange_repulsion_factors
+    @exchange_repulsion_factor.setter
+    def exchange_repulsion_factor(self, exchange_repulsion_factor):
+        assert isinstance(exchange_repulsion_factor, float)
+        self._exchange_repulsion_factor = exchange_repulsion_factor
 
     @property
     def use_standard_potentials(self):

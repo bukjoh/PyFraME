@@ -20,8 +20,10 @@
 
 import os
 import json
+import h5py
+import numpy as np
 
-from .utils import element2charge
+from .utils import element2charge, AA2BOHR
 
 __all__ = ['InputWriters', 'ScriptWriters']
 
@@ -29,7 +31,7 @@ __all__ = ['InputWriters', 'ScriptWriters']
 class InputWriters(object):
 
     @staticmethod
-    def dalton_loprop(fragment, region, filename=None):
+    def dalton_loprop(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
@@ -67,7 +69,7 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def dalton_loprop_multipoles(fragment, region, filename=None):
+    def dalton_loprop_multipoles(fragment, region, core_region, filename=None):
 
         if region.multipole_order > 2:
             # TODO replace with exception
@@ -99,7 +101,7 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def dalton_loprop_polarizability(fragment, region, filename=None):
+    def dalton_loprop_polarizability(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
@@ -133,7 +135,83 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def molcas_loprop(fragment, region, filename=None):
+    def dalton_pde(fragment, region, core_region, filename=None):
+        # Monomer calculation
+        input_filename = filename
+        if input_filename is None:
+            filename = f'{fragment.identifier}'
+        else:
+            filename = f'{filename}'
+        monomer_elements = [atom.element for atom in fragment.atoms]
+        monomer_charges = [float(element2charge[element]) for element in monomer_elements]
+        monomer_coordinates = [atom.coordinate for atom in fragment.atoms]
+        core_elements = [atom.element for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
+        core_charges = [float(element2charge[element]) for element in core_elements]
+        core_coordinates = [atom.coordinate for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
+        InputWriters.dalton_mol(monomer_elements, monomer_coordinates, fragment.charge, region.fragment_density_basis, f'{filename}_monomer')
+        with h5py.File(f'{filename}.h5', 'w') as h5:
+            # groups
+            h5.create_group('core_fragment')
+            h5.create_group('fragment')
+            h5_core = h5['core_fragment']
+            h5_fragment = h5['fragment']
+            # core fragment properties
+            h5_core['num_nuclei'] = len(core_elements)
+            h5_core['charges'] = core_charges
+            h5_core['coordinates'] = np.array(core_coordinates) * AA2BOHR 
+            # this fragment properties
+            h5_fragment['num_nuclei'] = len(monomer_elements)
+            h5_fragment['coordinates'] = np.array(monomer_coordinates) * AA2BOHR
+            h5_fragment['charges'] = monomer_charges
+        inp = '**DALTON INPUT\n'
+        inp += '.RUN WAVE FUNCTIONS\n'
+        inp += '.DIRECT\n'
+        inp += '*PEQM\n'
+        inp += '.SAVE DENSITY\n'
+        inp += f'{filename}.h5\n'
+        inp += '**WAVE FUNCTIONS\n'
+        if region.fragment_density_method == 'DFT':
+            inp += '.DFT\n'
+            inp += '{0}\n'.format(region.fragment_density_xcfun)
+        elif region.fragment_density_method == 'HF':
+            inp += '.HF\n'
+        else:
+            # TODO replace with exception
+            exit('ERROR: only DFT or HF supported for Dalton LoProp')
+        inp += '**END OF DALTON INPUT\n'
+        with open('{0}_monomer.dal'.format(filename), 'w') as input_file:
+            input_file.write(inp)
+        # Dimer calculation
+        dimer_elements = core_elements + monomer_elements
+        dimer_coordinates = core_coordinates + monomer_coordinates
+        core_charge = sum([fragment.charge for fragment in core_region.fragments.values()])
+        dimer_charge = fragment.charge + core_charge
+        dimer_bases = core_region.basis
+        if not isinstance(dimer_bases, list):
+            dimer_bases = [core_region.basis]*len(core_elements)
+        dimer_bases += [region.fragment_density_basis] * len(monomer_elements)
+        InputWriters.dalton_mol(dimer_elements, dimer_coordinates, dimer_charge, dimer_bases, f'{filename}_dimer')
+        inp = '**DALTON INPUT\n'
+        inp += '.RUN WAVE FUNCTIONS\n'
+        inp += '.DIRECT\n'
+        inp += '*PEQM\n'
+        inp += '.TWOINT\n'
+        inp += f'{filename}.h5\n'
+        inp += '**WAVE FUNCTIONS\n'
+        if region.exchange_repulsion_method == 'DFT':
+            inp += '.DFT\n'
+            inp += '{0}\n'.format(region.exchange_repulsion_xcfun)
+        elif region.exchange_repulsion_method == 'HF':
+            inp += '.HF\n'
+        else:
+            # TODO replace with exception
+            exit('ERROR: only DFT or HF supported for Dalton LoProp')
+        inp += '**END OF DALTON INPUT\n'
+        with open('{0}_dimer.dal'.format(filename), 'w') as input_file:
+            input_file.write(inp)
+
+    @staticmethod
+    def molcas_loprop(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
@@ -168,7 +246,7 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def molcas_loprop_multipoles(fragment, region, filename=None):
+    def molcas_loprop_multipoles(fragment, region, core_region, filename=None):
 
         if filename is None:
             filename = fragment.identifier + '_loprop'
@@ -198,7 +276,7 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def molcas_loprop_polarizability(fragment, region, filename=None):
+    def molcas_loprop_polarizability(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
@@ -232,31 +310,64 @@ class InputWriters(object):
     @staticmethod
     def dalton_mol(elements, coordinates, charge, basis, filename):
         """Write Dalton molecule file"""
+        if isinstance(basis, list):
+            atom_basis = True
+        else:
+            atom_basis = False
         atom_types = 0
         coordinate_groups = []
         coordinate_group = []
         element_group = []
         basis_group = []
         previous_element = None
-        for element, coordinate in zip(elements, coordinates):
-            if element != previous_element:
-                coordinate_group = [coordinate]
-                coordinate_groups.append(coordinate_group)
-                element_group.append(element)
-                atom_types += 1
-            else:
-                coordinate_group.append(coordinate)
-            previous_element = element
+        previous_basis = None
+        if atom_basis:
+            for element, coordinate, basis in zip(elements, coordinates, basis):
+                if element != previous_element or basis != previous_basis:
+                    coordinate_group = [coordinate]
+                    coordinate_groups.append(coordinate_group)
+                    element_group.append(element)
+                    basis_group.append(basis)
+                    atom_types += 1
+                else:
+                    coordinate_group.append(coordinate)
+                previous_element = element
+                previous_basis = basis
+        else:
+            for element, coordinate in zip(elements, coordinates):
+                if element != previous_element:
+                    coordinate_group = [coordinate]
+                    coordinate_groups.append(coordinate_group)
+                    element_group.append(element)
+                    atom_types += 1
+                else:
+                    coordinate_group.append(coordinate)
+                previous_element = element
         mol = ''
-        mol += 'BASIS\n'
-        mol += '{0}\n'.format(basis)
+        if atom_basis:
+            mol += 'ATOMBASIS\n'
+        else:
+            mol += 'BASIS\n'
+            mol += '{0}\n'.format(basis)
         mol += 'Generated by PyFraME\n'
         mol += '\n'
         mol += 'AtomTypes={0} Charge={1} NoSymmetry Angstrom\n'.format(atom_types, charge)
-        for element, coordinate_group in zip(element_group, coordinate_groups):
-            mol += 'Charge={0:.1f} Atoms={1}\n'.format(element2charge[element], len(coordinate_group))
-            for coordinate in coordinate_group:
-                mol += '{0:2} {1[0]:12.6f} {1[1]:12.6f} {1[2]:12.6f}\n'.format(element, coordinate)
+        if atom_basis:
+            for basis, element, coordinate_group in zip(basis_group, element_group,
+                                                        coordinate_groups):
+                mol += 'Charge={0:.1f} Atoms={1} Basis={2}\n'.format(element2charge[element],
+                                                                     len(coordinate_group),
+                                                                     basis)
+                for coordinate in coordinate_group:
+                    mol += '{0:2} {1[0]:12.6f} {1[1]:12.6f} {1[2]:12.6f}\n'.format(element,
+                                                                                   coordinate)
+        else:
+            for element, coordinate_group in zip(element_group, coordinate_groups):
+                mol += 'Charge={0:.1f} Atoms={1}\n'.format(element2charge[element],
+                                                           len(coordinate_group))
+                for coordinate in coordinate_group:
+                    mol += '{0:2} {1[0]:12.6f} {1[1]:12.6f} {1[2]:12.6f}\n'.format(element,
+                                                                                   coordinate)
         with open('{0}.mol'.format(filename), 'w') as mol_file:
             mol_file.write(mol)
 
@@ -599,7 +710,7 @@ class ScriptWriters(object):
         script += 'mv {0}.SIRIFC SIRIFC\n'.format(filename)
         script += 'mv {0}.AOPROPER AOPROPER\n'.format(filename)
         script += 'mv {0}.RSPVEC RSPVEC\n'.format(filename)
-        script += 'loprop -v -t . -A -a 2 -l 1 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
+        script += 'loprop -v -t . -A -a 2 -l -1 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
         script += 'rm -f AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC\n'
         with open('{0}.sh'.format(filename), 'w') as script_file:
             script_file.write(script)
@@ -629,6 +740,35 @@ class ScriptWriters(object):
         script += 'loprop -v -t . -A --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
         script += 'rm -f AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC\n'
         with open('{0}.sh'.format(filename), 'w') as script_file:
+            script_file.write(script)
+
+    @staticmethod
+    def dalton_pde(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+        """Writes run script for Dalton PDE calculation"""
+        temp_dir = os.path.join(scratch_dir, filename)
+        script = '#!/usr/bin/env bash\n'
+        script += 'export PATH={0}\n'.format(os.environ['PATH'])
+        if 'LD_LIBRARY_PATH' in os.environ:
+            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
+        script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
+        script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
+        script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
+        script += 'mkdir -p $DALTON_TMPDIR\n'
+        script += 'cd {0}\n'.format(os.path.join(work_dir, filename))
+        script += f'cp {work_dir}/temp.pot {work_dir}/{filename}/{filename}_monomer.pot\n'
+        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
+        script += f' -put {filename}.h5'
+        script += f' -get {filename}.h5'
+        script += f' -o ../{filename}_monomer.log -dal {filename}_monomer.dal -mol {filename}_monomer.mol -pot {filename}_monomer.pot\n'
+        script += f'bzip2 --best {work_dir}/{filename}_monomer.log\n'
+        script += f'mv {filename}_monomer.{filename}.h5 {filename}.h5\n'
+        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
+        script += f' -put {filename}.h5'
+        script += f' -get {filename}.h5'
+        script += f' -o ../{filename}_dimer.log -dal {filename}_dimer.dal -mol {filename}_dimer.mol\n'
+        script += f'bzip2 --best {work_dir}/{filename}_dimer.log\n'
+        script += f'mv {filename}_dimer.{filename}.h5 {work_dir}/{filename}.h5'
+        with open(f'{filename}.sh', 'w') as script_file:
             script_file.write(script)
 
     @staticmethod

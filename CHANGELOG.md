@@ -6,11 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
-
+- Polarizable density embedding (PDE) model
+  - see https:/doi.org/10.1021/jp510138k for details
 - Pipfile added for use with pipenv
 - Print license (`pyframe.print_license()`)
 - Added [contributing guidelines](https://gitlab.com/FraME-projects/PyFraME/blob/master/CONTRIBUTING.MD)
-- Cost-effective polarizable protein potential (CP3) (see: https://doi.org/10.26434/chemrxiv.8126912)
+- Cost-effective polarizable protein potential (CP3)
+  - see https://doi.org/10.1021/acs.jctc.9b00616 for details
 - The PDB input file reader will now try to guess the element based on the atom name, when the element field is missing.
 
 ### Fixed

@@ -316,16 +316,21 @@ class OutputReaders(object):
                     index += 1
                 if 'Molecular' in line:
                     break
+        # the polarizability starts after an index, three coordinates and the multipole (1+3+x)
         with open('{0}.out'.format(filename)) as loprop:
             line = loprop.readline()
             unit = line
             line = loprop.readline().split()
             n_sites = int(line[0])
             multipole_order = int(line[1])
+            # first we have the multipoles, then the polarizability
+            # if we use -l -1 (multipole_order + 1) = 0, so offset will be correct
+            # if we use -l -2 (multipole_order + 2) = 0, so offset will be correct
+            # if we use -l -3 (multipole_order + 3) = 0, so offset will be correct
+            pol_start = 1 + 3 + (multipole_order+1)*(multipole_order+2)*(multipole_order+3)//6
             pol_type = int(line[2])
             if n_sites != len(potential):
-                # TODO: replace with exception
-                exit('ERROR: inconsistency in {0}.out'.format(filename))
+                raise ValueError(f'Inconsistency in {filename}.out')
             for i in range(1, n_sites + 1):
                 line = loprop.readline().split()
                 coordinate = [float(component) for component in line[1:4]]
@@ -334,8 +339,7 @@ class OutputReaders(object):
                 elif 'AU' in unit:
                     coordinate = [float(component) * BOHR2AA for component in coordinate]
                 else:
-                    # TODO: replace with exception
-                    exit('ERROR: unidentifiable unit in {0}.out'.format(filename))
+                    raise ValueError(f'unidentifiable unit in {filename}.out')
                 potential[i]['coordinate'] = np.array(coordinate)
                 if multipole_order >= 0:
                     M0 = [float(line[4])]
@@ -351,9 +355,9 @@ class OutputReaders(object):
                         potential[i]['M2'] = M2
                 if 2 >= pol_type > 0:
                     if pol_type == 1:
-                        P11 = [float(line[14]) * AA2BOHR**3]
+                        P11 = [float(line[pol_start]) * AA2BOHR**3]
                     elif pol_type == 2:
-                        P11 = [float(component) * AA2BOHR**3 for component in line[14:20]]
+                        P11 = [float(component) * AA2BOHR**3 for component in line[pol_start:pol_start+6]]
                     if not all(abs(component) < 1.0e-6 for component in P11):
                         potential[i]['P11'] = P11
         return potential
