@@ -1,6 +1,7 @@
 PyFraME: Python framework for Fragment-based Multiscale Embedding calculations
 ==============================================================================
-Copyright (C) 2017-2018  Jógvan Magnus Haugaard Olsen
+
+Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen
 
 PyFraME is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -15,59 +16,77 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with PyFraME.  If not, see <https://www.gnu.org/licenses/>.
 
-[![PIPELINE](https://gitlab.com/FraME-projects/PyFraME/badges/master/build.svg)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
-[![COVERAGE](https://gitlab.com/FraME-projects/PyFraME/badges/master/coverage.svg?job=test-3.6)](https://gitlab.com/FraME-projects/PyFraME/commits/master)
-[![codecov](https://codecov.io/gl/FraME-projects/PyFraME/branch/master/graph/badge.svg)](https://codecov.io/gl/FraME-projects/PyFraME)
-[![PyPI](https://badge.fury.io/py/PyFraME.svg)](https://badge.fury.io/py/PyFraME)
-[![Python](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
-[![License: GPL v3+](https://img.shields.io/badge/License-GPL%20v3+-red.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.775113.svg)](https://doi.org/10.5281/zenodo.775113)
-
 
 Description
 -----------
 
-PyFraME is a Python package that provides a framework for fragment-based
-multiscale embedding calculations.
-The aim is to automatize the workflow of such calculations in a flexible
-manner.
+PyFraME is a Python package providing a framework for managing fragment-based
+multiscale embedding calculations. In such calculations, a molecular system is
+divided into two principal domains: a central core and its environment. The
+core part is treated at the highest level of theory while the effects from the
+environment are included effectively through an embedding potential. Using
+PyFraME the user can automatize the workflow starting from an initial structure
+to the final embedding potential. It can be used to build a multilayer
+description of the molecular environment. Each layer can be described either by
+a standard embedding potential, i.e., using a predefined set of parameters, or
+by deriving the embedding-potential parameters based on first-principles
+calculations. For the latter, a fragmentation method is used to subdivide large
+molecular structures into smaller computationally manageable fragments. The
+number of layers, as well as the composition and level of theory used for each
+layer, can be fully customized.
 
-The typical workflow is as follows:
+The basic workflow consists of three main steps. First, a molecular structure
+is given as an input. Currently, PyFraME supports input files in the PDB
+format. The input file reader extracts information about the structure and
+composition of the system, and it also defines the basic units of the system,
+i.e., fragments. Small molecules typically constitute a fragment on their own,
+but larger molecules need to be broken down into smaller fragments. For
+example, for proteins, a fragment would usually consist of an amino-acid
+residue. The molecular system to be used for the embedding calculation is then
+built by extracting subsets from the full list of fragments according to
+user-specified criteria, such as name, chain ID, distance, or a combination
+thereof, and placed into separate regions. As mentioned above, any number of
+regions may be added, and each can be fully customized. Once the system has
+been built, the final step is the derivation of the embedding potential.
+Depending on the specifics, it may involve a large number of separate
+calculations on the individual fragments in order to compute the
+embedding-potential parameters. For large molecules, where the parameters
+cannot be computed directly, PyFraME uses a fragmentation method based on the
+molecular fractionation with conjugate caps (MFCC) approach to derive the
+parameters. The individual fragment calculations are typically performed by
+Dalton and the LoProp Python package but this can be customized. The
+fragmentation of the system, fragment calculations, and subsequent joining of
+parameters to build the embedding potential are fully automatized and can make
+full use of large-scale HPC resources.
 
-1. a part of the total molecular system is chosen as the core region which is
-   typically treated a high level of theory
-2. the remainder is split into a number of regions each of which can be
-   treated at different levels of theory
-3. each region (except the core) is divided into fragments that consist of
-   either small molecules or parts of larger molecules that have been
-   fragmented into smaller computationally manageable fragments
-4. a calculation is run on each fragment to obtain fragment parameters
-   (if necessary)
-5. all fragment parameters of all regions are assembled and constitute the
-   embedding potential
-6. a final calculation is run on the core region using the embedding potential
-   to model the effect from the remainder of the molecular system
-
-The PyFraME package can be used to automatize steps 1-5.
+For an example showing how PyFraME can be used, see
+[Usage example](#usage-example).
 
 
 How to cite
 -----------
 
-To cite PyFraME please use a format similar to the following
+To cite PyFraME please use a format similar to the following:
 
-J. M. H. Olsen, *PyFraME: Python framework for Fragment-based Multiscale
-Embedding (version 0.2.0)*, **2018**, https://doi.org/10.5281/zenodo.1443314
+J. M. H. Olsen and contributors, *PyFraME: Python framework for Fragment-based
+Multiscale Embedding (version 0.3.0)*, **2020**. DOI: 10.5281/zenodo.3820471.
+See https://gitlab.com/FraME-projects/PyFraME.
 
 where the version and DOI should correspond to the actual version that was
-used.
-Note that the DOI [10.5281/zenodo.775113](https://doi.org/10.5281/zenodo.775113)
-represents all versions, and will always resolve to the latest one.
-A possible BibTeX entry can be found in the
+used. Note that the DOI
+[10.5281/zenodo.775113](https://doi.org/10.5281/zenodo.775113)
+represents all versions, and will always resolve to the latest one. A possible
+BibTeX entry can be found in the
 [CITATION](https://gitlab.com/FraME-projects/PyFraME/blob/master/CITATION)
-file.
-Alternatively, BibTeX and other formats can be generated by
+file. Alternatively, BibTeX and other formats can be generated by
 [Zenodo](https://doi.org/10.5281/zenodo.775113).
+
+
+Contributors
+------------
+
+The list of past and current contributors is found
+[here](https://gitlab.com/FraME-projects/PyFraME/-/graphs/master).
 
 
 Requirements
@@ -75,19 +94,21 @@ Requirements
 
 To use PyFraME you need:
 
-* [Python 3](http://www.python.org/downloads/)
-* [NumPy](http://www.numpy.org/)
-* [SciPy](http://www.scipy.org/)
+* [Python (3.6+)](https://www.python.org/)
+* [NumPy](https://www.numpy.org/)
+* [SciPy](https://www.scipy.org/)
+* [H5Py](https://www.h5py.org/)
 
 For certain functionality you will need one or more of the following:
 
-* [Dalton](http://www.daltonprogram.org/)
+* [Dalton](https://www.daltonprogram.org/)
 * [LoProp for Dalton](https://github.com/vahtras/loprop)
-* [Molcas 8](http://www.molcas.org/)
+* [Molcas](https://www.molcas.org/) (not tested recently)
+* [OpenMolcas](https://gitlab.com/Molcas/OpenMolcas) (not tested recently)
 
 To run the test suite you need:
 
-* [pytest](http://pytest.org)
+* [pytest](https://pytest.org)
 
 
 Installation
@@ -97,19 +118,15 @@ The PyFraME package can be installed from
 [PyPI](https://pypi.org/project/PyFraME/) directly using
 [pip](https://pip.pypa.io/en/stable/)
 
-    pip install [--user] PyFraME
+```bash
+pip install [--user] PyFraME
+```
 
 This will also install required dependencies (see above) unless they are
-already satisfied.
-The optional `--user` argument will install PyFraME in a location that is only
-accessible by the user.
-It is needed unless you have root privileges and want to install PyFraME in a
-location accessible by all users, or you are working in a virtual environment.
-If you are using [Pipenv](https://pipenv.readthedocs.io/en/latest/) to manage
-virtual environments, then the following command will install PyFraME and its
-dependencies:
-
-    pipenv install PyFraME
+already satisfied. The optional `--user` argument will install PyFraME in a
+location that is only accessible by the user. It is needed unless you have root
+privileges and want to install PyFraME in a location accessible by all users,
+or you are working in a virtual environment. 
 
 The entire source including history can be found at
 [GitLab](https://gitlab.com/FraME-projects/PyFraME).
@@ -120,17 +137,177 @@ All releases are also deposited at
 Testing
 -------
 
-To execute the full test suite (unit tests and integration tests) run
+If you installed from PyPI, the unit tests can be executed by typing
 
-    pytest
+```bash
+pytest --pyargs pyframe
+```
 
-from the PyFraME root directory, or, if you installed from PyPI, the
-unit tests can be executed by typing
+in a terminal. To execute the full test suite (unit tests and integration
+tests), which can be obtained by downloading from
+[GitLab](https://gitlab.com/FraME-projects/PyFraME), run
 
-    pytest --pyargs pyframe
+```bash
+pytest
+```
+
+from the PyFraME root directory.
 
 
 Issues
 ------
 
 Please report issues [here](https://gitlab.com/FraME-projects/PyFraME/issues).
+
+
+Contributing
+------------
+
+Please take a look at the
+[contribution guide](https://gitlab.com/FraME-projects/PyFraME/-/blob/master/CONTRIBUTING.md).
+
+
+Usage example
+-------------
+
+The following commented example is based on a molecular system consisting of a
+channelrhodopsin protein dimer embedded in a lipid membrane. For examples of
+how PyFraME can integrated in computational studies of response and transition
+properties of molecular systems, we refer to our
+[tutorial review](https://doi.org/10.1002/qua.25717) article.
+
+```python
+import pyframe
+
+# Create MolecularSystem() object. Currently only PDB and a restricted forms of
+# PQR files are supported (you can, however, give your own reader as an argument).
+system = pyframe.MolecularSystem(input_file='/path/to/input/file.pdb')
+
+# By default fragments are defined by the input but fragments can be modified
+# as shown here. This will affect all fragments with the given names.
+system.split_fragment_by_name(
+        name='RETK',
+        new_names=['LYSB', 'LYSS', 'RET'],
+        fragment_definitions=[['N', 'H', 'CA', 'HA', 'C', 'O'],
+                              ['CB', 'HB1', 'HB2', 'CG', 'HG1', 'HG2', 'CD',
+                               'HD1', 'HD2', 'CE', 'HE1', 'HE2'],
+                              ['NZ', 'HZ', 'C15', 'H15', 'C14', 'H14', 'C13',
+                               'C20', '1H20', '2H20', '3H20', 'C12', 'H12',
+                               'C11', 'H11', 'C10', 'H10', 'C9', 'C19', '1H19',
+                               '2H19', '3H19', 'C8', 'H8', 'C7', 'H7', 'C6',
+                               'C5', 'C18', '1H18', '2H18', '3H18', 'C4',
+                               'H41', 'H42', 'C3', 'H31', 'H32', 'C2', 'H21',
+                               'H22', 'C1', 'C16', '1H16', '2H16', '3H16',
+                               'C17', '1H17', '2H17', '3H17']])
+
+system.split_fragment_by_name(
+        name='POPE',
+        new_names=['POP1', 'POP2', 'POP3', 'POP4', 'POP5'],
+        fragment_definitions=[['N', 'HN1', 'HN2', 'HN3', 'C12', 'H12A', 'H12B',
+                               'C11', 'H11A', 'H11B', 'P', 'O13', 'O14', 'O11',
+                               'O12', 'C1', 'HA', 'HB', 'C2', 'HS', 'O21',
+                               'C3', 'HX', 'HY', 'O31'],
+                              ['C21', 'O22', 'C22', 'H2R', 'H2S', 'C23', 'H3R',
+                               'H3S', 'C24', 'H4R', 'H4S', 'C25', 'H5R', 'H5S',
+                               'C26', 'H6R', 'H6S', 'C27', 'H7R', 'H7S', 'C28',
+                               'H8R', 'H8S', 'C29', 'H91'],
+                              ['0C21', '1H10', '1C21', 'H11R', 'H11S', '2C21',
+                               'H12R', 'H12S', '3C21', 'H13R', 'H13S', '4C21',
+                               'H14R', 'H14S', '5C21', 'H15R', 'H15S', '6C21',
+                               'H16R', 'H16S', '7C21', 'H17R', 'H17S', '8C21',
+                               'H18R', 'H18S', 'H18T'],
+                              ['C31', 'O32', 'C32', 'H2X', 'H2Y', 'C33', 'H3X',
+                               'H3Y', 'C34', 'H4X', 'H4Y', 'C35', 'H5X', 'H5Y',
+                               'C36', 'H6X', 'H6Y', 'C37', 'H7X', 'H7Y', 'C38',
+                               'H8X', 'H8Y', 'C39', 'H9X', 'H9Y'],
+                              ['0C31', 'H10X', 'H10Y', '1C31', 'H11X', 'H11Y',
+                               '2C31', 'H12X', 'H12Y', '3C31', 'H13X', 'H13Y',
+                               '4C31', 'H14X', 'H14Y', '5C31', 'H15X', 'H15Y',
+                               '6C31', 'H16X', 'H16Y', 'H16Z']])
+
+# Take fragments and put them in core region.
+core = system.get_fragments_by_identifier(identifiers=['248_A_RET'])
+core += system.get_fragments_by_distance(distance=3.0, reference=core,
+                                         use_center_of_mass=False,
+                                         protect_molecules=False)
+system.set_core_region(core, basis='pcseg-2')
+
+# Take out protein (here I use chain id because all protein fragments have the
+# same id).
+protein = system.get_fragments_by_chain_id(chain_ids=['A'])
+
+# Add a region and place the protein in it. Note that each of these settings
+# have defaults and that there are more than those shown here.
+system.add_region(name='protein', fragments=protein, use_mfcc=True,
+                  mfcc_order=2, use_multipoles=True, multipole_order=2,
+                  multipole_basis='loprop-6-31+G*', use_polarizabilities=True,
+                  polarizability_basis='loprop-6-31+G*')
+
+lipids = system.get_fragments_by_distance_and_name(
+        distance=8.0,
+        names=['POP1', 'POP2', 'POP3', 'POP4', 'POP5'],
+        reference=protein)
+system.add_region(name='lipid', fragments=lipids, use_mfcc=True, mfcc_order=2,
+                  use_multipoles=True, multipole_order=2,
+                  multipole_basis='loprop-6-31+G*', use_polarizabilities=True,
+                  polarizability_basis='loprop-6-31+G*')
+
+ions = system.get_fragments_by_distance_and_name(distance=8.0,
+                                                 names=['NA', 'CL'],
+                                                 reference=protein)
+system.add_region(name='ion', fragments=ions, use_multipoles=True,
+                  multipole_order=0, multipole_basis='6-31+G*',
+                  use_polarizabilities=True, polarizability_basis='6-31+G*')
+
+solvents = system.get_fragments_by_distance_and_name(distance=8.0,
+                                                     names=['SOL'],
+                                                     reference=protein)
+system.add_region(name='solvent', fragments=solvents, use_multipoles=True,
+                  multipole_order=2, multipole_basis='loprop-6-31+G*',
+                  use_polarizabilities=True,
+                  polarizability_basis='loprop-6-31+G*')
+
+# Create Project() object
+project = pyframe.Project()
+
+# Set path to scratch directory.
+# This will be used by the auxiliary programs, e.g. Dalton or MOLCAS.
+project.scratch_dir = '/path/to/scratch'
+
+# Set path to working directory (it will be created if it does not exist).
+# This directory will contain the final output files from PyFraME (e.g. Dalton
+# mol and pot files), and a directory for each fragment which will contain
+# output from the auxiliary program, e.g. Dalton or MOLCAS.
+project.work_dir = '/path/to/work'
+
+# Specifies the number of jobs that will be run on each node.
+# A fragment may require one or more calculations run by an auxiliary program.
+# Each of these counts as a job.
+project.jobs_per_node = 2
+
+# Specifies memory per job.
+# Note that this amount will be shared by MPI processes
+project.memory_per_job = 2048 * 12
+
+# Number of MPI processes per job
+project.mpi_procs_per_job = 12
+
+# You can manually specify the name of nodes that should be used to run jobs.
+# PyFraME will attempt to autodetect nodes from SLURM and PBS/Torque queuing
+# systems. For example:
+# project.node_list = ['{0}'.format(os.environ['HOSTNAME'])]
+
+# Prints all the details regarding the setup. Note that all of the settings
+# demonstrated above have defaults which are shown with the method below.
+project.print_info()
+
+# This will start the fragment calculations using the using the auxiliary
+# programs and settings defined when creating the regions.
+project.create_embedding_potential(system)
+
+# Write potential file containing all parameters of the embedding potential.
+project.write_potential(system)
+
+# Write molecule file containing the core quantum region.
+project.write_core(system)
+```

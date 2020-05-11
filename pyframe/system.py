@@ -1,6 +1,4 @@
-# coding=utf-8
-#
-# Copyright (C) 2017-2018  Jógvan Magnus Haugaard Olsen
+# Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen
 #
 # This file is part of PyFraME.
 #
@@ -244,7 +242,7 @@ class MolecularSystem(object):
         An identifier is a unique string that identifies a fragment.
         This can for example be a combination of fragment number, chain id and fragment name
         from a PDB file, such as '1_A_SOL'.
- 
+
         """
         if isinstance(identifiers, str):
             identifiers = [identifiers]
@@ -511,7 +509,7 @@ class MolecularSystem(object):
 
     def write_potential(self, filename=None):
         """Write the embedding potential for the molecular system to a file.
-        
+
         The filename will be the variable 'filename' with the extension '.pot'.
         The variable 'filename' defaults to the name of the the molecular system with the extension '.pot'.
 

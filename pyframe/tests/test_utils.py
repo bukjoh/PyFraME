@@ -1,4 +1,3 @@
-# coding=utf-8
 """Tests PyFraME.utils.py"""
 
 import pytest

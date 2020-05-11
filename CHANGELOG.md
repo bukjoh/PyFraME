@@ -1,40 +1,34 @@
-# Change Log
+# Changelog
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
-
+## [0.3.0] 2020-05-11
 ### Added
 - Polarizable density embedding (PDE) model
-  - see https:/doi.org/10.1021/jp510138k for details
-- Pipfile added for use with pipenv
+  - see https://doi.org/10.1021/jp510138k and https://doi.org/10.1021/acs.jpclett.7b02788 for details
 - Print license (`pyframe.print_license()`)
-- Added [contributing guidelines](https://gitlab.com/FraME-projects/PyFraME/blob/master/CONTRIBUTING.MD)
+- Added [contributing guidelines](https://gitlab.com/FraME-projects/PyFraME/-/blob/master/CONTRIBUTING.md)
 - Cost-effective polarizable protein potential (CP3)
   - see https://doi.org/10.1021/acs.jctc.9b00616 for details
 - The PDB input file reader will now try to guess the element based on the atom name, when the element field is missing.
 
 ### Fixed
-
 - Settings, i.e. method, basis set, etc., when computing polarizabilities
   separately from multipoles using Dalton LoProp have been fixed
 - Fixed bug that in some cases resulted in corrupt core regions when it consisted of two
   fragments or more
 
 ### Changed
-
 - Minimum requirement changed to Python 3.6
 - Allow extracting fragments with a single item, e.g. system.get\_fragments\_by\_chain\_id('P'),
   where it was required to always use lists before
 - Remove use of Numba and instead use SciPy and NumPy only
 
-## 0.2.0 - 2018-20-03
-
+## [0.2.0] - 2018-20-03
 ### Added
-
 - Moved the suggested BibTeX snippet into the [CITATION
-  file](https://gitlab.com/FraME-projects/PyFraME/blob/master/CITATION)
+  file](https://gitlab.com/FraME-projects/PyFraME/-/blob/master/CITATION)
 - Added sodium and chloride charge and isotropic polarizability to
   solvent embedding potential
 - Added calcium, magnesium, potassium, zinc and bromine charge and
@@ -52,7 +46,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   J. Comput. Chem. 38 (2017) 601-611.
 
 ### Fixed
-
 - Fixed wrong asserts which would have caused errors if octopoles or
   higher were requested
 - All polarizabilities up to octopole-octopole are now present
@@ -67,17 +60,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   would erroneously have _link_ appended to it
 
 ### Changed
-
 - Running the test suite now requires pytest (unittests can be run by typing `pytest --pyargs pyframe`)
 - The default bond detection threshold factor has been set to 1.15 instead of 1.2
 - Improved error message when there is a mismatch between the number of sites in
   an output file compared to the number of sites in the fragment read in from input
 - Default is now to first try to find a free communication port
 
-## 0.1.1 - 2018-02-08
-
+## [0.1.1] - 2018-02-08
 ### Changed
-
 - There is now a check for empty output files from fragment
   calculations to prevent deletion of subdirectories of failed
   fragment calculations
@@ -90,16 +80,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Refactored the atoms module (faster and safer)
 
 ### Fixed
-
 - Bug in MOLCAS LoProp ('Fragment' object has no attribute 'xyz')
 - Using Dalton LoProp with multipole orders lower than two no longer
   fails
 - Bug in charge redistribution where negative surplus charge would not
   be redistributed
 
-## 0.1.0 - 2017-02-20
-
+## [0.1.0] - 2017-02-20
 ### Added
-
 - Initial version
 

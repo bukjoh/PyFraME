@@ -1,8 +1,6 @@
-# coding=utf-8
+"""PyFraME: Python framework for Fragment-based Multiscale Embedding
 
-"""PyFraME: Python framework for fragment-based Multiscale Embedding
-
-Copyright (C) 2017-2018  Jógvan Magnus Haugaard Olsen
+Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen
 
 PyFraME is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -24,10 +22,10 @@ from .project import Project
 from .system import MolecularSystem
 
 __all__ = ['Project', 'MolecularSystem']
-__version__ = '0.2.1-alpha'
+__version__ = '0.3.0'
 __author__ = "Jógvan Magnus Haugaard Olsen"
 __credits__ = ["Jógvan Magnus Haugaard Olsen", "Peter Reinholdt"]
-__copyright__ = "Copyright (C) 2017-2018  Jógvan Magnus Haugaard Olsen"
+__copyright__ = "Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen"
 __license__ = "GPLv3+"
 __maintainer__ = "Jógvan Magnus Haugaard Olsen"
 __email__ = "foeroyingur@gmail.com"

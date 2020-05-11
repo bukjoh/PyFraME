@@ -1,4 +1,3 @@
-# coding=utf-8
 """Tests for atoms module"""
 
 import pytest

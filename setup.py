@@ -1,4 +1,3 @@
-# coding=utf-8
 import os.path as path
 from setuptools import setup
 
@@ -12,20 +11,22 @@ setup(name='PyFraME',
       description='PyFraME: Python framework for Fragment-based Multiscale Embedding',
       long_description=long_description,
       long_description_content_type='text/markdown',
-      url='https://gitlab.com/FraME-projects/PyFraME',
-      download_url='https://pypi.org/project/PyFraME/',
-      author='Jógvan Magnus Haugaard Olsen',
+      url='https://gitlab.com/FraME-projects/PyFraME/',
+      project_urls={'Source': 'https://gitlab.com/FraME-projects/PyFraME/',
+                    'Issue Tracker': 'https://gitlab.com/FraME-projects/PyFraME/issues',
+                    'Zenodo deposits': 'https://doi.org/10.5281/zenodo.775113'},
+      author=pyframe.__author__,
       author_email='foeroyingur@gmail.com',
-      license='GPLv3+',
       classifiers=['Intended Audience :: Science/Research',
                    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                    'Natural Language :: English',
                    'Programming Language :: Python :: 3.6',
                    'Programming Language :: Python :: 3.7',
+                   'Programming Language :: Python :: 3.8',
                    'Topic :: Scientific/Engineering :: Chemistry',
                    'Topic :: Scientific/Engineering :: Physics'
                    ],
-      install_requires=['numpy', 'scipy', 'h5py'],
+      install_requires=['numpy>=1,<2', 'scipy>=1,<2', 'h5py>=2.10,<3'],
       python_requires='>=3.6',
       packages=['pyframe', 'pyframe.tests'],
       package_data={'pyframe': ['data/*.csv']}

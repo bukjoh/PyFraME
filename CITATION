@@ -1,5 +1,6 @@
 @misc{pyframe,
-      author = {Olsen, J. M. H.},
-      title = {{PyFraME}: {P}ython framework for {F}ragment-based {M}ultiscale {E}mbedding (version 0.2.0)},
-      year = {2018},
-      note = {https://doi.org/10.5281/zenodo.1443314}}
+      author = {Olsen, J. M. H. and contributors},
+      title = {{PyFraME}: {P}ython framework for {F}ragment-based {M}ultiscale {E}mbedding (version 0.3.0)},
+      year = {2020},
+      doi = {10.5281/zenodo.3820471},
+      note = {https://gitlab.com/FraME-projects/PyFraME}}

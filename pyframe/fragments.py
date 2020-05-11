@@ -1,6 +1,4 @@
-# coding: utf-8
-#
-# Copyright (C) 2017-2018  Jógvan Magnus Haugaard Olsen
+# Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen
 #
 # This file is part of PyFraME.
 #

@@ -13,11 +13,6 @@ coverage:
       default:
         enabled: yes
         target: auto
-        threshold: 1%
+        threshold: 10%
         base: auto
-    changes:
-      default:
-        enabled: no
-        target: auto
-        threshold: null
-        base: auto
+    changes: off

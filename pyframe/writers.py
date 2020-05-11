@@ -1,6 +1,4 @@
-# coding=utf-8
-#
-# Copyright (C) 2017-2018  Jógvan Magnus Haugaard Olsen
+# Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen
 #
 # This file is part of PyFraME.
 #
@@ -158,7 +156,7 @@ class InputWriters(object):
             # core fragment properties
             h5_core['num_nuclei'] = len(core_elements)
             h5_core['charges'] = core_charges
-            h5_core['coordinates'] = np.array(core_coordinates) * AA2BOHR 
+            h5_core['coordinates'] = np.array(core_coordinates) * AA2BOHR
             # this fragment properties
             h5_fragment['num_nuclei'] = len(monomer_elements)
             h5_fragment['coordinates'] = np.array(monomer_coordinates) * AA2BOHR
