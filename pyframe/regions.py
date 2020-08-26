@@ -141,7 +141,6 @@ class Region(object):
         self._multipole_method = 'DFT'
         self._multipole_xcfun = 'B3LYP'
         self._multipole_basis = 'loprop-6-31+G*'
-        self._atomic_multipoles = True
         # polarizability options
         self._polarizability_order = (1, 1)
         self._polarizability_program = 'dalton'
@@ -149,7 +148,6 @@ class Region(object):
         self._polarizability_method = 'DFT'
         self._polarizability_xcfun = 'B3LYP'
         self._polarizability_basis = 'loprop-6-31+G*'
-        self._atomic_polarizabilities = True
         self._isotropic_polarizabilities = False
         # fragment_densities options
         self._fragment_density_program = 'dalton'
@@ -290,16 +288,6 @@ class Region(object):
         self._multipole_basis = basis
 
     @property
-    def atomic_multipoles(self):
-        return self._atomic_multipoles
-
-    @atomic_multipoles.setter
-    def atomic_multipoles(self, atomic_multipoles):
-        assert isinstance(atomic_multipoles, bool)
-        assert atomic_multipoles
-        self._atomic_multipoles = atomic_multipoles
-
-    @property
     def use_polarizabilities(self):
         return self._use_polarizabilities
 
@@ -361,16 +349,6 @@ class Region(object):
     def polarizability_basis(self, basis):
         assert isinstance(basis, str)
         self._polarizability_basis = basis
-
-    @property
-    def atomic_polarizabilities(self):
-        return self._atomic_polarizabilities
-
-    @atomic_polarizabilities.setter
-    def atomic_polarizabilities(self, atomic_polarizabilities):
-        assert isinstance(atomic_polarizabilities, bool)
-        assert atomic_polarizabilities
-        self._atomic_polarizabilities = atomic_polarizabilities
 
     @property
     def isotropic_polarizabilities(self):
@@ -541,10 +519,6 @@ class Region(object):
     @use_mfcc.setter
     def use_mfcc(self, use_mfcc):
         assert isinstance(use_mfcc, bool)
-        if use_mfcc and self.use_multipoles:
-            assert self.atomic_multipoles
-        if use_mfcc and self.use_polarizabilities:
-            assert self.atomic_polarizabilities
         self._use_mfcc = use_mfcc
 
     @property

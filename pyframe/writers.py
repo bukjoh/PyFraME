@@ -235,11 +235,7 @@ class InputWriters(object):
         #     inp += 'UHF\n'
         inp += '&LOPROP\n'
         inp += 'MPPROP = {0}\n'.format(region.multipole_order)
-        if region.atomic_multipoles and region.atomic_polarizabilities:
-            inp += 'BOND = 0.0\n'
-        elif region.atomic_multipoles or region.atomic_polarizabilities:
-            # TODO replace with exception
-            exit('ERROR: inconsistency in choice of atomic parameters')
+        inp += 'BOND = 0.0\n'
         with open('{0}.inp'.format(filename), 'w') as input_file:
             input_file.write(inp)
 
@@ -268,8 +264,7 @@ class InputWriters(object):
         inp += '&LOPROP\n'
         inp += 'MPPROP = {0}\n'.format(region.multipole_order)
         inp += 'NOFIELD\n'
-        if region.atomic_multipoles:
-            inp += 'BOND = 0.0\n'
+        inp += 'BOND = 0.0\n'
         with open('{0}.inp'.format(filename), 'w') as input_file:
             input_file.write(inp)
 
@@ -300,8 +295,7 @@ class InputWriters(object):
         #     inp += 'UHF\n'
         inp += '&LOPROP\n'
         inp += 'MPPROP = -1\n'
-        if region.atomic_polarizabilities:
-            inp += 'BOND = 0.0\n'
+        inp += 'BOND = 0.0\n'
         with open('{0}.inp'.format(filename), 'w') as input_file:
             input_file.write(inp)
 

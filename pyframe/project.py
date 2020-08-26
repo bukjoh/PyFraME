@@ -208,12 +208,6 @@ class Project(object):
             writers = []
             combine_calc = False
             if region.use_mfcc:
-                if region.use_multipoles and not region.atomic_multipoles:
-                    # TODO replace with exception
-                    exit('ERROR: MFCC only works with atom-centered properties')
-                if region.use_polarizabilities and not region.atomic_polarizabilities:
-                    # TODO replace with exception
-                    exit('ERROR: MFCC only works with atom-centred properties')
                 region.create_mfcc_fragments()
                 fragments = region.mfcc_fragments
             else:
@@ -224,8 +218,7 @@ class Project(object):
                 same_method = (region.multipole_method == region.polarizability_method and
                                region.multipole_xcfun == region.polarizability_xcfun)
                 same_basis = (region.multipole_basis == region.polarizability_basis)
-                both_atomic = region.use_multipoles and region.atomic_multipoles
-                combine_calc = (same_program and same_model and same_method and same_basis and both_atomic)
+                combine_calc = (same_program and same_model and same_method and same_basis)
             if region.use_multipoles and not combine_calc:
                 writers.append(region.multipole_program + '_' + region.multipole_model + '_multipoles')
             if region.use_polarizabilities and not combine_calc:
@@ -540,69 +533,31 @@ class Project(object):
                 #         print('Charge after equilibration:')
                 #         print(total_charge)
             else:
-                if region.atomic_polarizabilities and region.atomic_multipoles:
-                    for fragment in region.fragments.values():
-                        for atom in fragment.atoms:
-                            exclusion_list = []
-                            for other_atom in fragment.atoms:
-                                exclusion_list.append(atom2site[other_atom.number])
-                            exclusion_list = sorted(list(set(exclusion_list)))
-                            exclusion_list.pop(exclusion_list.index(atom2site[atom.number]))
-                            system.potential[atom2site[atom.number]].exclusion_list = exclusion_list
-                    for fragment in region.fragments.values():
-                        for reader in readers[fragment.identifier]:
-                            filename = '{0}_{1}'.format(fragment.identifier, reader)
-                            potential = getattr(OutputReaders, reader)(filename)
-                            if len(potential.values()) != fragment.number_of_atoms:
-                                # TODO replace with custom exception
-                                raise ValueError('ERROR: number of sites in {filename}.out does not'.format(filename=filename) +
-                                                 ' match the number of atoms in fragment {identifier}.'.format(identifier=fragment.identifier))
-                            for atom, params in zip(fragment.atoms, potential.values()):
-                                site = system.potential[atom2site[atom.number]]
-                                for key, value in params.items():
-                                    if key == 'coordinate' or key == 'element':
-                                        continue
-                                    if not hasattr(site, key):
-                                        # TODO replace with exception
-                                        exit('ERROR: {0} is not implemented'.format(key))
-                                    setattr(site, key, value)
-                else:
-                    # TODO replace with exception
-                    exit('ERROR: only atom-centered properties are supported')
-                    # TODO separate site creation and place it together with
-                    #      other types of site creation in previous region loop
-                    for fragment in region.fragments.values():
+                for fragment in region.fragments.values():
+                    for atom in fragment.atoms:
                         exclusion_list = []
-                        for reader in readers[fragment.identifier]:
-                            filename = '{0}_{1}'.format(fragment.identifier, reader)
-                            potential = getattr(OutputReaders, reader)(filename)
-                            for params in potential.values():
-                                assert 'coordinate' in params
-                                assert 'element' in params
-                                # TODO better way to test for existing sites
-                                site_exists = False
-                                test_index = False
-                                for test_index, test_site in system.potential.items():
-                                    if np.allclose(params['coordinate'], test_site.coordinate):
-                                        site_exists = True
-                                        break
-                                if site_exists and test_index:
-                                    site = system.potential[test_index]
-                                else:
-                                    site = Potential()
-                                    system.potential[site_index] = site
-                                    exclusion_list.append(site_index)
-                                    site_index += 1
-                                for key, value in params.items():
-                                    if not hasattr(site, key):
-                                        # TODO replace with exception
-                                        exit('ERROR: {0} is not implemented'.format(key))
-                                    setattr(site, key, value)
-                        for index in exclusion_list:
-                            other_indices = []
-                            other_indices.extend(exclusion_list)
-                            other_indices.pop(other_indices.index(index))
-                            system.potential[index].exclusion_list.extend(other_indices)
+                        for other_atom in fragment.atoms:
+                            exclusion_list.append(atom2site[other_atom.number])
+                        exclusion_list = sorted(list(set(exclusion_list)))
+                        exclusion_list.pop(exclusion_list.index(atom2site[atom.number]))
+                        system.potential[atom2site[atom.number]].exclusion_list = exclusion_list
+                for fragment in region.fragments.values():
+                    for reader in readers[fragment.identifier]:
+                        filename = '{0}_{1}'.format(fragment.identifier, reader)
+                        potential = getattr(OutputReaders, reader)(filename)
+                        if len(potential.values()) != fragment.number_of_atoms:
+                            # TODO replace with custom exception
+                            raise ValueError('ERROR: number of sites in {filename}.out does not'.format(filename=filename) +
+                                             ' match the number of atoms in fragment {identifier}.'.format(identifier=fragment.identifier))
+                        for atom, params in zip(fragment.atoms, potential.values()):
+                            site = system.potential[atom2site[atom.number]]
+                            for key, value in params.items():
+                                if key == 'coordinate' or key == 'element':
+                                    continue
+                                if not hasattr(site, key):
+                                    # TODO replace with exception
+                                    exit('ERROR: {0} is not implemented'.format(key))
+                                setattr(site, key, value)
         os.chdir(self.work_dir)
         formal_charge = 0.0
         for region in system.regions.values():
