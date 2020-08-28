@@ -41,21 +41,21 @@ class Project(object):
     def __init__(self, **kwargs):
         if 'SCRATCH' in os.environ:
             self._scratch_dir = os.environ['SCRATCH']
-        elif os.path.isdir('/scratch'):
+        elif os.access('/scratch', os.W_OK | os.X_OK):
             self._scratch_dir = '/scratch'
-        elif os.path.isdir('/scr'):
+        elif os.access('/scr', os.W_OK | os.X_OK):
             self._scratch_dir = '/scr'
-        elif os.path.isdir('/tmp'):
+        elif os.access('/tmp', os.W_OK | os.X_OK):
             self._scratch_dir = '/tmp'
-        elif os.path.isdir('/usr/tmp'):
+        elif os.access('/usr/tmp', os.W_OK | os.X_OK):
             self._scratch_dir = '/usr/tmp'
-        elif os.path.isdir(os.path.join(os.getcwd(), 'scratch')):
+        elif os.access(os.path.join(os.getcwd(), 'scratch'), os.W_OK | os.X_OK):
             self._scratch_dir = os.path.join(os.getcwd(), 'scratch')
-        elif os.path.isdir(os.path.join(os.getcwd(), 'scr')):
+        elif os.access(os.path.join(os.getcwd(), 'scr'), os.W_OK | os.X_OK):
             self._scratch_dir = os.path.join(os.getcwd(), 'scr')
-        elif os.path.isdir(os.path.join(os.getcwd(), 'tmp')):
+        elif os.access(os.path.join(os.getcwd(), 'tmp'), os.W_OK | os.X_OK):
             self._scratch_dir = os.path.join(os.getcwd(), 'tmp')
-        elif os.path.isdir(os.path.join(os.getcwd(), 'temp')):
+        elif os.access(os.path.join(os.getcwd(), 'temp'), os.W_OK | os.X_OK):
             self._scratch_dir = os.path.join(os.getcwd(), 'temp')
         else:
             self._scratch_dir = os.getcwd()
