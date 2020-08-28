@@ -22,7 +22,7 @@ from .project import Project
 from .system import MolecularSystem
 
 __all__ = ['Project', 'MolecularSystem']
-__version__ = '0.3.0'
+__version__ = '0.4.0-dev'
 __author__ = "Jógvan Magnus Haugaard Olsen"
 __credits__ = ["Jógvan Magnus Haugaard Olsen", "Peter Reinholdt"]
 __copyright__ = "Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen"

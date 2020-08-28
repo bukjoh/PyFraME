@@ -213,18 +213,13 @@ class Project(object):
             else:
                 fragments = region.fragments
             if region.use_multipoles and region.use_polarizabilities:
-                same_program = (region.multipole_program == region.polarizability_program)
-                same_model = (region.multipole_model == region.polarizability_model)
-                same_method = (region.multipole_method == region.polarizability_method and
-                               region.multipole_xcfun == region.polarizability_xcfun)
-                same_basis = (region.multipole_basis == region.polarizability_basis)
-                combine_calc = (same_program and same_model and same_method and same_basis)
+                combine_calc = True
             if region.use_multipoles and not combine_calc:
-                writers.append(region.multipole_program + '_' + region.multipole_model + '_multipoles')
+                writers.append(region.program + '_multipoles')
             if region.use_polarizabilities and not combine_calc:
-                writers.append(region.polarizability_program + '_' + region.polarizability_model + '_polarizability')
+                writers.append(region.program + '_polarizability')
             if region.use_multipoles and region.use_polarizabilities and combine_calc:
-                writers.append(region.multipole_program + '_' + region.multipole_model)
+                writers.append(region.program + '_multipoles_polarizability')
             for writer in writers:
                 if not hasattr(InputWriters, writer) or not hasattr(ScriptWriters, writer):
                     # TODO replace with exception
@@ -630,15 +625,9 @@ class Project(object):
             else:
                 fragments = region.fragments
             if region.use_fragment_densities and region.use_exchange_repulsion:
-                same_program = (region.fragment_density_program == region.exchange_repulsion_program)
-                same_model = (region.fragment_density_model == region.exchange_repulsion_model)
-                same_method = (
-                        region.fragment_density_method == region.exchange_repulsion_method and region.fragment_density_xcfun == region.exchange_repulsion_xcfun)
-                same_basis = (region.fragment_density_basis == region.exchange_repulsion_basis)
-                combine_calc = (same_program and same_model and same_method and same_basis)
-            # TODO handle fragment density only and exchange repulsion only
+                combine_calc = True
             if region.use_fragment_densities and region.use_polarizabilities and combine_calc:
-                writers.append(f'{region.fragment_density_program}_{region.fragment_density_model}')
+                writers.append(f'{region.program}_pde')
             else:
                 raise NotImplementedError('Fragment density and exchange repulsion settings must be the same')
             for writer in writers:

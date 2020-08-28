@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Changed
+- Region options, '*x*\_program', '*x*\_method', '*x*\_xcfun', and '*x*\_basis', where *x* can be multipoles,
+  polarizabilites, etc., have been unified to single options 'program', 'method', 'xcfun', and 'basis', that
+  apply to all properties associated with a given region. All unused '*x*\_model' properties have been removed.
+
 ## [0.3.0] 2020-05-11
 ### Added
 - Polarizable density embedding (PDE) model
@@ -25,7 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   where it was required to always use lists before
 - Remove use of Numba and instead use SciPy and NumPy only
 
-## [0.2.0] - 2018-20-03
+## [0.2.0] - 2018-10-03
 ### Added
 - Moved the suggested BibTeX snippet into the [CITATION
   file](https://gitlab.com/FraME-projects/PyFraME/-/blob/master/CITATION)

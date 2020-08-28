@@ -25,7 +25,10 @@ def test_permanganate():
     core = system.get_fragments_by_name('LIG')
     system.set_core_region(core)
     solvent = system.get_fragments_by_name(names=['HOH'])
-    system.add_region(name='solvent', fragments=solvent, use_standard_potentials=True, standard_potential_model='TIP3P')
+    system.add_region(name='solvent',
+                      fragments=solvent,
+                      use_standard_potentials=True,
+                      standard_potential_model='TIP3P')
     project.create_embedding_potential(system)
     project.write_core(system)
     assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
@@ -88,9 +91,14 @@ def test_insulin():
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
-    system.add_region(name='protein', fragments=protein, use_mfcc=True, use_multipoles=True, multipole_order=2,
-                      multipole_xcfun='PBE0', multipole_basis='loprop-cc-pVDZ', use_polarizabilities=True,
-                      polarizability_xcfun='PBE0', polarizability_basis='loprop-cc-pVDZ',
+    system.add_region(name='protein',
+                      fragments=protein,
+                      use_mfcc=True,
+                      use_multipoles=True,
+                      multipole_order=2,
+                      xcfun='PBE0',
+                      basis='loprop-cc-pVDZ',
+                      use_polarizabilities=True,
                       isotropic_polarizabilities=True)
     project.create_embedding_potential(system)
     project.write_potential(system)
@@ -118,8 +126,11 @@ def test_insulin_cp3_fragment():
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
-    system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
-                      standard_potential_model='CP3', standard_potential_exclusion_type='fragment')
+    system.add_region(name='protein',
+                      fragments=protein,
+                      use_standard_potentials=True,
+                      standard_potential_model='CP3',
+                      standard_potential_exclusion_type='fragment')
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
@@ -133,8 +144,11 @@ def test_insulin_cp3_mfcc():
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
-    system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
-                      standard_potential_model='CP3', standard_potential_exclusion_type='mfcc')
+    system.add_region(name='protein',
+                      fragments=protein,
+                      use_standard_potentials=True,
+                      standard_potential_model='CP3',
+                      standard_potential_exclusion_type='mfcc')
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
@@ -148,7 +162,9 @@ def test_insulin_ff94():
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
-    system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
+    system.add_region(name='protein',
+                      fragments=protein,
+                      use_standard_potentials=True,
                       standard_potential_model='ff94')
     project.create_embedding_potential(system)
     project.write_potential(system)
@@ -163,7 +179,9 @@ def test_insulin_ff03():
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     protein = system.get_fragments_by_chain_id(chain_ids=['A', 'B'])
-    system.add_region(name='protein', fragments=protein, use_standard_potentials=True,
+    system.add_region(name='protein',
+                      fragments=protein,
+                      use_standard_potentials=True,
                       standard_potential_model='ff03')
     project.create_embedding_potential(system)
     project.write_potential(system)
@@ -178,12 +196,14 @@ def test_4val():
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
     mfcc = system.get_fragments_by_chain_id('A')
-    system.add_region(name='mfcc', fragments=mfcc, use_mfcc=True,
-                      use_multipoles=True, multipole_order=2,
+    system.add_region(name='mfcc',
+                      fragments=mfcc,
+                      use_mfcc=True,
+                      use_multipoles=True,
+                      multipole_order=2,
                       use_polarizabilities=True)
     cp3 = system.get_fragments_by_chain_id(chain_ids=['B'])
-    system.add_region(name='cp3', fragments=cp3, use_standard_potentials=True,
-                      standard_potential_model='CP3')
+    system.add_region(name='cp3', fragments=cp3, use_standard_potentials=True, standard_potential_model='CP3')
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
@@ -196,55 +216,35 @@ def test_popc():
     tests_dir = '{0}'.format(os.path.dirname(__file__))
     project = pyframe.Project(work_dir='{0}'.format(tests_dir))
     system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
-    system.split_fragment_by_name(name='POPC', new_names=['POCH', 'POCO', 'POCP'],
-                                  fragment_definitions=[['N',
-                                                         'C13', 'H13A', 'H13B', 'H13C',
-                                                         'C14', 'H14A', 'H14B', 'H14C',
-                                                         'C15', 'H15A', 'H15B', 'H15C',
-                                                         'C12', 'H12A', 'H12B',
-                                                         'C11', 'H11A', 'H11B',
-                                                         'P', 'O11', 'O12', 'O13', 'O14',
-                                                         'C1', 'HA', 'HB',
-                                                         'C2', 'HS',
-                                                         'O21', 'C21', 'O22',
-                                                         'C3', 'HX', 'HY',
-                                                         'O31', 'C31', 'O32'],
-                                                        ['C22', 'H2R', 'H2S',
-                                                         'C23', 'H3R', 'H3S',
-                                                         'C24', 'H4R', 'H4S',
-                                                         'C25', 'H5R', 'H5S',
-                                                         'C26', 'H6R', 'H6S',
-                                                         'C27', 'H7R', 'H7S',
-                                                         'C28', 'H8R', 'H8S',
-                                                         'C29', 'H91',
-                                                         'C210', 'H101',
-                                                         'C211', 'H11R', 'H11S',
-                                                         'C212', 'H12R', 'H12S',
-                                                         'C213', 'H13R', 'H13S',
-                                                         'C214', 'H14R', 'H14S',
-                                                         'C215', 'H15R', 'H15S',
-                                                         'C216', 'H16R', 'H16S',
-                                                         'C217', 'H17R', 'H17S',
-                                                         'C218', 'H18R', 'H18S', 'H18T'],
-                                                        ['C32', 'H2X', 'H2Y',
-                                                         'C33', 'H3X', 'H3Y',
-                                                         'C34', 'H4X', 'H4Y',
-                                                         'C35', 'H5X', 'H5Y',
-                                                         'C36', 'H6X', 'H6Y',
-                                                         'C37', 'H7X', 'H7Y',
-                                                         'C38', 'H8X', 'H8Y',
-                                                         'C39', 'H9X', 'H9Y',
-                                                         'C310', 'H10X', 'H10Y',
-                                                         'C311', 'H11X', 'H11Y',
-                                                         'C312', 'H12X', 'H12Y',
-                                                         'C313', 'H13X', 'H13Y',
-                                                         'C314', 'H14X', 'H14Y',
-                                                         'C315', 'H15X', 'H15Y',
-                                                         'C316', 'H16X', 'H16Y', 'H16Z']])
+    system.split_fragment_by_name(
+        name='POPC',
+        new_names=['POCH', 'POCO', 'POCP'],
+        fragment_definitions=[[
+            'N', 'C13', 'H13A', 'H13B', 'H13C', 'C14', 'H14A', 'H14B', 'H14C', 'C15', 'H15A', 'H15B', 'H15C', 'C12',
+            'H12A', 'H12B', 'C11', 'H11A', 'H11B', 'P', 'O11', 'O12', 'O13', 'O14', 'C1', 'HA', 'HB', 'C2', 'HS',
+            'O21', 'C21', 'O22', 'C3', 'HX', 'HY', 'O31', 'C31', 'O32'
+        ],
+                              [
+                                  'C22', 'H2R', 'H2S', 'C23', 'H3R', 'H3S', 'C24', 'H4R', 'H4S', 'C25', 'H5R', 'H5S',
+                                  'C26', 'H6R', 'H6S', 'C27', 'H7R', 'H7S', 'C28', 'H8R', 'H8S', 'C29', 'H91', 'C210',
+                                  'H101', 'C211', 'H11R', 'H11S', 'C212', 'H12R', 'H12S', 'C213', 'H13R', 'H13S',
+                                  'C214', 'H14R', 'H14S', 'C215', 'H15R', 'H15S', 'C216', 'H16R', 'H16S', 'C217',
+                                  'H17R', 'H17S', 'C218', 'H18R', 'H18S', 'H18T'
+                              ],
+                              [
+                                  'C32', 'H2X', 'H2Y', 'C33', 'H3X', 'H3Y', 'C34', 'H4X', 'H4Y', 'C35', 'H5X', 'H5Y',
+                                  'C36', 'H6X', 'H6Y', 'C37', 'H7X', 'H7Y', 'C38', 'H8X', 'H8Y', 'C39', 'H9X', 'H9Y',
+                                  'C310', 'H10X', 'H10Y', 'C311', 'H11X', 'H11Y', 'C312', 'H12X', 'H12Y', 'C313',
+                                  'H13X', 'H13Y', 'C314', 'H14X', 'H14Y', 'C315', 'H15X', 'H15Y', 'C316', 'H16X',
+                                  'H16Y', 'H16Z'
+                              ]])
 
     lipid = system.get_fragments_by_name(names=['POCH', 'POCO', 'POCP'])
-    system.add_region(name='lipid', fragments=lipid, use_standard_potentials=True,
-                      standard_potential_model='ALEP', standard_potential_exclusion_type='mfcc',
+    system.add_region(name='lipid',
+                      fragments=lipid,
+                      use_standard_potentials=True,
+                      standard_potential_model='ALEP',
+                      standard_potential_exclusion_type='mfcc',
                       mfcc_order=3)
     project.create_embedding_potential(system)
     project.write_potential(system)
@@ -252,16 +252,17 @@ def test_popc():
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
+
 def test_gfp():
     test = 'GFP'
     tests_dir = f'{os.path.dirname(__file__)}'
     project = pyframe.Project(work_dir=f'{tests_dir}')
     system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{test}.pdb')
-    core = system.get_fragments_by_identifier(identifiers=['63_CRO', '40_LEU', '141_TYR', '161_PHE', '60_THR',
-                                                           '59_VAL', '62_LEU', '64_VAL', '144_HID', '218_GLH',
-                                                           '92_ARG', '199_THR', '201_SER', '90_GLN', '65_GLN',
-                                                           '467_WAT', '303_WAT', '263_WAT', '364_WAT', '340_WAT',
-                                                           '349_WAT', '518_WAT'])
+    core = system.get_fragments_by_identifier(identifiers=[
+        '63_CRO', '40_LEU', '141_TYR', '161_PHE', '60_THR', '59_VAL', '62_LEU', '64_VAL', '144_HID', '218_GLH',
+        '92_ARG', '199_THR', '201_SER', '90_GLN', '65_GLN', '467_WAT', '303_WAT', '263_WAT', '364_WAT', '340_WAT',
+        '349_WAT', '518_WAT'
+    ])
     system.set_core_region(core)
     project.write_core(system)
     assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
@@ -277,13 +278,16 @@ def test_pde_simple_water():
     environment = system.get_fragments_by_name(['WAT'])
     core = system.get_fragments_by_name(['COR'])
     system.set_core_region(core, basis='STO-3G')
-    system.add_region(name='environment', fragments=environment, use_mfcc=False, use_multipoles=False,
-                      use_polarizabilities=True, use_fragment_densities=True, use_exchange_repulsion=True,
-                      polarizability_method='HF',
-                      fragment_density_method='HF',
-                      exchange_repulsion_method='HF',
-                      polarizability_basis='loprop-6-31+G*', fragment_density_basis='STO-3G',
-                      exchange_repulsion_basis='STO-3G', exchange_repulsion_factor=1.0)
+    system.add_region(name='environment',
+                      fragments=environment,
+                      use_mfcc=False,
+                      use_multipoles=False,
+                      use_polarizabilities=True,
+                      use_fragment_densities=True,
+                      use_exchange_repulsion=True,
+                      method='HF',
+                      basis='loprop-6-31+G*',
+                      exchange_repulsion_factor=1.0)
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile(f'{tests_dir}/{test}/{test}.pot')
@@ -320,10 +324,15 @@ def test_pde_two_water_helium():
     environment = system.get_fragments_by_name(['WAT'])
     core = system.get_fragments_by_name(['HEL'])
     system.set_core_region(core, basis='6-31+G*')
-    system.add_region(name='environment', fragments=environment, use_mfcc=False, use_multipoles=False,
-                      use_polarizabilities=True, use_fragment_densities=True, use_exchange_repulsion=True,
-                      polarizability_basis='loprop-6-31+G*', fragment_density_basis='loprop-6-31+G*',
-                      exchange_repulsion_basis='loprop-6-31+G*', exchange_repulsion_factor=1.0)
+    system.add_region(name='environment',
+                      fragments=environment,
+                      use_mfcc=False,
+                      use_multipoles=False,
+                      use_polarizabilities=True,
+                      use_fragment_densities=True,
+                      use_exchange_repulsion=True,
+                      basis='loprop-6-31+G*',
+                      exchange_repulsion_factor=1.0)
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
@@ -358,10 +367,14 @@ def test_pde_GG_acetone():
     peptide = system.get_fragments_by_chain_id(['A'])
     ligand = system.get_fragments_by_chain_id(['B'])
     system.set_core_region(ligand)
-    system.add_region(name='peptide', fragments=peptide, use_mfcc=True, use_multipoles=False,
-                      use_polarizabilities=True, use_fragment_densities=True, use_exchange_repulsion=True,
-                      polarizability_basis='6-31G', fragment_density_basis='6-31G',
-                      exchange_repulsion_basis='6-31G')
+    system.add_region(name='peptide',
+                      fragments=peptide,
+                      use_mfcc=True,
+                      use_multipoles=False,
+                      use_polarizabilities=True,
+                      use_fragment_densities=True,
+                      use_exchange_repulsion=True,
+                      basis='6-31G')
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
@@ -387,19 +400,28 @@ def test_pde_GG_acetone():
     assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
 
+
 def test_terminal_autodetect():
     test = 'terminal_autodetect'
     tests_dir = f'{os.path.dirname(__file__)}'
     project = pyframe.Project(work_dir=f'{tests_dir}/{test}')
-    for aa in ['ALA','ARG','ASN','ASP','CYS','GLN','GLU','GLY','HIS','ILE','LEU','LYS','MET','PHE','PRO','SER','THR','TRP','TYR','VAL']:
+    for aa in [
+            'ALA', 'ARG', 'ASN', 'ASP', 'CYS', 'GLN', 'GLU', 'GLY', 'HIS', 'ILE', 'LEU', 'LYS', 'MET', 'PHE', 'PRO',
+            'SER', 'THR', 'TRP', 'TYR', 'VAL'
+    ]:
         for prefix in ['', 'N', 'C']:
             system = pyframe.MolecularSystem(input_file=f'{tests_dir}/{test}/{prefix}{aa}.pdb')
-            system.add_region(name='protein', fragments=system.fragments, use_standard_potentials=True, standard_potential_model='cp3')
+            system.add_region(name='protein',
+                              fragments=system.fragments,
+                              use_standard_potentials=True,
+                              standard_potential_model='cp3')
             project.create_embedding_potential(system)
             project.write_potential(system)
             assert os.path.isfile(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
-            assert filecmp.cmp(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot', f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot.ref')
+            assert filecmp.cmp(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot',
+                               f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot.ref')
             os.remove(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
+
 
 def test_pdbreader_element_guess():
     test = 'pdbreader_element_guess'

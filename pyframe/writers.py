@@ -29,7 +29,7 @@ __all__ = ['InputWriters', 'ScriptWriters']
 class InputWriters(object):
 
     @staticmethod
-    def dalton_loprop(fragment, region, core_region, filename=None):
+    def dalton_multipoles_polarizability(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
@@ -38,19 +38,19 @@ class InputWriters(object):
             # TODO replace with exception
             exit('ERROR: only up to second order multipoles supported with LoProp model in Dalton')
         if filename is None:
-            filename = fragment.identifier + '_loprop'
+            filename = fragment.identifier + ''
         elements = [atom.element for atom in fragment.atoms]
         coordinates = [atom.coordinate for atom in fragment.atoms]
-        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.multipole_basis, filename)
+        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.basis, filename)
         inp = '**DALTON INPUT\n'
         inp += '.RUN RESPONSE\n'
         inp += '.DIRECT\n'
         inp += '**WAVE FUNCTIONS\n'
         inp += '.INTERFACE\n'
-        if region.multipole_method == 'DFT':
+        if region.method == 'DFT':
             inp += '.DFT\n'
-            inp += '{0}\n'.format(region.multipole_xcfun)
-        elif region.multipole_method == 'HF':
+            inp += '{0}\n'.format(region.xcfun)
+        elif region.method == 'HF':
             inp += '.HF\n'
         else:
             # TODO replace with exception
@@ -67,25 +67,25 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def dalton_loprop_multipoles(fragment, region, core_region, filename=None):
+    def dalton_multipoles(fragment, region, core_region, filename=None):
 
         if region.multipole_order > 2:
             # TODO replace with exception
             exit('ERROR: only up to second order multipoles supported with LoProp model in Dalton')
         if filename is None:
-            filename = fragment.identifier + '_loprop'
+            filename = fragment.identifier + ''
         elements = [atom.element for atom in fragment.atoms]
         coordinates = [atom.coordinate for atom in fragment.atoms]
-        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.multipole_basis, filename)
+        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.basis, filename)
         inp = '**DALTON INPUT\n'
         inp += '.RUN WAVE FUNCTION\n'
         inp += '.DIRECT\n'
         inp += '**WAVE FUNCTIONS\n'
         inp += '.INTERFACE\n'
-        if region.multipole_method == 'DFT':
+        if region.method == 'DFT':
             inp += '.DFT\n'
-            inp += '{0}\n'.format(region.multipole_xcfun)
-        elif region.multipole_method == 'HF':
+            inp += '{0}\n'.format(region.xcfun)
+        elif region.method == 'HF':
             inp += '.HF\n'
         else:
             # TODO replace with exception
@@ -99,25 +99,25 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def dalton_loprop_polarizability(fragment, region, core_region, filename=None):
+    def dalton_polarizability(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
             exit('ERROR: only dipole-dipole polarizabilities supported with LoProp model in MOLCAS')
         if filename is None:
-            filename = fragment.identifier + '_loprop'
+            filename = fragment.identifier + ''
         elements = [atom.element for atom in fragment.atoms]
         coordinates = [atom.coordinate for atom in fragment.atoms]
-        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.polarizability_basis, filename)
+        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.basis, filename)
         inp = '**DALTON INPUT\n'
         inp += '.RUN RESPONSE\n'
         inp += '.DIRECT\n'
         inp += '**WAVE FUNCTIONS\n'
         inp += '.INTERFACE\n'
-        if region.polarizability_method == 'DFT':
+        if region.method == 'DFT':
             inp += '.DFT\n'
-            inp += '{0}\n'.format(region.polarizability_xcfun)
-        elif region.polarizability_method == 'HF':
+            inp += '{0}\n'.format(region.xcfun)
+        elif region.method == 'HF':
             inp += '.HF\n'
         else:
             # TODO replace with exception
@@ -146,7 +146,7 @@ class InputWriters(object):
         core_elements = [atom.element for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
         core_charges = [float(element2charge[element]) for element in core_elements]
         core_coordinates = [atom.coordinate for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
-        InputWriters.dalton_mol(monomer_elements, monomer_coordinates, fragment.charge, region.fragment_density_basis, f'{filename}_monomer')
+        InputWriters.dalton_mol(monomer_elements, monomer_coordinates, fragment.charge, region.basis, f'{filename}_monomer')
         with h5py.File(f'{filename}.h5', 'w') as h5:
             # groups
             h5.create_group('core_fragment')
@@ -168,10 +168,10 @@ class InputWriters(object):
         inp += '.SAVE DENSITY\n'
         inp += f'{filename}.h5\n'
         inp += '**WAVE FUNCTIONS\n'
-        if region.fragment_density_method == 'DFT':
+        if region.method == 'DFT':
             inp += '.DFT\n'
-            inp += '{0}\n'.format(region.fragment_density_xcfun)
-        elif region.fragment_density_method == 'HF':
+            inp += '{0}\n'.format(region.xcfun)
+        elif region.method == 'HF':
             inp += '.HF\n'
         else:
             # TODO replace with exception
@@ -187,7 +187,7 @@ class InputWriters(object):
         dimer_bases = core_region.basis
         if not isinstance(dimer_bases, list):
             dimer_bases = [core_region.basis]*len(core_elements)
-        dimer_bases += [region.fragment_density_basis] * len(monomer_elements)
+        dimer_bases += [region.basis] * len(monomer_elements)
         InputWriters.dalton_mol(dimer_elements, dimer_coordinates, dimer_charge, dimer_bases, f'{filename}_dimer')
         inp = '**DALTON INPUT\n'
         inp += '.RUN WAVE FUNCTIONS\n'
@@ -196,10 +196,10 @@ class InputWriters(object):
         inp += '.TWOINT\n'
         inp += f'{filename}.h5\n'
         inp += '**WAVE FUNCTIONS\n'
-        if region.exchange_repulsion_method == 'DFT':
+        if region.method == 'DFT':
             inp += '.DFT\n'
-            inp += '{0}\n'.format(region.exchange_repulsion_xcfun)
-        elif region.exchange_repulsion_method == 'HF':
+            inp += '{0}\n'.format(region.xcfun)
+        elif region.method == 'HF':
             inp += '.HF\n'
         else:
             # TODO replace with exception
@@ -209,18 +209,18 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def molcas_loprop(fragment, region, core_region, filename=None):
+    def molcas_multipoles_polarizability(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
             exit('ERROR: only dipole-dipole polarizabilities supported with LoProp model in MOLCAS')
         if filename is None:
-            filename = fragment.identifier + '_loprop'
+            filename = fragment.identifier + ''
         fragment.write_xyz(filename)
         inp = '&GATEWAY\n'
         inp += 'TITLE = Generated by PyFraME\n'
         inp += 'COORD = {0}.xyz\n'.format(filename)
-        inp += 'BASIS = {0}\n'.format(region.multipole_basis)
+        inp += 'BASIS = {0}\n'.format(region.basis)
         inp += 'GROUP = C1\n'
         inp += '&SEWARD\n'
         inp += 'MULT = {0}\n'.format(max(region.multipole_order, 1))
@@ -228,8 +228,8 @@ class InputWriters(object):
         inp += '&SCF\n'
         inp += 'CHARGE = {0}\n'.format(round(fragment.charge))
         inp += 'CHOL\n'
-        if region.multipole_method == 'DFT':
-            inp += 'KSDFT = {0}\n'.format(region.multipole_xcfun)
+        if region.method == 'DFT':
+            inp += 'KSDFT = {0}\n'.format(region.xcfun)
         # if fragment.spin_multiplicity:
         #     inp += 'SPIN = {0}\n'.format(fragment.spin_multiplicity)
         #     inp += 'UHF\n'
@@ -240,15 +240,15 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def molcas_loprop_multipoles(fragment, region, core_region, filename=None):
+    def molcas_multipoles(fragment, region, core_region, filename=None):
 
         if filename is None:
-            filename = fragment.identifier + '_loprop'
+            filename = fragment.identifier + ''
         fragment.write_xyz(filename)
         inp = '&GATEWAY\n'
         inp += 'TITLE = Generated by PyFraME\n'
         inp += 'COORD = {0}.xyz\n'.format(filename)
-        inp += 'BASIS = {0}\n'.format(region.multipole_basis)
+        inp += 'BASIS = {0}\n'.format(region.basis)
         inp += 'GROUP = C1\n'
         inp += '&SEWARD\n'
         inp += 'MULT = {0}\n'.format(region.multipole_order)
@@ -256,8 +256,8 @@ class InputWriters(object):
         inp += '&SCF\n'
         inp += 'CHARGE = {0}\n'.format(round(fragment.charge))
         inp += 'CHOL\n'
-        if region.multipole_method == 'DFT':
-            inp += 'KSDFT = {0}\n'.format(region.multipole_xcfun)
+        if region.method == 'DFT':
+            inp += 'KSDFT = {0}\n'.format(region.xcfun)
         # if fragment.spin_multiplicity:
         #     inp += 'SPIN = {0}\n'.format(fragment.spin_multiplicity)
         #     inp += 'UHF\n'
@@ -269,18 +269,18 @@ class InputWriters(object):
             input_file.write(inp)
 
     @staticmethod
-    def molcas_loprop_polarizability(fragment, region, core_region, filename=None):
+    def molcas_polarizability(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
             # TODO replace with exception
             exit('ERROR: only dipole-dipole polarizabilities supported with LoProp model in MOLCAS')
         if filename is None:
-            filename = fragment.identifier + '_loprop'
+            filename = fragment.identifier + ''
         fragment.write_xyz(filename)
         inp = '&GATEWAY\n'
         inp += 'TITLE = Generated by PyFraME\n'
         inp += 'COORD = {0}.xyz\n'.format(filename)
-        inp += 'BASIS = {0}\n'.format(region.polarizability_basis)
+        inp += 'BASIS = {0}\n'.format(region.basis)
         inp += 'GROUP = C1\n'
         inp += '&SEWARD\n'
         inp += 'MULT = 1\n'
@@ -288,8 +288,8 @@ class InputWriters(object):
         inp += '&SCF\n'
         inp += 'CHARGE = {0}\n'.format(round(fragment.charge))
         inp += 'CHOL\n'
-        if region.polarizability_method == 'DFT':
-            inp += 'KSDFT = {0}\n'.format(region.polarizability_xcfun)
+        if region.method == 'DFT':
+            inp += 'KSDFT = {0}\n'.format(region.xcfun)
         # if fragment.spin_multiplicity:
         #     inp += 'SPIN = {0}\n'.format(fragment.spin_multiplicity)
         #     inp += 'UHF\n'
@@ -654,7 +654,7 @@ class InputWriters(object):
 class ScriptWriters(object):
 
     @staticmethod
-    def dalton_loprop(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+    def dalton_multipoles_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
         """Writes run script for Dalton LoProp calculation"""
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
@@ -681,7 +681,7 @@ class ScriptWriters(object):
             script_file.write(script)
 
     @staticmethod
-    def dalton_loprop_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+    def dalton_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
         """Writes run script for Dalton LoProp calculation"""
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
@@ -708,7 +708,7 @@ class ScriptWriters(object):
             script_file.write(script)
 
     @staticmethod
-    def dalton_loprop_multipoles(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+    def dalton_multipoles(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
         """Writes run script for Dalton LoProp calculation"""
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
@@ -764,7 +764,7 @@ class ScriptWriters(object):
             script_file.write(script)
 
     @staticmethod
-    def molcas_loprop(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+    def molcas_multipoles_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
         """Writes run script for MOLCAS LoProp calculation"""
         temp_dir = os.path.join(scratch_dir, filename)
         script = '#!/usr/bin/env bash\n'
@@ -789,9 +789,9 @@ class ScriptWriters(object):
             script_file.write(script)
 
     @staticmethod
-    def molcas_loprop_polarizability(*args):
-        ScriptWriters.molcas_loprop(*args)
+    def molcas_polarizability(*args):
+        ScriptWriters.molcas_multipoles_polarizability(*args)
 
     @staticmethod
-    def molcas_loprop_multipoles(*args):
-        ScriptWriters.molcas_loprop(*args)
+    def molcas_multipoles(*args):
+        ScriptWriters.molcas_multipoles_polarizability(*args)

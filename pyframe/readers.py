@@ -299,7 +299,7 @@ class InputReaders(object):
 class OutputReaders(object):
 
     @staticmethod
-    def dalton_loprop(filename):
+    def dalton_multipoles_polarizability(filename):
         """Reads output from Dalton LoProp calculations"""
         potential = {}
         with open('{0}.out'.format(filename)) as loprop:
@@ -361,15 +361,15 @@ class OutputReaders(object):
         return potential
 
     @staticmethod
-    def dalton_loprop_polarizability(*args):
-        return OutputReaders.dalton_loprop(*args)
+    def dalton_polarizability(*args):
+        return OutputReaders.dalton_multipoles_polarizability(*args)
 
     @staticmethod
-    def dalton_loprop_multipoles(*args):
-        return OutputReaders.dalton_loprop(*args)
+    def dalton_multipoles(*args):
+        return OutputReaders.dalton_multipoles_polarizability(*args)
 
     @staticmethod
-    def molcas_loprop(filename):
+    def molcas_multipoles_polarizability(filename):
         """Reads output from MOLCAS LoProp calculations (MpProp file)"""
         potential = {}
         index = 1
@@ -445,12 +445,12 @@ class OutputReaders(object):
         return potential
 
     @staticmethod
-    def molcas_loprop_polarizability(*args):
-        return OutputReaders.molcas_loprop(*args)
+    def molcas_polarizability(*args):
+        return OutputReaders.molcas_multipoles_polarizability(*args)
 
     @staticmethod
-    def molcas_loprop_multipoles(*args):
-        return OutputReaders.molcas_loprop(*args)
+    def molcas_multipoles(*args):
+        return OutputReaders.molcas_multipoles_polarizability(*args)
 
 
 class PDBError(Exception):
