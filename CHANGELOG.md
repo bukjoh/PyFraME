@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Region options, '*x*\_program', '*x*\_method', '*x*\_xcfun', and '*x*\_basis', where *x* can be multipoles,
   polarizabilites, etc., have been unified to single options 'program', 'method', 'xcfun', and 'basis', that
   apply to all properties associated with a given region. All unused '*x*\_model' properties have been removed.
+### Fixed
+- When running on a single local node, `ssh` is no longer required. This fixes problems with job processing
+- Process jobs without ssh when using only a single local machine. This fixes problems with job processing
+  that were present on some linux configurations.
 
 ## [0.3.0] 2020-05-11
 ### Added

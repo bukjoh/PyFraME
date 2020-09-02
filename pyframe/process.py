@@ -115,11 +115,19 @@ def start_clients(node_list, comm_port, auth_key, jobs_per_node):
     remote_command = 'bash -c -l \'cd {0}; nohup {1} PyFraME_client.py' \
                      ' >& /dev/null 2> /dev/null &\''.format(os.getcwd(), sys.executable)
     jobs = []
-    for node in node_list:
-        command = 'ssh {0} \"{1}\"'.format(node, remote_command)
+    # if executing in a non-ssh environment, with just a single node
+    if len(node_list) == 1 and node_list[0] == socket.gethostname():
+        command = remote_command
         job = mp.Process(target=run, args=(command,))
         job.start()
         jobs.append(job)
+    # multi-node case
+    else:
+        for node in node_list:
+            command = 'ssh {0} \"{1}\"'.format(node, remote_command)
+            job = mp.Process(target=run, args=(command,))
+            job.start()
+            jobs.append(job)
     for job in jobs:
         job.join()
 
