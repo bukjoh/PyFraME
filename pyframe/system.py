@@ -236,6 +236,12 @@ class MolecularSystem(object):
     #         new_fragment.identifier = '{0}_{1}'.format(new_fragment.number, new_fragment.name)
     #     self.fragments[new_fragment.identifier] = new_fragment
 
+    def get_remaining_fragments(self):
+        fragments = FragmentDict()
+        for fragment in list(self.fragments.values()):
+            fragments[fragment.identifier] = self.fragments.pop(fragment.identifier)
+        return fragments
+
     def get_fragments_by_identifier(self, identifiers):
         """Return a fragment dictionary based on a list of identifiers.
 
