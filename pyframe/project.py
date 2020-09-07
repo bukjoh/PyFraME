@@ -201,29 +201,22 @@ class Project(object):
         filenames = []
         fragment_sizes = []
         readers = {}
+        # temp file for PDE
+        write_dummy_potential(system, filename='temp')
         for region in system.regions.values():
             if region.use_standard_potentials:
                 region.create_mfcc_fragments()
                 continue
-            writers = []
-            combine_calc = False
             if region.use_mfcc:
                 region.create_mfcc_fragments()
                 fragments = region.mfcc_fragments
             else:
                 fragments = region.fragments
-            if region.use_multipoles and region.use_polarizabilities:
-                combine_calc = True
-            if region.use_multipoles and not combine_calc:
-                writers.append(region.program + '_multipoles')
-            if region.use_polarizabilities and not combine_calc:
-                writers.append(region.program + '_polarizability')
-            if region.use_multipoles and region.use_polarizabilities and combine_calc:
-                writers.append(region.program + '_multipoles_polarizability')
+            writers = get_writers(region)
             for writer in writers:
                 if not hasattr(InputWriters, writer) or not hasattr(ScriptWriters, writer):
                     # TODO replace with exception
-                    exit('ERROR: input writer {0} does not exist'.format(writer))
+                    raise ValueError('Input writer {0} does not exist'.format(writer))
                 for fragment in fragments.values():
                     readers[fragment.identifier] = []
                 for fragment in fragments.values():
@@ -252,6 +245,7 @@ class Project(object):
                 if os.path.isfile(filename.replace('.sh', '.out')):
                     if os.path.getsize(filename.replace('.sh', '.out')) > 0:
                         shutil.rmtree(directory)
+        os.remove('temp.pot')
         atom2site = {}
         site2atom = {}
         site_index = 1
@@ -604,110 +598,67 @@ class Project(object):
             print('INFO: surplus charge: {0:12.8f}'.format(surplus_charge))
             print('WARNING: this may indicate that an error has occurred')
 
-        # TODO temporary (but probably ends up being permanent) hack to run PDE calculations
-        temp_dir = tempfile.mkdtemp(prefix='PyFraME_', dir=self.scratch_dir)
-        system_dir = os.path.join(self.work_dir, system.name)
-        if not os.path.isdir(system_dir):
-            os.makedirs(system_dir)
-        os.chdir(system_dir)
-        system.write_potential(filename='temp')
-        directories = []
-        filenames = []
-        fragment_sizes = []
-        readers = {}
-        for region in system.regions.values():
-            if not region.use_fragment_densities:
-                continue
-            writers = []
-            combine_calc = False
-            if region.use_mfcc:
-                fragments = region.mfcc_fragments
-            else:
-                fragments = region.fragments
-            if region.use_fragment_densities and region.use_exchange_repulsion:
-                combine_calc = True
-            if region.use_fragment_densities and region.use_polarizabilities and combine_calc:
-                writers.append(f'{region.program}_pde')
-            else:
-                raise NotImplementedError('Fragment density and exchange repulsion settings must be the same')
-            for writer in writers:
-                if not hasattr(InputWriters, writer) or not hasattr(ScriptWriters, writer):
-                    # TODO replace with exception
-                    exit('ERROR: input writer {0} does not exist'.format(writer))
-                for fragment in fragments.values():
-                    readers[fragment.identifier] = []
-                for fragment in fragments.values():
-                    os.chdir(system_dir)
-                    filename = fragment.identifier + '_' + writer
-                    readers[fragment.identifier].append(writer)
-                    if os.path.isfile(filename + '.h5'):
-                        continue
-                    if not os.path.isdir(filename):
-                        os.mkdir(filename)
-                    os.chdir(filename)
-                    getattr(InputWriters, writer)(fragment, region, system.core_region, filename)
-                    getattr(ScriptWriters, writer)(filename, system_dir, temp_dir, self.mpi_procs_per_job,
-                                                   self.omp_threads_per_job, self.memory_per_job)
-                    directories.append(os.path.join(system_dir, filename))
-                    filenames.append('{0}.sh'.format(filename))
-                    fragment_sizes.append(fragment.number_of_atoms)
-                    os.chdir(system_dir)
-        shutil.rmtree(temp_dir)
-        os.chdir(system_dir)
-        if directories and filenames:
-            fragment_sizes, directories, filenames = zip(*sorted(zip(fragment_sizes, directories, filenames),
-                                                                 reverse=True))
-            process_jobs(directories, filenames, self.node_list, self.jobs_per_node, self.comm_port)
-            for filename, directory in zip(filenames, directories):
-                if os.path.isfile(filename.replace('.sh', '.h5')):
-                    if os.path.getsize(filename.replace('.sh', '.h5')) > 0:
-                        shutil.rmtree(directory)
-        os.remove('temp.pot')
         # PDE post process
         fd_fragments = []
-        fd_prefactors = []
-        repulsion_factors = []
+        fd_suffixes = []
+        density_prefactors = []
+        repulsion_prefactors = []
         # get regions with PDE
         for region in system.regions.values():
-            if not region.use_fragment_densities:
+            if not (region.use_fragment_densities or region.use_exchange_repulsion):
                 continue
-            if region.use_fragment_densities:
+            region_writers = get_writers(region)
+            # capped fragments (MFCC) or normal standalone fragments
+            for fragment in region.fragments.values():
+                fd_suffixes.append(get_writers(region)[0]) # <-- bugs goes here
                 if region.use_mfcc:
-                    for fragment in region.fragments.values():
-                        fd_fragments.append(fragment.capped_fragment)
-                        fd_prefactors.append(1.0)
-                        repulsion_factors.append(region.exchange_repulsion_factor)
-                        for concap in fragment.concaps.values():
-                            if concap in fd_fragments:
-                                continue
-                            fd_fragments.append(concap)
-                            fd_prefactors.append(-1.0)
-                            repulsion_factors.append(region.exchange_repulsion_factor)
+                    fd_fragments.append(fragment.capped_fragment)
                 else:
-                    fd_fragments += region.fragments.values()
-                    fd_prefactors += [1.0] * len(fd_fragments)
-                    repulsion_factors += [region.exchange_repulsion_factor] * len(fd_fragments)
+                    fd_fragments.append(fragment)
+                if region.use_fragment_densities:
+                    density_prefactors.append(1.0)
+                else:
+                    density_prefactors.append(0.0)
+                if region.use_exchange_repulsion:
+                    repulsion_prefactors.append(region.exchange_repulsion_factor)
+                else:
+                    repulsion_prefactors.append(0.0)
+                # ... and con-caps (if they exist)
+                for concap in fragment.concaps.values():
+                    fd_suffixes.append(get_writers(region)[0]) # <-- bugs goes here
+                    if concap in fd_fragments:
+                        continue
+                    fd_fragments.append(concap)
+                    if region.use_fragment_densities:
+                        density_prefactors.append(-1.0)
+                    else:
+                        density_prefactors.append(0.0)
+                    if region.use_exchange_repulsion:
+                        repulsion_prefactors.append(-region.exchange_repulsion_factor)
+                    else:
+                        repulsion_prefactors.append(0.0)
         # get info for final h5 (dimensions of fock matrix etc.)
         nucel_energy = 0.0
         nuclear_coordinates = []
         nuclear_charges = []
+        
         if fd_fragments:
-            # get dimension info for final h5
-            with h5py.File(f'{fd_fragments[0].identifier}_dalton_pde.h5', 'r') as fragment_h5:
+            os.chdir(system_dir)
+            with h5py.File(f'{fd_fragments[0].identifier}_{fd_suffixes[0]}.h5', 'r') as fragment_h5:
                 num_bas = fragment_h5['core_fragment']['num_bas'][0]
                 repulsion_matrix = np.zeros(num_bas*(num_bas+1)//2)
                 electrostatic_matrix = np.zeros(num_bas*(num_bas+1)//2)
                 num_pols = fragment_h5['fragment']['num_pols'][0]
                 fd_static_field = np.zeros(3*num_pols)
             # assemble final h5
-            for fragment, prefactor, repulsion_scale_factor in zip(fd_fragments, fd_prefactors, repulsion_factors):
-                with h5py.File(f'{fragment.identifier}_dalton_pde.h5', 'r') as fragment_h5:
+            for fragment, suffix, density_prefactor, repulsion_prefactor in zip(fd_fragments, fd_suffixes, density_prefactors, repulsion_prefactors):
+                with h5py.File(f'{fragment.identifier}_{suffix}.h5', 'r') as fragment_h5:
                     nuclear_coordinates += fragment_h5['fragment']['coordinates']
-                    nuclear_charges += [prefactor * charge for charge in fragment_h5['fragment']['charges']]
-                    nucel_energy += prefactor * fragment_h5['core_fragment']['nuclear-electron energy'][()]
-                    electrostatic_matrix += prefactor * fragment_h5['core_fragment']['electrostatic matrix'][()]
-                    repulsion_matrix += prefactor * repulsion_scale_factor * fragment_h5['core_fragment']['exchange-repulsion matrix'][()]
-                    fd_static_field += prefactor * fragment_h5['fragment']['electric fields'][()]
+                    nuclear_charges += [density_prefactor * charge for charge in fragment_h5['fragment']['charges']]
+                    nucel_energy += density_prefactor * fragment_h5['core_fragment']['nuclear-electron energy'][()]
+                    electrostatic_matrix += density_prefactor * fragment_h5['core_fragment']['electrostatic matrix'][()]
+                    repulsion_matrix += repulsion_prefactor * fragment_h5['core_fragment']['exchange-repulsion matrix'][()]
+                    fd_static_field += density_prefactor * fragment_h5['fragment']['electric fields'][()]
             with h5py.File(f'{system.name}.h5', 'w') as combined_h5:
                 combined_h5['num_bas'] = num_bas
                 combined_h5['electrostatic matrix'] = electrostatic_matrix
@@ -718,6 +669,7 @@ class Project(object):
                 combined_h5['nuclear-electron energy'] = nucel_energy
                 combined_h5['num_fields'] = num_pols
                 combined_h5['electric fields'] = fd_static_field
+            os.chdir(self.work_dir)
 
     def write_potential(self, system):
         """Write potential file."""
@@ -732,3 +684,64 @@ class Project(object):
         os.chdir(system_dir)
         system.write_core()
         os.chdir(self.work_dir)
+
+def get_writers(region):
+    """
+    Find out which writers are needed, and which can be combined
+    """
+    # assign all simple writers
+    writers = []
+    if region.use_multipoles:
+        writers.append(f'{region.program}_multipoles')
+    if region.use_polarizabilities:
+        writers.append(f'{region.program}_polarizability')
+    if region.use_fragment_densities:
+        writers.append(f'{region.program}_density')
+    if region.use_exchange_repulsion:
+        writers.append(f'{region.program}_repulsion')
+
+    # check for combinable calculations
+    # only common/sensible combinations are checked (add more as needed)
+    # other combinations work fine, but will not be attempted to be combined
+
+    # standard PE
+    if region.use_multipoles and region.use_polarizabilities and (not region.use_fragment_densities) and (not region.use_exchange_repulsion):
+        writers.remove(f'{region.program}_multipoles')
+        writers.remove(f'{region.program}_polarizability')
+        writers.append(f'{region.program}_multipoles_polarizability')
+    # PE + repulsion
+    elif region.use_multipoles and region.use_polarizabilities and (not region.use_fragment_densities) and region.use_exchange_repulsion:
+        writers.remove(f'{region.program}_multipoles')
+        writers.remove(f'{region.program}_polarizability')
+        writers.remove(f'{region.program}_repulsion')
+        writers.append(f'{region.program}_multipoles_polarizability_repulsion')
+    # standard PDE
+    elif (not region.use_multipoles) and region.use_polarizabilities and region.use_fragment_densities and region.use_exchange_repulsion:
+        writers.remove(f'{region.program}_polarizability')
+        writers.remove(f'{region.program}_repulsion')
+        writers.remove(f'{region.program}_density')
+        writers.append(f'{region.program}_polarizability_density_repulsion')
+    return writers
+
+def write_dummy_potential(system, filename):
+    atom2site = {}
+    site2atom = {}
+    site_index = 1
+    for region in system.regions.values():
+        for fragment in region.fragments.values():
+            for atom in fragment.atoms:
+                site = Potential()
+                system.potential[site_index] = site
+                atom2site[atom.number] = site_index
+                site2atom[site_index] = atom.number
+                site.coordinate = atom.coordinate
+                site.element = atom.element
+                site_index += 1
+    for region in system.regions.values():
+        if region.use_polarizabilities:
+            for fragment in region.fragments.values():
+                for atom in fragment.atoms:
+                    site = system.potential[atom2site[atom.number]]
+                    # dummy polarizability
+                    site.P11 = [1., 0., 0., 1., 0., 1.]
+    system.write_potential(filename)

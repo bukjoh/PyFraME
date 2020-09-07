@@ -367,6 +367,24 @@ class OutputReaders(object):
     @staticmethod
     def dalton_multipoles(*args):
         return OutputReaders.dalton_multipoles_polarizability(*args)
+    
+    @staticmethod
+    def dalton_density(*args):
+        pass
+
+    @staticmethod
+    def dalton_repulsion(*args):
+        # this is done in project.py
+        pass
+
+    @staticmethod
+    def dalton_multipoles_polarizability_repulsion(*args):
+        return OutputReaders.dalton_multipoles_polarizability(*args)
+
+    @staticmethod
+    def dalton_polarizability_density_repulsion(*args):
+        return OutputReaders.dalton_multipoles_polarizability(*args)
+
 
     @staticmethod
     def molcas_multipoles_polarizability(filename):

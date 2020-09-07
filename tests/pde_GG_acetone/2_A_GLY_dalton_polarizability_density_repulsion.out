@@ -135,4 +135,4 @@ Domain center:            6.72581     4.02363     0.00359
 Nuclear charge:          61.00000
 Polarizability av (0)        8.09458
 Polarizability (0)           9.36901     0.72236     8.95874    -1.95017    -0.13118     5.95598
-Time used in Loprop              :      0.14 (cpu)       0.21 (wall)
+Time used in Loprop-dalton       :      0.26 (cpu)       0.30 (wall)

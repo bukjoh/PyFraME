@@ -35,5 +35,5 @@ Molecular
 Domain center:            0.00000    -0.11080     0.00000
 Nuclear charge:          10.00000
 Polarizability av (0)        1.00762
-Polarizability (0)           1.13636    -0.00000     0.92669    -0.00000    -0.00000     0.95983
-Time used in Loprop              :      0.06 (cpu)       0.06 (wall)
+Polarizability (0)           1.13636     0.00000     0.92669    -0.00000    -0.00000     0.95983
+Time used in Loprop-dalton       :      0.05 (cpu)       0.07 (wall)

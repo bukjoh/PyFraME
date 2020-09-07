@@ -30,183 +30,31 @@ class InputWriters(object):
 
     @staticmethod
     def dalton_multipoles_polarizability(fragment, region, core_region, filename=None):
-
-        if region.polarizability_order != (1, 1):
-            # TODO replace with exception
-            exit('ERROR: only dipole-dipole polarizabilities supported with LoProp model in Dalton')
-        if region.multipole_order > 2:
-            # TODO replace with exception
-            exit('ERROR: only up to second order multipoles supported with LoProp model in Dalton')
-        if filename is None:
-            filename = fragment.identifier + ''
-        elements = [atom.element for atom in fragment.atoms]
-        coordinates = [atom.coordinate for atom in fragment.atoms]
-        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.basis, filename)
-        inp = '**DALTON INPUT\n'
-        inp += '.RUN RESPONSE\n'
-        inp += '.DIRECT\n'
-        inp += '**WAVE FUNCTIONS\n'
-        inp += '.INTERFACE\n'
-        if region.method == 'DFT':
-            inp += '.DFT\n'
-            inp += '{0}\n'.format(region.xcfun)
-        elif region.method == 'HF':
-            inp += '.HF\n'
-        else:
-            # TODO replace with exception
-            exit('ERROR: only DFT or HF supported for Dalton LoProp')
-        inp += '**INTEGRAL\n'
-        inp += '.NOSUP\n'
-        inp += '.DIPLEN\n'
-        inp += '.SECMOM\n'
-        inp += '**RESPONSE\n'
-        inp += '*LINEAR\n'
-        inp += '.DIPLEN\n'
-        inp += '**END OF\n'
-        with open('{0}.dal'.format(filename), 'w') as input_file:
-            input_file.write(inp)
+        _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=True, do_polarizability=True)
 
     @staticmethod
     def dalton_multipoles(fragment, region, core_region, filename=None):
-
-        if region.multipole_order > 2:
-            # TODO replace with exception
-            exit('ERROR: only up to second order multipoles supported with LoProp model in Dalton')
-        if filename is None:
-            filename = fragment.identifier + ''
-        elements = [atom.element for atom in fragment.atoms]
-        coordinates = [atom.coordinate for atom in fragment.atoms]
-        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.basis, filename)
-        inp = '**DALTON INPUT\n'
-        inp += '.RUN WAVE FUNCTION\n'
-        inp += '.DIRECT\n'
-        inp += '**WAVE FUNCTIONS\n'
-        inp += '.INTERFACE\n'
-        if region.method == 'DFT':
-            inp += '.DFT\n'
-            inp += '{0}\n'.format(region.xcfun)
-        elif region.method == 'HF':
-            inp += '.HF\n'
-        else:
-            # TODO replace with exception
-            exit('ERROR: only DFT or HF supported for Dalton LoProp')
-        inp += '**INTEGRAL\n'
-        inp += '.NOSUP\n'
-        inp += '.DIPLEN\n'
-        inp += '.SECMOM\n'
-        inp += '**END OF\n'
-        with open('{0}.dal'.format(filename), 'w') as input_file:
-            input_file.write(inp)
+        _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=True)
 
     @staticmethod
     def dalton_polarizability(fragment, region, core_region, filename=None):
-
-        if region.polarizability_order != (1, 1):
-            # TODO replace with exception
-            exit('ERROR: only dipole-dipole polarizabilities supported with LoProp model in MOLCAS')
-        if filename is None:
-            filename = fragment.identifier + ''
-        elements = [atom.element for atom in fragment.atoms]
-        coordinates = [atom.coordinate for atom in fragment.atoms]
-        InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.basis, filename)
-        inp = '**DALTON INPUT\n'
-        inp += '.RUN RESPONSE\n'
-        inp += '.DIRECT\n'
-        inp += '**WAVE FUNCTIONS\n'
-        inp += '.INTERFACE\n'
-        if region.method == 'DFT':
-            inp += '.DFT\n'
-            inp += '{0}\n'.format(region.xcfun)
-        elif region.method == 'HF':
-            inp += '.HF\n'
-        else:
-            # TODO replace with exception
-            exit('ERROR: only DFT or HF supported for Dalton LoProp')
-        inp += '**INTEGRAL\n'
-        inp += '.NOSUP\n'
-        inp += '.DIPLEN\n'
-        inp += '**RESPONSE\n'
-        inp += '*LINEAR\n'
-        inp += '.DIPLEN\n'
-        inp += '**END OF\n'
-        with open('{0}.dal'.format(filename), 'w') as input_file:
-            input_file.write(inp)
+        _generate_dalton_input(fragment, region, core_region, filename, do_polarizability=True)
 
     @staticmethod
-    def dalton_pde(fragment, region, core_region, filename=None):
-        # Monomer calculation
-        input_filename = filename
-        if input_filename is None:
-            filename = f'{fragment.identifier}'
-        else:
-            filename = f'{filename}'
-        monomer_elements = [atom.element for atom in fragment.atoms]
-        monomer_charges = [float(element2charge[element]) for element in monomer_elements]
-        monomer_coordinates = [atom.coordinate for atom in fragment.atoms]
-        core_elements = [atom.element for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
-        core_charges = [float(element2charge[element]) for element in core_elements]
-        core_coordinates = [atom.coordinate for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
-        InputWriters.dalton_mol(monomer_elements, monomer_coordinates, fragment.charge, region.basis, f'{filename}_monomer')
-        with h5py.File(f'{filename}.h5', 'w') as h5:
-            # groups
-            h5.create_group('core_fragment')
-            h5.create_group('fragment')
-            h5_core = h5['core_fragment']
-            h5_fragment = h5['fragment']
-            # core fragment properties
-            h5_core['num_nuclei'] = len(core_elements)
-            h5_core['charges'] = core_charges
-            h5_core['coordinates'] = np.array(core_coordinates) * AA2BOHR
-            # this fragment properties
-            h5_fragment['num_nuclei'] = len(monomer_elements)
-            h5_fragment['coordinates'] = np.array(monomer_coordinates) * AA2BOHR
-            h5_fragment['charges'] = monomer_charges
-        inp = '**DALTON INPUT\n'
-        inp += '.RUN WAVE FUNCTIONS\n'
-        inp += '.DIRECT\n'
-        inp += '*PEQM\n'
-        inp += '.SAVE DENSITY\n'
-        inp += f'{filename}.h5\n'
-        inp += '**WAVE FUNCTIONS\n'
-        if region.method == 'DFT':
-            inp += '.DFT\n'
-            inp += '{0}\n'.format(region.xcfun)
-        elif region.method == 'HF':
-            inp += '.HF\n'
-        else:
-            # TODO replace with exception
-            exit('ERROR: only DFT or HF supported for Dalton LoProp')
-        inp += '**END OF DALTON INPUT\n'
-        with open('{0}_monomer.dal'.format(filename), 'w') as input_file:
-            input_file.write(inp)
-        # Dimer calculation
-        dimer_elements = core_elements + monomer_elements
-        dimer_coordinates = core_coordinates + monomer_coordinates
-        core_charge = sum([fragment.charge for fragment in core_region.fragments.values()])
-        dimer_charge = fragment.charge + core_charge
-        dimer_bases = core_region.basis
-        if not isinstance(dimer_bases, list):
-            dimer_bases = [core_region.basis]*len(core_elements)
-        dimer_bases += [region.basis] * len(monomer_elements)
-        InputWriters.dalton_mol(dimer_elements, dimer_coordinates, dimer_charge, dimer_bases, f'{filename}_dimer')
-        inp = '**DALTON INPUT\n'
-        inp += '.RUN WAVE FUNCTIONS\n'
-        inp += '.DIRECT\n'
-        inp += '*PEQM\n'
-        inp += '.TWOINT\n'
-        inp += f'{filename}.h5\n'
-        inp += '**WAVE FUNCTIONS\n'
-        if region.method == 'DFT':
-            inp += '.DFT\n'
-            inp += '{0}\n'.format(region.xcfun)
-        elif region.method == 'HF':
-            inp += '.HF\n'
-        else:
-            # TODO replace with exception
-            exit('ERROR: only DFT or HF supported for Dalton LoProp')
-        inp += '**END OF DALTON INPUT\n'
-        with open('{0}_dimer.dal'.format(filename), 'w') as input_file:
-            input_file.write(inp)
+    def dalton_repulsion(fragment, region, core_region, filename=None):
+        _generate_dalton_input(fragment, region, core_region, filename, do_repulsion=True)
+
+    @staticmethod
+    def dalton_density(fragment, region, core_region, filename=None):
+        _generate_dalton_input(fragment, region, core_region, filename, do_density=True)
+
+    @staticmethod
+    def dalton_multipoles_polarizability_repulsion(fragment, region, core_region, filename=None):
+        _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=True, do_polarizability=True, do_repulsion=True)
+
+    @staticmethod
+    def dalton_polarizability_density_repulsion(fragment, region, core_region, filename=None):
+        _generate_dalton_input(fragment, region, core_region, filename, do_polarizability=True, do_density=True, do_repulsion=True)
 
     @staticmethod
     def molcas_multipoles_polarizability(fragment, region, core_region, filename=None):
@@ -655,113 +503,31 @@ class ScriptWriters(object):
 
     @staticmethod
     def dalton_multipoles_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        """Writes run script for Dalton LoProp calculation"""
-        temp_dir = os.path.join(scratch_dir, filename)
-        script = '#!/usr/bin/env bash\n'
-        script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        if 'LD_LIBRARY_PATH' in os.environ:
-            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
-        script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
-        script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
-        script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
-        script += 'mkdir -p $DALTON_TMPDIR\n'
-        script += 'cd {0}\n'.format(os.path.join(work_dir, filename))
-        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
-        script += ' -get "AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC"'
-        script += ' -o ../{0}.log -dal {0}.dal -mol {0}.mol\n'.format(filename)
-        script += 'bzip2 --best {1}/{0}.log\n'.format(filename, work_dir)
-        script += 'mv {0}.AOONEINT AOONEINT\n'.format(filename)
-        script += 'mv {0}.DALTON.BAS DALTON.BAS\n'.format(filename)
-        script += 'mv {0}.SIRIFC SIRIFC\n'.format(filename)
-        script += 'mv {0}.AOPROPER AOPROPER\n'.format(filename)
-        script += 'mv {0}.RSPVEC RSPVEC\n'.format(filename)
-        script += 'loprop -v -t . -A -a 2 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
-        script += 'rm -f AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC\n'
-        with open('{0}.sh'.format(filename), 'w') as script_file:
-            script_file.write(script)
-
-    @staticmethod
-    def dalton_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        """Writes run script for Dalton LoProp calculation"""
-        temp_dir = os.path.join(scratch_dir, filename)
-        script = '#!/usr/bin/env bash\n'
-        script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        if 'LD_LIBRARY_PATH' in os.environ:
-            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
-        script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
-        script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
-        script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
-        script += 'mkdir -p $DALTON_TMPDIR\n'
-        script += 'cd {0}\n'.format(os.path.join(work_dir, filename))
-        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
-        script += ' -get "AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC"'
-        script += ' -o ../{0}.log -dal {0}.dal -mol {0}.mol\n'.format(filename)
-        script += 'bzip2 --best {1}/{0}.log\n'.format(filename, work_dir)
-        script += 'mv {0}.AOONEINT AOONEINT\n'.format(filename)
-        script += 'mv {0}.DALTON.BAS DALTON.BAS\n'.format(filename)
-        script += 'mv {0}.SIRIFC SIRIFC\n'.format(filename)
-        script += 'mv {0}.AOPROPER AOPROPER\n'.format(filename)
-        script += 'mv {0}.RSPVEC RSPVEC\n'.format(filename)
-        script += 'loprop -v -t . -A -a 2 -l -1 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
-        script += 'rm -f AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC\n'
-        with open('{0}.sh'.format(filename), 'w') as script_file:
-            script_file.write(script)
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=True, do_polarizability=True)
 
     @staticmethod
     def dalton_multipoles(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        """Writes run script for Dalton LoProp calculation"""
-        temp_dir = os.path.join(scratch_dir, filename)
-        script = '#!/usr/bin/env bash\n'
-        script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        if 'LD_LIBRARY_PATH' in os.environ:
-            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
-        script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
-        script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
-        script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
-        script += 'mkdir -p $DALTON_TMPDIR\n'
-        script += 'cd {0}\n'.format(os.path.join(work_dir, filename))
-        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
-        script += ' -get "AOONEINT DALTON.BAS SIRIFC AOPROPER"'
-        script += ' -o ../{0}.log -dal {0}.dal -mol {0}.mol\n'.format(filename)
-        script += 'bzip2 --best {1}/{0}.log\n'.format(filename, work_dir)
-        script += 'mv {0}.AOONEINT AOONEINT\n'.format(filename)
-        script += 'mv {0}.DALTON.BAS DALTON.BAS\n'.format(filename)
-        script += 'mv {0}.SIRIFC SIRIFC\n'.format(filename)
-        script += 'mv {0}.AOPROPER AOPROPER\n'.format(filename)
-        script += 'mv {0}.RSPVEC RSPVEC\n'.format(filename)
-        script += 'loprop -v -t . -A --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
-        script += 'rm -f AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC\n'
-        with open('{0}.sh'.format(filename), 'w') as script_file:
-            script_file.write(script)
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=True)
 
     @staticmethod
-    def dalton_pde(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        """Writes run script for Dalton PDE calculation"""
-        temp_dir = os.path.join(scratch_dir, filename)
-        script = '#!/usr/bin/env bash\n'
-        script += 'export PATH={0}\n'.format(os.environ['PATH'])
-        if 'LD_LIBRARY_PATH' in os.environ:
-            script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
-        script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
-        script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
-        script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
-        script += 'mkdir -p $DALTON_TMPDIR\n'
-        script += 'cd {0}\n'.format(os.path.join(work_dir, filename))
-        script += f'cp {work_dir}/temp.pot {work_dir}/{filename}/{filename}_monomer.pot\n'
-        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
-        script += f' -put {filename}.h5'
-        script += f' -get {filename}.h5'
-        script += f' -o ../{filename}_monomer.log -dal {filename}_monomer.dal -mol {filename}_monomer.mol -pot {filename}_monomer.pot\n'
-        script += f'bzip2 --best {work_dir}/{filename}_monomer.log\n'
-        script += f'mv {filename}_monomer.{filename}.h5 {filename}.h5\n'
-        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
-        script += f' -put {filename}.h5'
-        script += f' -get {filename}.h5'
-        script += f' -o ../{filename}_dimer.log -dal {filename}_dimer.dal -mol {filename}_dimer.mol\n'
-        script += f'bzip2 --best {work_dir}/{filename}_dimer.log\n'
-        script += f'mv {filename}_dimer.{filename}.h5 {work_dir}/{filename}.h5'
-        with open(f'{filename}.sh', 'w') as script_file:
-            script_file.write(script)
+    def dalton_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_polarizability=True)
+
+    @staticmethod
+    def dalton_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_repulsion=True)
+
+    @staticmethod
+    def dalton_density(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_density=True)
+
+    @staticmethod
+    def dalton_multipoles_polarizability_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=True, do_polarizability=True, do_repulsion=True)
+
+    @staticmethod
+    def dalton_polarizability_density_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_polarizability=True, do_density=True, do_repulsion=True)
 
     @staticmethod
     def molcas_multipoles_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
@@ -795,3 +561,164 @@ class ScriptWriters(object):
     @staticmethod
     def molcas_multipoles(*args):
         ScriptWriters.molcas_multipoles_polarizability(*args)
+
+def _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=False, do_polarizability=False, do_density=False, do_repulsion=False):
+    """Writes run script for Dalton calculations"""
+    temp_dir = os.path.join(scratch_dir, filename)
+    # general common options
+    script = '#!/usr/bin/env bash\n'
+    script += 'export PATH={0}\n'.format(os.environ['PATH'])
+    if 'LD_LIBRARY_PATH' in os.environ:
+        script += 'export LD_LIBRARY_PATH={0}\n'.format(os.environ['LD_LIBRARY_PATH'])
+    script += 'export DALTON_NUM_MPI_PROCS={0:d}\n'.format(mpi_procs)
+    script += 'export OMP_NUM_THREADS={0:d}\n'.format(omp_threads)
+    script += 'export DALTON_TMPDIR={0}\n'.format(temp_dir)
+    script += 'mkdir -p $DALTON_TMPDIR\n'
+    script += 'cd {0}\n'.format(os.path.join(work_dir, filename))
+    if do_density or do_repulsion:
+        script += f'cp {work_dir}/temp.pot {work_dir}/{filename}/{filename}.pot\n'
+    # main dalton call (loprop / pde monomer)
+    get_args = ""
+    put_args = ""
+    if do_density or do_repulsion:
+        put_args += f" {filename}.h5"
+        get_args += f" {filename}.h5"
+    if do_polarizability: # pol, pol+mul
+        get_args += " AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC"
+    elif do_multipoles: # only mul
+        get_args += " AOONEINT DALTON.BAS SIRIFC AOPROPER"
+    script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
+    if put_args:
+        script += f' -put "{put_args}" '
+    if get_args:
+        script += f' -get "{get_args}" '
+    if do_density or do_repulsion:
+        script += ' -o ../{0}.log -dal {0}.dal -mol {0}.mol -pot {0}.pot\n'.format(filename)
+    else:
+        script += ' -o ../{0}.log -dal {0}.dal -mol {0}.mol\n'.format(filename)
+
+    script += 'bzip2 --best {1}/{0}.log\n'.format(filename, work_dir)
+    # temporary file renames for loprop
+    renames = []
+    if do_multipoles or do_polarizability:
+        renames.extend(['AOONEINT', 'DALTON.BAS', 'SIRIFC', 'AOPROPER'])
+    if do_polarizability:
+        renames.append('RSPVEC')
+    for rename in renames:
+        script += f'mv {filename}.{rename} {rename}\n'
+    # loprop
+    if do_multipoles and do_polarizability:
+        script += 'loprop -v -t . -A -a 2 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
+    elif do_multipoles:
+        script += 'loprop -v -t . -A --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
+    elif do_polarizability:
+        script += 'loprop -v -t . -A -a 2 -l -1 --decimal 10 > {0}/{1}.out\n'.format(work_dir, filename)
+    for rename in renames:
+        script += f'rm -f {rename}\n'
+    # secondary dalton call for PDE dimer
+    if do_density or do_repulsion:
+        script += f'mv {filename}.{filename}.h5 {filename}.h5\n'
+        script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
+        script += f' -put {filename}.h5'
+        script += f' -get {filename}.h5'
+        script += f' -o ../{filename}_dimer.log -dal {filename}_dimer.dal -mol {filename}_dimer.mol\n'
+        script += f'bzip2 --best {work_dir}/{filename}_dimer.log\n'
+        script += f'mv {filename}_dimer.{filename}.h5 {work_dir}/{filename}.h5'
+    with open('{0}.sh'.format(filename), 'w') as script_file:
+        script_file.write(script)
+
+def _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=False, do_polarizability=False, do_density=False, do_repulsion=False):
+    """
+    Generates input for dalton multipoles/polarizabilities/pde combinations
+    """
+    if filename is None:
+        filename = fragment.identifier + ''
+
+    # check validity
+    if do_polarizability and region.polarizability_order != (1, 1):
+        raise ValueError('Only dipole-dipole polarizabilities supported with LoProp model in Dalton')
+    if do_multipoles and region.multipole_order > 2:
+        raise ValueError('Only up to second order multipoles supported with LoProp model in Dalton')
+    # standard PE / PDE monomer calculation
+    # general section
+    inp = '**DALTON INPUT\n'
+    inp += '.DIRECT\n'
+    if do_polarizability:
+        inp += '.RUN RESPONSE\n'
+    else:
+        inp += '.RUN WAVE FUNCTION\n'
+    if do_density or do_repulsion:
+        inp += '*PEQM\n'
+        inp += '.SAVE DENSITY\n'
+        inp += f'{filename}.h5\n'
+    inp += '**WAVE FUNCTIONS\n'
+    inp += '.INTERFACE\n'
+    if region.method == 'DFT':
+        inp += '.DFT\n'
+        inp += '{0}\n'.format(region.xcfun)
+    elif region.method == 'HF':
+        inp += '.HF\n'
+    else:
+        raise ValueError('Only DFT or HF supported with Dalton')
+    if do_multipoles or do_polarizability:
+        inp += '**INTEGRAL\n'
+        inp += '.NOSUP\n'
+        inp += '.DIPLEN\n'
+        inp += '.SECMOM\n'
+    if do_polarizability:
+        inp += '**RESPONSE\n'
+        inp += '*LINEAR\n'
+        inp += '.DIPLEN\n'
+    inp += '**END OF DALTON INPUT\n'
+    with open('{0}.dal'.format(filename), 'w') as input_file:
+        input_file.write(inp)
+
+    # h5 file for PDE + input for dimer calculation
+    if do_density or do_repulsion:
+        # monomer h5
+        monomer_elements = [atom.element for atom in fragment.atoms]
+        monomer_charges = [float(element2charge[element]) for element in monomer_elements]
+        monomer_coordinates = [atom.coordinate for atom in fragment.atoms]
+        core_elements = [atom.element for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
+        core_charges = [float(element2charge[element]) for element in core_elements]
+        core_coordinates = [atom.coordinate for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
+        InputWriters.dalton_mol(monomer_elements, monomer_coordinates, fragment.charge, region.basis, f'{filename}')
+        with h5py.File(f'{filename}.h5', 'w') as h5:
+            h5.create_group('core_fragment')
+            h5.create_group('fragment')
+            h5_core = h5['core_fragment']
+            h5_fragment = h5['fragment']
+            h5_core['num_nuclei'] = len(core_elements)
+            h5_core['charges'] = core_charges
+            h5_core['coordinates'] = np.array(core_coordinates) * AA2BOHR
+            h5_fragment['num_nuclei'] = len(monomer_elements)
+            h5_fragment['coordinates'] = np.array(monomer_coordinates) * AA2BOHR
+            h5_fragment['charges'] = monomer_charges
+
+        # dimer input
+        dimer_elements = core_elements + monomer_elements
+        dimer_coordinates = core_coordinates + monomer_coordinates
+        core_charge = sum([fragment.charge for fragment in core_region.fragments.values()])
+        dimer_charge = fragment.charge + core_charge
+        dimer_bases = core_region.basis
+        if not isinstance(dimer_bases, list):
+            dimer_bases = [core_region.basis]*len(core_elements)
+        dimer_bases += [region.basis] * len(monomer_elements)
+        InputWriters.dalton_mol(dimer_elements, dimer_coordinates, dimer_charge, dimer_bases, f'{filename}_dimer')
+        inp = '**DALTON INPUT\n'
+        inp += '.RUN WAVE FUNCTIONS\n'
+        inp += '.DIRECT\n'
+        inp += '*PEQM\n'
+        inp += '.TWOINT\n'
+        inp += f'{filename}.h5\n'
+        inp += '**WAVE FUNCTIONS\n'
+        if region.method == 'DFT':
+            inp += '.DFT\n'
+            inp += '{0}\n'.format(region.xcfun)
+        elif region.method == 'HF':
+            inp += '.HF\n'
+        else:
+            raise ValueError('Only DFT or HF supported for Dalton LoProp')
+        inp += '**END OF DALTON INPUT\n'
+        with open('{0}_dimer.dal'.format(filename), 'w') as input_file:
+            input_file.write(inp)

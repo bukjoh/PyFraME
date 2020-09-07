@@ -240,8 +240,7 @@ protein = system.get_fragments_by_chain_id(chain_ids=['A'])
 # have defaults and that there are more than those shown here.
 system.add_region(name='protein', fragments=protein, use_mfcc=True,
                   mfcc_order=2, use_multipoles=True, multipole_order=2,
-                  multipole_basis='loprop-6-31+G*', use_polarizabilities=True,
-                  polarizability_basis='loprop-6-31+G*')
+                  use_polarizabilities=True, basis='loprop-6-31+G*')
 
 lipids = system.get_fragments_by_distance_and_name(
         distance=8.0,
@@ -249,23 +248,21 @@ lipids = system.get_fragments_by_distance_and_name(
         reference=protein)
 system.add_region(name='lipid', fragments=lipids, use_mfcc=True, mfcc_order=2,
                   use_multipoles=True, multipole_order=2,
-                  multipole_basis='loprop-6-31+G*', use_polarizabilities=True,
-                  polarizability_basis='loprop-6-31+G*')
+                  use_polarizabilities=True, basis='loprop-6-31+G*')
 
 ions = system.get_fragments_by_distance_and_name(distance=8.0,
                                                  names=['NA', 'CL'],
                                                  reference=protein)
 system.add_region(name='ion', fragments=ions, use_multipoles=True,
-                  multipole_order=0, multipole_basis='6-31+G*',
-                  use_polarizabilities=True, polarizability_basis='6-31+G*')
+                  multipole_order=0, use_polarizabilities=True,
+                  basis='6-31+G*')
 
 solvents = system.get_fragments_by_distance_and_name(distance=8.0,
                                                      names=['SOL'],
                                                      reference=protein)
 system.add_region(name='solvent', fragments=solvents, use_multipoles=True,
-                  multipole_order=2, multipole_basis='loprop-6-31+G*',
-                  use_polarizabilities=True,
-                  polarizability_basis='loprop-6-31+G*')
+                  multipole_order=2, use_polarizabilities=True,
+                  basis='loprop-6-31+G*')
 
 # Create Project() object
 project = pyframe.Project()

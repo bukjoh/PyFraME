@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Added a `get_remaining_fragments` method to the `MolecularSystem` class that will return all remaining fragments. 
 
 ### Changed
+- Improved cost of PDE calculations by combining the SCFs used to calculate polarizability and fragment densities
 - Region options, '*x*\_program', '*x*\_method', '*x*\_xcfun', and '*x*\_basis', where *x* can be multipoles,
   polarizabilites, etc., have been unified to single options 'program', 'method', 'xcfun', and 'basis', that
   apply to all properties associated with a given region. All unused '*x*\_model' properties have been removed.
