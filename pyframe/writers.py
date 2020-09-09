@@ -633,7 +633,9 @@ def _generate_dalton_input(fragment, region, core_region, filename, do_multipole
     """
     if filename is None:
         filename = fragment.identifier + ''
-
+    elements = [atom.element for atom in fragment.atoms]
+    coordinates = [atom.coordinate for atom in fragment.atoms]
+    InputWriters.dalton_mol(elements, coordinates, fragment.charge, region.basis, filename)
     # check validity
     if do_polarizability and region.polarizability_order != (1, 1):
         raise ValueError('Only dipole-dipole polarizabilities supported with LoProp model in Dalton')
