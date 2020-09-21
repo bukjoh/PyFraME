@@ -18,8 +18,10 @@
 
 import os.path
 import warnings
+import pathlib
 
 import numpy as np
+import h5py
 
 from .fragments import FragmentDict, Fragment
 from .atoms import AtomList, Atom
@@ -369,13 +371,27 @@ class OutputReaders(object):
         return OutputReaders.dalton_multipoles_polarizability(*args)
     
     @staticmethod
+    def dalton_density_repulsion(filename):
+        potential = {}
+        index = 1
+        h5file = pathlib.Path(filename).stem + '.h5'
+        with h5py.File(h5file, 'r') as f:
+            for i in range(len(f['fragment/charges'])):
+                potential[index] = {}
+                nuclear_charge = int(f['fragment/charges'][i])
+                element = elements[nuclear_charge - 1]
+                potential[index]['element'] = element
+                potential[index]['coordinate'] = np.array(f['fragment/coordinates'][i])
+                index += 1
+        return potential
+
+    @staticmethod
     def dalton_density(*args):
-        pass
+        return OutputReaders.dalton_density_repulsion(*args)
 
     @staticmethod
     def dalton_repulsion(*args):
-        # this is done in project.py
-        pass
+        return OutputReaders.dalton_density_repulsion(*args)
 
     @staticmethod
     def dalton_multipoles_polarizability_repulsion(*args):

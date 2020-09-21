@@ -721,6 +721,11 @@ def get_writers(region):
         writers.remove(f'{region.program}_repulsion')
         writers.remove(f'{region.program}_density')
         writers.append(f'{region.program}_polarizability_density_repulsion')
+    # density + repulsion
+    elif (not region.use_multipoles) and (not region.use_polarizabilities) and region.use_fragment_densities and region.use_exchange_repulsion:
+        writers.remove(f'{region.program}_repulsion')
+        writers.remove(f'{region.program}_density')
+        writers.append(f'{region.program}_density_repulsion')
     return writers
 
 def write_dummy_potential(system, filename):

@@ -57,6 +57,10 @@ class InputWriters(object):
         _generate_dalton_input(fragment, region, core_region, filename, do_polarizability=True, do_density=True, do_repulsion=True)
 
     @staticmethod
+    def dalton_density_repulsion(fragment, region, core_region, filename=None):
+        _generate_dalton_input(fragment, region, core_region, filename, do_density=True, do_repulsion=True)
+
+    @staticmethod
     def molcas_multipoles_polarizability(fragment, region, core_region, filename=None):
 
         if region.polarizability_order != (1, 1):
@@ -528,6 +532,10 @@ class ScriptWriters(object):
     @staticmethod
     def dalton_polarizability_density_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
         _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_polarizability=True, do_density=True, do_repulsion=True)
+
+    @staticmethod
+    def dalton_density_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_density=True, do_repulsion=True)
 
     @staticmethod
     def molcas_multipoles_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
