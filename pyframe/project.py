@@ -743,7 +743,16 @@ def write_dummy_potential(system, filename):
                 site.element = atom.element
                 site_index += 1
     for region in system.regions.values():
-        if region.use_polarizabilities:
+        # add polarizability if it will appear in the final potential file
+        # either if it is region.use_polarizabilities
+        # or if it is from a polarizable standard potential
+        if region.use_standard_potentials:
+            potential_path = os.path.join(os.path.dirname(__file__), 'data')
+            with open(f'{potential_path}/{region.standard_potential_model}.csv') as pot_file:
+                polarizable_standard_potential = 'P11' in pot_file.readline()
+        else:
+            polarizable_standard_potential = False
+        if region.use_polarizabilities or polarizable_standard_potential:
             for fragment in region.fragments.values():
                 for atom in fragment.atoms:
                     site = system.potential[atom2site[atom.number]]
