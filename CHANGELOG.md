@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When running on a single local node, `ssh` is no longer required. This fixes problems with job processing
 - Process jobs without ssh when using only a single local machine. This fixes problems with job processing
   that were present on some linux configurations.
+- Reset of the molecular system
 
 ## [0.3.0] 2020-05-11
 ### Added

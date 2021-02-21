@@ -66,7 +66,9 @@ class MolecularSystem(object):
             # TODO replace with exception
             exit('ERROR: no fragments defined')
         self.analyse_bonding(self.fragments)
-        self._fragments_backup = FragmentDict(self.fragments)
+        self._fragments_backup = FragmentDict()
+        for identifier, fragment in self.fragments.items():
+            self._fragments_backup[identifier] = fragment.copy()
 
     @property
     def name(self):

@@ -432,3 +432,27 @@ def test_pdbreader_element_guess():
     ref_elements = ['N', 'H', 'C', 'H', 'H', 'C', 'O']
     for atom, ref_element in zip(system.fragments['1_GLY'].atoms, ref_elements):
         assert atom.element == ref_element
+
+def test_reset():
+    test = 'permanganate'
+    tests_dir = '{0}'.format(os.path.dirname(__file__))
+    project = pyframe.Project(work_dir='{0}'.format(tests_dir))
+    system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
+    num_fragments = len(system.fragments)
+    core = system.get_fragments_by_name('LIG')
+    assert len(system.fragments) == num_fragments - 1
+    assert system.core_region is None
+    system.set_core_region(core)
+    assert system.core_region is not None
+    solvent = system.get_fragments_by_name(names=['HOH'])
+    assert len(system.fragments) == 0
+    assert len(system.regions) == 0
+    system.add_region(name='solvent',
+                      fragments=solvent,
+                      use_standard_potentials=True,
+                      standard_potential_model='TIP3P')
+    assert len(system.regions) == 1
+    system.reset()
+    assert len(system.fragments) == num_fragments
+    assert system.core_region is None
+    assert len(system.regions) == 0
