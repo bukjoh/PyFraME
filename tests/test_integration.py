@@ -219,11 +219,10 @@ def test_popc():
     system.split_fragment_by_name(
         name='POPC',
         new_names=['POCH', 'POCO', 'POCP'],
-        fragment_definitions=[[
-            'N', 'C13', 'H13A', 'H13B', 'H13C', 'C14', 'H14A', 'H14B', 'H14C', 'C15', 'H15A', 'H15B', 'H15C', 'C12',
-            'H12A', 'H12B', 'C11', 'H11A', 'H11B', 'P', 'O11', 'O12', 'O13', 'O14', 'C1', 'HA', 'HB', 'C2', 'HS',
-            'O21', 'C21', 'O22', 'C3', 'HX', 'HY', 'O31', 'C31', 'O32'
-        ],
+        fragment_definitions=[['N', 'C13', 'H13A', 'H13B', 'H13C', 'C14', 'H14A', 'H14B', 'H14C', 'C15', 'H15A', 'H15B',
+                               'H15C', 'C12', 'H12A', 'H12B', 'C11', 'H11A', 'H11B', 'P', 'O11', 'O12', 'O13', 'O14',
+                               'C1', 'HA', 'HB', 'C2', 'HS', 'O21', 'C21', 'O22', 'C3', 'HX', 'HY', 'O31', 'C31', 'O32'
+                              ],
                               [
                                   'C22', 'H2R', 'H2S', 'C23', 'H3R', 'H3S', 'C24', 'H4R', 'H4S', 'C25', 'H5R', 'H5S',
                                   'C26', 'H6R', 'H6S', 'C27', 'H7R', 'H7S', 'C28', 'H8R', 'H8S', 'C29', 'H91', 'C210',
@@ -238,7 +237,6 @@ def test_popc():
                                   'H13X', 'H13Y', 'C314', 'H14X', 'H14Y', 'C315', 'H15X', 'H15Y', 'C316', 'H16X',
                                   'H16Y', 'H16Z'
                               ]])
-
     lipid = system.get_fragments_by_name(names=['POCH', 'POCO', 'POCP'])
     system.add_region(name='lipid',
                       fragments=lipid,
@@ -248,9 +246,9 @@ def test_popc():
                       mfcc_order=3)
     project.create_embedding_potential(system)
     project.write_potential(system)
-    assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
-    assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
-    os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    assert os.path.isfile(f'{tests_dir}/{test}/{test}.pot')
+    assert filecmp.cmp(f'{tests_dir}/{test}/{test}.pot', f'{tests_dir}/{test}/{test}.pot.ref')
+    os.remove(f'{tests_dir}/{test}/{test}.pot')
 
 
 def test_gfp():
@@ -433,6 +431,7 @@ def test_pdbreader_element_guess():
     for atom, ref_element in zip(system.fragments['1_GLY'].atoms, ref_elements):
         assert atom.element == ref_element
 
+
 def test_reset():
     test = 'permanganate'
     tests_dir = '{0}'.format(os.path.dirname(__file__))
@@ -456,3 +455,31 @@ def test_reset():
     assert len(system.fragments) == num_fragments
     assert system.core_region is None
     assert len(system.regions) == 0
+
+
+def test_split_fragment_by_identifier():
+    test = '4VAL'
+    tests_dir = '{0}'.format(os.path.dirname(__file__))
+    project = pyframe.Project(work_dir='{0}'.format(tests_dir))
+    system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
+    system.split_fragment_by_identifier(identifier='1_A_VAL',
+                                        new_names=['VALB', 'VALS'],
+                                        fragment_definitions=[['N', 'H', 'C', 'O', 'CA', 'HA'], ['.*']])
+    assert '1_A_VALB' in system.fragments
+    assert '1_A_VALS' in system.fragments
+    assert len(system.fragments['1_A_VALB'].atoms) == 6
+    assert len(system.fragments['1_A_VALS'].atoms) == 10
+
+
+def test_split_fragment_by_name():
+    test = '4VAL'
+    tests_dir = '{0}'.format(os.path.dirname(__file__))
+    project = pyframe.Project(work_dir='{0}'.format(tests_dir))
+    system = pyframe.MolecularSystem(input_file='{0}/{1}/{1}.pdb'.format(tests_dir, test), bond_threshold=1.15)
+    system.split_fragment_by_name(name='VAL',
+                                  new_names=['VALB', 'VALS'],
+                                  fragment_definitions=[['N', 'H', 'C', 'O', 'CA', 'HA'], ['.*']])
+    assert '1_A_VALB' in system.fragments
+    assert '3_B_VALS' in system.fragments
+    assert len(system.fragments['2_A_VALB'].atoms) == 6
+    assert len(system.fragments['4_B_VALS'].atoms) == 10

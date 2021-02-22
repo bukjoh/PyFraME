@@ -191,14 +191,7 @@ system.split_fragment_by_name(
         fragment_definitions=[['N', 'H', 'CA', 'HA', 'C', 'O'],
                               ['CB', 'HB1', 'HB2', 'CG', 'HG1', 'HG2', 'CD',
                                'HD1', 'HD2', 'CE', 'HE1', 'HE2'],
-                              ['NZ', 'HZ', 'C15', 'H15', 'C14', 'H14', 'C13',
-                               'C20', '1H20', '2H20', '3H20', 'C12', 'H12',
-                               'C11', 'H11', 'C10', 'H10', 'C9', 'C19', '1H19',
-                               '2H19', '3H19', 'C8', 'H8', 'C7', 'H7', 'C6',
-                               'C5', 'C18', '1H18', '2H18', '3H18', 'C4',
-                               'H41', 'H42', 'C3', 'H31', 'H32', 'C2', 'H21',
-                               'H22', 'C1', 'C16', '1H16', '2H16', '3H16',
-                               'C17', '1H17', '2H17', '3H17']])
+                              ['.*']])
 
 system.split_fragment_by_name(
         name='POPE',

@@ -19,6 +19,7 @@
 """ The module 'system' contains the class 'MolecularSystem', which defines the moleculer system."""
 
 import os.path
+import re
 from typing import List, Union
 
 from .atoms import AtomList
@@ -133,7 +134,7 @@ class MolecularSystem(object):
             new_fragment = original_fragment.copy()
             new_atoms = AtomList()
             for atom in list(original_fragment.atoms):
-                if atom.name in definition:
+                if any(re.findall(f'^{selection}$', atom.name) for selection in definition):
                     new_atoms.append(original_fragment.atoms.pop(atom.number))
             new_fragment.atoms = new_atoms
             new_fragment.name = new_name
@@ -191,7 +192,7 @@ class MolecularSystem(object):
                 new_fragment = original_fragment.copy()
                 new_atoms = AtomList()
                 for atom in list(original_fragment.atoms):
-                    if atom.name in definition:
+                    if any(re.findall(f'^{selection}$', atom.name) for selection in definition):
                         new_atoms.append(original_fragment.atoms.pop(atom.number))
                 new_fragment.atoms = new_atoms
                 new_fragment.name = new_name
