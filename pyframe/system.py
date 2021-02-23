@@ -542,3 +542,4 @@ class MolecularSystem(object):
         self._potential = PotentialDict()
         self._core_region = None
         self._regions = RegionDict()
+        self.analyse_bonding(self.fragments)
