@@ -343,23 +343,19 @@ class OutputReaders(object):
                 potential[i]['coordinate'] = np.array(coordinate)
                 if multipole_order >= 0:
                     M0 = [float(line[4])]
-                    if not all(abs(component) < 1.0e-6 for component in M0):
-                        potential[i]['M0'] = M0
+                    potential[i]['M0'] = M0
                 if multipole_order >= 1:
                     M1 = [float(component) for component in line[5:8]]
-                    if not all(abs(component) < 1.0e-6 for component in M1):
-                        potential[i]['M1'] = M1
+                    potential[i]['M1'] = M1
                 if multipole_order >= 2:
                     M2 = [float(component) for component in line[8:14]]
-                    if not all(abs(component) < 1.0e-6 for component in M2):
-                        potential[i]['M2'] = M2
+                    potential[i]['M2'] = M2
                 if 2 >= pol_type > 0:
                     if pol_type == 1:
                         P11 = [float(line[pol_start]) * AA2BOHR**3]
                     elif pol_type == 2:
                         P11 = [float(component) * AA2BOHR**3 for component in line[pol_start:pol_start+6]]
-                    if not all(abs(component) < 1.0e-6 for component in P11):
-                        potential[i]['P11'] = P11
+                    potential[i]['P11'] = P11
         return potential
 
     @staticmethod
@@ -427,41 +423,34 @@ class OutputReaders(object):
                     potential[index]['coordinate'] = np.array(coordinate)
                     if multipole_order >= 0:
                         M0 = [float(loprop.readline())]
-                        if not all(abs(component) < 1.0e-6 for component in M0):
-                            potential[index]['M0'] = M0
+                        potential[index]['M0'] = M0
                     if multipole_order >= 1:
                         M1 = [float(component) for component in loprop.readline().split()]
-                        if not all(abs(component) < 1.0e-6 for component in M1):
-                            potential[index]['M1'] = M1
+                        potential[index]['M1'] = M1
                     if multipole_order >= 2:
                         M2 = [float(component) for component in loprop.readline().split()]
                         M2.extend([float(component) for component in loprop.readline().split()])
-                        if not all(abs(component) < 1.0e-6 for component in M2):
-                            potential[index]['M2'] = M2
+                        potential[index]['M2'] = M2
                     if multipole_order >= 3:
                         M3 = [float(component) for component in loprop.readline().split()]
                         for i in range(3):
                             M3.extend([float(component) for component in loprop.readline().split()])
-                        if not all(abs(component) < 1.0e-6 for component in M3):
-                            potential[index]['M3'] = M3
+                        potential[index]['M3'] = M3
                     if multipole_order >= 4:
                         M4 = [float(component) for component in loprop.readline().split()]
                         for i in range(4):
                             M4.extend([float(component) for component in loprop.readline().split()])
-                        if not all(abs(component) < 1.0e-6 for component in M4):
-                            potential[index]['M4'] = M4
+                        potential[index]['M4'] = M4
                     if multipole_order >= 5:
                         M5 = [float(component) for component in loprop.readline().split()]
                         for i in range(6):
                             M5.extend([float(component) for component in loprop.readline().split()])
-                        if not all(abs(component) < 1.0e-6 for component in M5):
-                            potential[index]['M5'] = M5
+                        potential[index]['M5'] = M5
                     if multipole_order >= 6:
                         M6 = [float(component) for component in loprop.readline().split()]
                         for i in range(9):
                             M6.extend([float(component) for component in loprop.readline().split()])
-                        if not all(abs(component) < 1.0e-6 for component in M6):
-                            potential[index]['M6'] = M6
+                        potential[index]['M6'] = M6
                     if multipole_order == 0:
                         loprop.readline()
                     elif multipole_order == 1:
@@ -472,8 +461,7 @@ class OutputReaders(object):
                             loprop.readline()
                     P11 = [float(component) for component in loprop.readline().split()]
                     P11.extend([float(component) for component in loprop.readline().split()])
-                    if not all(abs(component) < 1.0e-6 for component in P11):
-                        potential[index]['P11'] = P11
+                    potential[index]['P11'] = P11
                     index += 1
                 line = loprop.readline()
         return potential

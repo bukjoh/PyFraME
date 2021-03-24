@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Process jobs without ssh when using only a single local machine. This fixes problems with job processing
   that were present on some linux configurations.
-- Reset of the molecular system
+- Reset of the molecular system.
+- IndexError exception that would occur when a charge is missing (i.e. because it is zero).
 
 ## [0.3.0] 2020-05-11
 ### Added
