@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Added
 - Added a `get_remaining_fragments` method to the `MolecularSystem` class that will return all remaining fragments.
+- Added AMBER Lipid14 and Lipid17 charges
 
 ### Changed
 - Improved cost of PDE calculations by combining the SCFs used to calculate polarizability and fragment densities.
