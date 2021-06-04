@@ -94,7 +94,7 @@ Requirements
 
 To use PyFraME you need:
 
-* [Python (3.6+)](https://www.python.org/)
+* [Python (3.7+)](https://www.python.org/)
 * [NumPy](https://www.numpy.org/)
 * [SciPy](https://www.scipy.org/)
 * [H5Py](https://www.h5py.org/)

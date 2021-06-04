@@ -20,14 +20,13 @@ setup(name='PyFraME',
       classifiers=['Intended Audience :: Science/Research',
                    'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
                    'Natural Language :: English',
-                   'Programming Language :: Python :: 3.6',
                    'Programming Language :: Python :: 3.7',
                    'Programming Language :: Python :: 3.8',
                    'Topic :: Scientific/Engineering :: Chemistry',
                    'Topic :: Scientific/Engineering :: Physics'
                    ],
       install_requires=['numpy>=1,<2', 'scipy>=1,<2', 'h5py>=2.10,<3'],
-      python_requires='>=3.6',
+      python_requires='>=3.7',
       packages=['pyframe', 'pyframe.tests'],
       package_data={'pyframe': ['data/*.csv']}
       )

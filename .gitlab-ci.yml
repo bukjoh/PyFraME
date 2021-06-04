@@ -29,15 +29,6 @@ python-3.7:
     - pip install -r requirements.txt
     - pip install .
     - pytest
-
-python-3.6:
-  stage: test
-  image: python:3.6
-  script:
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install .
-    - pytest
       --cov-config .coveragerc
       --cov-report term-missing
       --cov=pyframe
@@ -47,7 +38,7 @@ python-3.6:
 
 codecov:
   stage: coverage
-  image: python:3.6
+  image: python:3.7
   retry: 2
   allow_failure: true
   script:
