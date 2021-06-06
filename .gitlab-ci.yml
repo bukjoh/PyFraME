@@ -12,35 +12,49 @@ variables:
   SAST_EXCLUDED_PATHS: "tests"
   SAST_BANDIT_EXCLUDED_PATHS: "tests"
 
+python-3.9:
+  stage: test
+  image: python:3.9
+  interruptible: true
+  script:
+    - python -m pip install --upgrade pip
+    - python -m pip install -r requirements.txt
+    - python -m pip install .
+    - pytest
+
 python-3.8:
   stage: test
   image: python:3.8
+  interruptible: true
   script:
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install .
+    - python -m pip install --upgrade pip
+    - python -m pip install -r requirements.txt
+    - python -m pip install .
     - pytest
 
 python-3.7:
   stage: test
   image: python:3.7
+  interruptible: true
   script:
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install .
+    - python -m pip install --upgrade pip
+    - python -m pip install -r requirements.txt
+    - python -m pip install .
     - pytest
       --cov-config .coveragerc
-      --cov-report term-missing
+      --cov-report term
+      --cov-report xml
       --cov=pyframe
   artifacts:
     paths:
-      - .coverage
+      - coverage.xml
 
 codecov:
   stage: coverage
   image: python:3.7
+  needs: [python-3.7]
   retry: 2
   allow_failure: true
   script:
-    - pip install coverage
-    - bash <(curl -s https://codecov.io/bash) -t 5c2b4cbc-5626-4d17-877d-b29bf16032b3 -Z
+    - python -m pip install coverage
+    - bash <(curl -s https://codecov.io/bash) -t 5c2b4cbc-5626-4d17-877d-b29bf16032b3 -Z -f coverage.xml
