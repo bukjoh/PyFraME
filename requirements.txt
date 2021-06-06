@@ -1,3 +1,5 @@
+daltools==1.1.6
+loprop==0.3.4
 numpy==1.18.4
 scipy==1.4.1
 pytest==5.4.2

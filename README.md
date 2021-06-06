@@ -101,8 +101,7 @@ To use PyFraME you need:
 
 For certain functionality you will need one or more of the following:
 
-* [Dalton](https://www.daltonprogram.org/)
-* [LoProp for Dalton](https://github.com/vahtras/loprop)
+* [Dalton](https://www.daltonprogram.org/) and [LoProp for Dalton](https://github.com/vahtras/loprop)
 * [Molcas](https://www.molcas.org/) (not tested recently)
 * [OpenMolcas](https://gitlab.com/Molcas/OpenMolcas) (not tested recently)
 
@@ -122,11 +121,11 @@ The PyFraME package can be installed from
 pip install [--user] PyFraME
 ```
 
-This will also install required dependencies (see above) unless they are
-already satisfied. The optional `--user` argument will install PyFraME in a
-location that is only accessible by the user. It is needed unless you have root
-privileges and want to install PyFraME in a location accessible by all users,
-or you are working in a virtual environment. 
+This will also install required dependencies (see above) that are available on
+PyPI, i.e., not Dalton, Molcas, etc. The optional `--user` argument will install
+PyFraME in a location that is only accessible by the user. It is needed unless
+you have root privileges and want to install PyFraME in a location accessible by
+all users, or you are working in a virtual environment. 
 
 The entire source including history can be found at
 [GitLab](https://gitlab.com/FraME-projects/PyFraME).

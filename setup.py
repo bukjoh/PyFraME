@@ -25,7 +25,7 @@ setup(name='PyFraME',
                    'Topic :: Scientific/Engineering :: Chemistry',
                    'Topic :: Scientific/Engineering :: Physics'
                    ],
-      install_requires=['numpy>=1,<2', 'scipy>=1,<2', 'h5py>=2.10,<3'],
+      install_requires=['daltools>=1.1.4,<1.1.6', 'loprop>=0.2.4,<0.4', 'numpy>=1,<2', 'scipy>=1,<2', 'h5py>=2.10,<3'],
       python_requires='>=3.7',
       packages=['pyframe', 'pyframe.tests'],
       package_data={'pyframe': ['data/*.csv']}
