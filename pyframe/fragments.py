@@ -26,6 +26,9 @@ __all__ = ['FragmentDict', 'Fragment', 'find_nearest_atom', 'find_bonded_fragmen
            'find_bonded_atoms', 'find_bonded_heavy_atoms', 'find_bonded_hydrogens']
 
 WATER_NAMES = ['SOL', 'HOH', 'H2O', 'WAT', 'T3P', 'T3H', 'T4P', 'T4E', 'T5P', 'TIP3', 'SPC']
+ION_NAMES = ['Na+', 'Na', 'NA', 'SOD', 'Cl-', 'Cl', 'CL', 'CLA', 'K+', 'K', 'POT', 'Ca2+', 'Ca', 'CA',
+             'Mg2+', 'Mg', 'MG', 'Zn2+', 'Zn', 'ZN', 'Br-', 'Br', 'BR', 'Li+', 'Li', 'LI', 'Cs+', 'Cs', 'CS',
+             'Rb+', 'Rb', 'RB']
 
 
 class FragmentDict(dict):
@@ -348,15 +351,15 @@ def convert2hydrogen(acceptor_atom, donor_atom):
 
 def find_bonded_fragments(acceptor, donors, bond_threshold=1.15):
     """Find all fragments that are bonded to acceptor fragment"""
+    bonded_fragments = []
+    if acceptor.name in WATER_NAMES + ION_NAMES:
+        return bonded_fragments
     acceptor_coordinate_matrix = acceptor.heavy_coordinate_matrix
     acceptor_atoms = [atom for atom in acceptor.atoms if atom.element != 'H']
-    bonded_fragments = []
-    if acceptor.name in WATER_NAMES:
-        return bonded_fragments
     for donor in donors.values():
         if acceptor.identifier == donor.identifier:
             continue
-        if donor.name in WATER_NAMES:
+        if donor.name in WATER_NAMES + ION_NAMES:
             continue
         distances = compute_distance_matrix(acceptor_coordinate_matrix, donor.heavy_coordinate_matrix)
         first, second = np.unravel_index(distances.argmin(), distances.shape)
