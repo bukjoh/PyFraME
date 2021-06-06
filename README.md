@@ -1,7 +1,7 @@
 PyFraME: Python framework for Fragment-based Multiscale Embedding calculations
 ==============================================================================
 
-Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen
+Copyright (C) 2017-2021  Jógvan Magnus Haugaard Olsen and Peter Reinholdt
 
 PyFraME is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -68,8 +68,8 @@ How to cite
 
 To cite PyFraME please use a format similar to the following:
 
-J. M. H. Olsen and contributors, *PyFraME: Python framework for Fragment-based
-Multiscale Embedding (version 0.3.0)*, **2020**. DOI: 10.5281/zenodo.3820471.
+J. M. H. Olsen, P. Reinholdt, and contributors, *PyFraME: Python framework for Fragment-based
+Multiscale Embedding (version 0.4.0)*, **2021**. DOI: 10.5281/zenodo.4899311.
 See https://gitlab.com/FraME-projects/PyFraME.
 
 where the version and DOI should correspond to the actual version that was
@@ -118,7 +118,7 @@ The PyFraME package can be installed from
 [pip](https://pip.pypa.io/en/stable/)
 
 ```bash
-pip install [--user] PyFraME
+python -m pip install [--user] PyFraME
 ```
 
 This will also install required dependencies (see above) that are available on
@@ -143,7 +143,7 @@ pytest --pyargs pyframe
 ```
 
 in a terminal. To execute the full test suite (unit tests and integration
-tests), which can be obtained by downloading from
+tests), which can be obtained by downloading the source from
 [GitLab](https://gitlab.com/FraME-projects/PyFraME), run
 
 ```bash
@@ -171,7 +171,7 @@ Usage example
 
 The following commented example is based on a molecular system consisting of a
 channelrhodopsin protein dimer embedded in a lipid membrane. For examples of
-how PyFraME can integrated in computational studies of response and transition
+how PyFraME can be integrated in computational studies of response and transition
 properties of molecular systems, we refer to our
 [tutorial review](https://doi.org/10.1002/qua.25717) article.
 

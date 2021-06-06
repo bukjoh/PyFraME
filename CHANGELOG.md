@@ -3,13 +3,13 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## [0.4.0] 2021-06-06
 ### Added
 - Added a `get_remaining_fragments` method to the `MolecularSystem` class that will return all remaining fragments.
 - Added AMBER Lipid14 and Lipid17 charges
 
 ### Changed
-- Improved cost of PDE calculations by combining the SCFs used to calculate polarizability and fragment densities.
+- Reduced cost of PDE calculations by combining the SCFs used to calculate polarizability and fragment densities.
 - Region options, '*x*\_program', '*x*\_method', '*x*\_xcfun', and '*x*\_basis', where *x* can be multipoles,
   polarizabilites, etc., have been unified to single options 'program', 'method', 'xcfun', and 'basis', that
   apply to all properties associated with a given region. All unused '*x*\_model' properties have been removed.
@@ -112,4 +112,3 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.1.0] - 2017-02-20
 ### Added
 - Initial version.
-

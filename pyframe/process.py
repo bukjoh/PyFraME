@@ -1,4 +1,4 @@
-# Copyright (C) 2017-2020  Jógvan Magnus Haugaard Olsen
+# Copyright (C) 2017-2021  Jógvan Magnus Haugaard Olsen and Peter Reinholdt
 #
 # This file is part of PyFraME.
 #
