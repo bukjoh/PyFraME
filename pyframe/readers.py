@@ -321,7 +321,12 @@ class OutputReaders(object):
             line = loprop.readline()
             unit = line
             line = loprop.readline().split()
-            n_sites = int(line[0])
+            try:
+                num_sites = int(line[0])
+            except IndexError:
+                raise IndexError(f'Failed to read {filename}.')
+            except ValueError:
+                raise ValueError(f'{filename} is empty?')
             multipole_order = int(line[1])
             # first we have the multipoles, then the polarizability
             # if we use -l -1 (multipole_order + 1) = 0, so offset will be correct
@@ -329,9 +334,9 @@ class OutputReaders(object):
             # if we use -l -3 (multipole_order + 3) = 0, so offset will be correct
             pol_start = 1 + 3 + (multipole_order+1)*(multipole_order+2)*(multipole_order+3)//6
             pol_type = int(line[2])
-            if n_sites != len(potential):
+            if num_sites != len(potential):
                 raise ValueError(f'Inconsistency in {filename}.out')
-            for i in range(1, n_sites + 1):
+            for i in range(1, num_sites + 1):
                 line = loprop.readline().split()
                 coordinate = [float(component) for component in line[1:4]]
                 if 'AA' in unit:
@@ -365,7 +370,7 @@ class OutputReaders(object):
     @staticmethod
     def dalton_multipoles(*args):
         return OutputReaders.dalton_multipoles_polarizability(*args)
-    
+
     @staticmethod
     def dalton_density_repulsion(filename):
         potential = {}

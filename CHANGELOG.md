@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Reset of the molecular system.
 - IndexError exception that would occur when a charge is missing (i.e. because it is zero).
 - Adjusted averaged lipid embedding parameters to make the total charge integer (was off by -4e-5).
+- Raise Exception when trying to read empty or non-existent Dalton LoProp output file
 
 ## [0.3.0] 2020-05-11
 ### Added
