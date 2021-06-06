@@ -14,8 +14,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   polarizabilites, etc., have been unified to single options 'program', 'method', 'xcfun', and 'basis', that
   apply to all properties associated with a given region. All unused '*x*\_model' properties have been removed.
 - Regular expressions can now be used for selecting atoms for new fragment definitions when splitting fragments.
-- Minimum requirement changed to Python 3.7 (though Python 3.6 should still work but is not guaranteed 
+- Minimum requirement changed to Python 3.7 (though Python 3.6 should still work but is not guaranteed
   starting from this release).
+- Redistribute surplus charge of non-MFCC standard potential fragments if total fragment charge is not integer
 
 ### Fixed
 - Process jobs without ssh when using only a single local machine. This fixes problems with job processing

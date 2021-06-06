@@ -560,9 +560,16 @@ class Project(object):
                     for atom in fragment.atoms:
                         site = system.potential[atom2site[atom.number]]
                         fragment_charge += site.M0[0]
-                    if abs(fragment_charge - float(round(fragment_charge))) > 1.0e-8:
-                        print('WARNING: sum of partial charges of {0} is: {1:12.8f}'.format(fragment.identifier,
-                                                                                            fragment_charge))
+                    # redistribute charge of non-MFCC fragments if it is not integer
+                    if abs(fragment_charge - float(round(fragment_charge))) > 1.0e-12 and not region.use_mfcc:
+                        surplus_charge = fragment_charge - fragment.charge
+                        print(f'WARNING: sum of partial charges of {fragment.identifier} is:'
+                              f' {fragment_charge:12.8f}')
+                        print(f'INFO: surplus charge {surplus_charge:12.8f} in fragment'
+                              f' {fragment.identifier} has been redistributed to all atoms in the fragment')
+                        for atom in fragment.atoms:
+                            site = system.potential[atom2site[atom.number]]
+                            site.M0[0] -= surplus_charge / fragment.number_of_atoms
             elif region.use_mfcc and region.use_multipoles:
                 region_formal_charge = 0
                 region_num_atoms = 0
@@ -578,8 +585,7 @@ class Project(object):
                     region_charge += fragment_charge
                 # redistribute the surplus charge across all atoms of the region
                 surplus_charge = region_charge - region_formal_charge
-                print('INFO: surplus charge: {0:12.8f} in region {1} has been redistributed'.format(surplus_charge,
-                                                                                                    region.name))
+                print(f'INFO: surplus charge {surplus_charge:12.8f} in region {region.name} has been redistributed')
                 for fragment in region.fragments.values():
                     for atom in fragment.atoms:
                         site = system.potential[atom2site[atom.number]]
@@ -641,7 +647,7 @@ class Project(object):
         nucel_energy = 0.0
         nuclear_coordinates = []
         nuclear_charges = []
-        
+
         if fd_fragments:
             os.chdir(system_dir)
             with h5py.File(f'{fd_fragments[0].identifier}_{fd_suffixes[0]}.h5', 'r') as fragment_h5:

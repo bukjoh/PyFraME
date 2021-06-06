@@ -243,6 +243,7 @@ def test_popc_alep():
                       use_standard_potentials=True,
                       standard_potential_model='ALEP',
                       standard_potential_exclusion_type='mfcc',
+                      use_mfcc=True,
                       mfcc_order=3)
     project.create_embedding_potential(system)
     project.write_potential(system)
