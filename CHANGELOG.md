@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.4.0] 2021-06-06
+## [0.4.0] 2021-06-07
 ### Added
 - Added a `get_remaining_fragments` method to the `MolecularSystem` class that will return all remaining fragments.
 - Added AMBER Lipid14 and Lipid17 charges

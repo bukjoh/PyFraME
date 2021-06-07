@@ -29,6 +29,13 @@ __license__ = 'GPLv3+'
 __maintainer__ = 'Jógvan Magnus Haugaard Olsen'
 __email__ = 'jmho@kemi.dtu.dk'
 
+CITATION = """@misc{pyframe:0.4.0,
+      author = {Olsen, J. M. H. and Reinholdt, P. and contributors},
+      title = {{PyFraME}: {P}ython framework for {F}ragment-based {M}ultiscale {E}mbedding (version 0.4.0)},
+      year = {2021},
+      doi = {10.5281/zenodo.4899311},
+      note = {See https://gitlab.com/FraME-projects/PyFraME}}"""
+
 LICENSE = """
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
@@ -705,6 +712,11 @@ the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
 """
+
+
+def print_citation():
+    """Print citation in BibTeX format"""
+    print(CITATION)
 
 
 def print_license():

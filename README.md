@@ -97,7 +97,7 @@ To use PyFraME you need:
 * [Python (3.7+)](https://www.python.org/)
 * [NumPy](https://www.numpy.org/)
 * [SciPy](https://www.scipy.org/)
-* [H5Py](https://www.h5py.org/)
+* [h5py](https://www.h5py.org/)
 
 For certain functionality you will need one or more of the following:
 
@@ -118,14 +118,11 @@ The PyFraME package can be installed from
 [pip](https://pip.pypa.io/en/stable/)
 
 ```bash
-python -m pip install [--user] PyFraME
+python -m pip install PyFraME
 ```
 
 This will also install required dependencies (see above) that are available on
-PyPI, i.e., not Dalton, Molcas, etc. The optional `--user` argument will install
-PyFraME in a location that is only accessible by the user. It is needed unless
-you have root privileges and want to install PyFraME in a location accessible by
-all users, or you are working in a virtual environment. 
+PyPI, i.e., not Dalton, Molcas, etc.
 
 The entire source including history can be found at
 [GitLab](https://gitlab.com/FraME-projects/PyFraME).
@@ -139,7 +136,7 @@ Testing
 If you installed from PyPI, the unit tests can be executed by typing
 
 ```bash
-pytest --pyargs pyframe
+python -m pytest --pyargs pyframe
 ```
 
 in a terminal. To execute the full test suite (unit tests and integration
@@ -147,7 +144,7 @@ tests), which can be obtained by downloading the source from
 [GitLab](https://gitlab.com/FraME-projects/PyFraME), run
 
 ```bash
-pytest
+python -m pytest
 ```
 
 from the PyFraME root directory.
@@ -178,8 +175,8 @@ properties of molecular systems, we refer to our
 ```python
 import pyframe
 
-# Create MolecularSystem() object. Currently only PDB and a restricted forms of
-# PQR files are supported (you can, however, give your own reader as an argument).
+# Create MolecularSystem() object. Currently only PDB and fixed-format PQR files
+# are supported (you can, however, give your own reader as an argument).
 system = pyframe.MolecularSystem(input_file='/path/to/input/file.pdb')
 
 # By default fragments are defined by the input but fragments can be modified
@@ -191,7 +188,6 @@ system.split_fragment_by_name(
                               ['CB', 'HB1', 'HB2', 'CG', 'HG1', 'HG2', 'CD',
                                'HD1', 'HD2', 'CE', 'HE1', 'HE2'],
                               ['.*']])
-
 system.split_fragment_by_name(
         name='POPE',
         new_names=['POP1', 'POP2', 'POP3', 'POP4', 'POP5'],
@@ -217,23 +213,24 @@ system.split_fragment_by_name(
                                '4C31', 'H14X', 'H14Y', '5C31', 'H15X', 'H15Y',
                                '6C31', 'H16X', 'H16Y', 'H16Z']])
 
-# Take fragments and put them in core region.
+# Extract fragments and put them in core region.
 core = system.get_fragments_by_identifier(identifiers=['248_A_RET'])
 core += system.get_fragments_by_distance(distance=3.0, reference=core,
                                          use_center_of_mass=False,
                                          protect_molecules=False)
 system.set_core_region(core, basis='pcseg-2')
 
-# Take out protein (here I use chain id because all protein fragments have the
-# same id).
+# Extract protein (here I use chain id because all protein fragments in this case
+# have the same id).
 protein = system.get_fragments_by_chain_id(chain_ids=['A'])
 
-# Add a region and place the protein in it. Note that each of these settings
+# Add a region containing the protein in it. Note that each of these settings
 # have defaults and that there are more than those shown here.
 system.add_region(name='protein', fragments=protein, use_mfcc=True,
                   mfcc_order=2, use_multipoles=True, multipole_order=2,
                   use_polarizabilities=True, basis='loprop-6-31+G*')
 
+# Here we repeat for lipids, ions, and solvent.
 lipids = system.get_fragments_by_distance_and_name(
         distance=8.0,
         names=['POP1', 'POP2', 'POP3', 'POP4', 'POP5'],
@@ -241,14 +238,12 @@ lipids = system.get_fragments_by_distance_and_name(
 system.add_region(name='lipid', fragments=lipids, use_mfcc=True, mfcc_order=2,
                   use_multipoles=True, multipole_order=2,
                   use_polarizabilities=True, basis='loprop-6-31+G*')
-
 ions = system.get_fragments_by_distance_and_name(distance=8.0,
                                                  names=['NA', 'CL'],
                                                  reference=protein)
 system.add_region(name='ion', fragments=ions, use_multipoles=True,
                   multipole_order=0, use_polarizabilities=True,
                   basis='6-31+G*')
-
 solvents = system.get_fragments_by_distance_and_name(distance=8.0,
                                                      names=['SOL'],
                                                      reference=protein)
@@ -256,29 +251,29 @@ system.add_region(name='solvent', fragments=solvents, use_multipoles=True,
                   multipole_order=2, use_polarizabilities=True,
                   basis='loprop-6-31+G*')
 
-# Create Project() object
+# Create Project() object that is used to create embedding potentials and write
+# input files.
 project = pyframe.Project()
 
-# Set path to scratch directory.
-# This will be used by the auxiliary programs, e.g. Dalton or MOLCAS.
+# Set path to scratch directory. This will be used by the auxiliary programs,
+# e.g. Dalton or Molcas.
 project.scratch_dir = '/path/to/scratch'
 
 # Set path to working directory (it will be created if it does not exist).
 # This directory will contain the final output files from PyFraME (e.g. Dalton
-# mol and pot files), and a directory for each fragment which will contain
-# output from the auxiliary program, e.g. Dalton or MOLCAS.
+# mol and pot files), and the output from the auxiliary program. In addition,
+# during execution it will contain temporary directories for each fragment.
 project.work_dir = '/path/to/work'
 
-# Specifies the number of jobs that will be run on each node.
-# A fragment may require one or more calculations run by an auxiliary program.
-# Each of these counts as a job.
+# Specifies the number of jobs that will be run on each node. A fragment may
+# require one or more calculations run by an auxiliary program. Each of these
+# counts as a job.
 project.jobs_per_node = 2
 
-# Specifies memory per job.
-# Note that this amount will be shared by MPI processes
+# Specifies memory per job. Note that this amount will be shared by MPI processes.
 project.memory_per_job = 2048 * 12
 
-# Number of MPI processes per job
+# Number of MPI processes per job.
 project.mpi_procs_per_job = 12
 
 # You can manually specify the name of nodes that should be used to run jobs.
