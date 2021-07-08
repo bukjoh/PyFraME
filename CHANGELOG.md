@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## [Unreleased]
+### Fixed
+- Atom records in pdb files with identical residue number, chain id, and residue name are now handled. This occurs in some PDB files with many residues (>10000).
+
+
 ## [0.4.0] 2021-06-07
 ### Added
 - Added a `get_remaining_fragments` method to the `MolecularSystem` class that will return all remaining fragments.

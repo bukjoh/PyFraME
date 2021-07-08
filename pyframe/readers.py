@@ -120,6 +120,7 @@ class InputReaders(object):
             fragments = fragment_dict()
             atom_number = 1
             line = input_file.readline()
+            unique = 0
             while line:
                 if str(line[0:6]).strip() not in ['ATOM', 'HETATM']:
                     line = input_file.readline()
@@ -145,6 +146,9 @@ class InputReaders(object):
                     fragment.identifier = '{0}_{1}_{2}'.format(str(number), chain_id, name)
                 else:
                     fragment.identifier = '{0}_{1}'.format(str(number), name)
+                if fragment.identifier in fragments:
+                    fragment.identifier = f'{fragment.identifier}_{unique}'
+                    unique += 1
                 atoms = atom_list()
                 while (atom_type == str(line[0:6]).strip() and number == int(line[22:26]) and
                        chain_id == str(line[21]).strip() and name == str(line[17:21]).strip()):
