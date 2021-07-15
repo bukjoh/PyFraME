@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 ### Fixed
 - Atom records in pdb files with identical residue number, chain id, and residue name are now handled. This occurs in some PDB files with many residues (>10000).
+- Fixed a bug with element detection for HSD/HSE residue names.
 
 
 ## [0.4.0] 2021-06-07
