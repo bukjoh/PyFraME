@@ -18,10 +18,12 @@
 
 import scipy.spatial
 import numpy as np
+import os
+import subprocess
 
 __all__ = ['BOHR2AA', 'AA2BOHR', 'element2radius', 'element2charge', 'element2mass', 'compute_angle',
            'compute_distance', 'compute_distance_matrix', 'get_minimum_distance',
-           'get_bond_length', 'scale_bond_length']
+           'get_bond_length', 'scale_bond_length', 'get_git_hash']
 
 BOHR2AA = 0.5291772108
 AA2BOHR = 1.0 / BOHR2AA
@@ -181,3 +183,11 @@ def scale_bond_length(acceptor_atom, donor_atom):
     factor = get_bond_length(acceptor_atom.element, donor_atom.element)
     factor /= np.linalg.norm(difference_coordinate)
     return acceptor_atom.coordinate - factor * difference_coordinate
+
+def get_git_version():
+    cwd = os.path.dirname(os.path.realpath(__file__))
+    try:
+        return subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).decode('ascii').strip()
+    except:
+        return ""
+

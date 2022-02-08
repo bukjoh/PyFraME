@@ -4,10 +4,14 @@ import pytest
 import os
 import filecmp
 import h5py
+import subprocess
 
 import pyframe
 import pyframe.readers
 from pyframe.readers import PDBError
+
+def strip_version_from_potfile(filename):
+    subprocess.check_output(["sed", "-i", "s/ (version.*)//", filename])
 
 
 def test_pdb_error():
@@ -32,10 +36,12 @@ def test_permanganate():
     project.create_embedding_potential(system)
     project.write_core(system)
     assert os.path.isfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.mol'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.mol'.format(tests_dir, test), '{0}/{1}/{1}.mol.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -56,6 +62,7 @@ def test_pna_in_ccl4():
     os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -81,6 +88,7 @@ def test_4np_in_water():
     os.remove('{0}/{1}/{1}.mol'.format(tests_dir, test))
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -134,6 +142,7 @@ def test_insulin_cp3_fragment():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -152,6 +161,7 @@ def test_insulin_cp3_mfcc():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -169,6 +179,7 @@ def test_insulin_ff94():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -186,6 +197,7 @@ def test_insulin_ff03():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -207,6 +219,7 @@ def test_4val():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
 
@@ -248,6 +261,7 @@ def test_popc_alep():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile(f'{tests_dir}/{test}/{test}.pot')
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp(f'{tests_dir}/{test}/{test}.pot', f'{tests_dir}/{test}/{test}.pot.ref')
     os.remove(f'{tests_dir}/{test}/{test}.pot')
 
@@ -286,6 +300,7 @@ def test_popc_lipid14():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile(f'{tests_dir}/{test}/{test}.pot')
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp(f'{tests_dir}/{test}/{test}.pot', f'{tests_dir}/{test}/{test}.pot.ref')
     os.remove(f'{tests_dir}/{test}/{test}.pot')
 
@@ -328,6 +343,7 @@ def test_pde_simple_water():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile(f'{tests_dir}/{test}/{test}.pot')
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp(f'{tests_dir}/{test}/{test}.pot', f'{tests_dir}/{test}/{test}.pot.ref')
     os.remove(f'{tests_dir}/{test}/{test}.pot')
     assert os.path.isfile(f'{tests_dir}/{test}/{test}.h5')
@@ -373,6 +389,7 @@ def test_pde_two_water_helium():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert os.path.isfile(f'{tests_dir}/{test}/{test}.h5')
@@ -415,6 +432,7 @@ def test_pde_GG_acetone():
     project.create_embedding_potential(system)
     project.write_potential(system)
     assert os.path.isfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
+    strip_version_from_potfile('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert filecmp.cmp('{0}/{1}/{1}.pot'.format(tests_dir, test), '{0}/{1}/{1}.pot.ref'.format(tests_dir, test))
     os.remove('{0}/{1}/{1}.pot'.format(tests_dir, test))
     assert os.path.isfile(f'{tests_dir}/{test}/{test}.h5')
@@ -455,6 +473,7 @@ def test_terminal_autodetect():
             project.create_embedding_potential(system)
             project.write_potential(system)
             assert os.path.isfile(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
+            strip_version_from_potfile(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
             assert filecmp.cmp(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot',
                                f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot.ref')
             os.remove(f'{tests_dir}/{test}/{prefix}{aa}/{prefix}{aa}.pot')
