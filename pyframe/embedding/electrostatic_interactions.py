@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from pyframe.embedding import polytensor, tensor_tools, particle, constants
+from pyframe.embedding import polytensor, tensor_tools, particle, constants, fragment
 from typing import Optional
 
 
@@ -85,3 +85,43 @@ def compute_atom_nucleus_interaction(atom: particle.Atom,
         Electrostatic interaction energy.
     """
     return (atom.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+
+
+def compute_fragments_interaction(c_fragment_1: fragment.ClassicalFragment,
+                                  c_fragment_2: fragment.ClassicalFragment
+                                  ) -> float:
+    """Calculates the electrostatic interaction between two Classical fragments.
+
+    Returns:
+        Electrostatic interaction energy.
+    """
+    electrostatic_energy = 0
+    for atom_1 in c_fragment_1.atoms:
+        for atom_2 in c_fragment_2.atoms:
+            electrostatic_energy += compute_atoms_interaction(atom_1, atom_2)
+    return electrostatic_energy
+
+
+def compute_fragment_atom_interaction(atom: particle.Atom,
+                                      c_fragment: fragment.ClassicalFragment
+                                      ) -> float:
+    """Calculates the electrostatic interaction between a Classical fragment and a particle.
+
+    Returns:
+        Electrostatic interaction energy between a Classical fragment and a particle from the perspective of particle1.
+    """
+    electrostatic_energy = 0
+    for atoms in c_fragment.atoms:
+        electrostatic_energy += compute_atoms_interaction(atom, atoms)
+    return electrostatic_energy
+
+
+def compute_fragment_nucleus_interaction(nucleus: particle.Nucleus,
+                                         c_fragment: fragment.ClassicalFragment
+                                         ) -> float:
+    """Calculates the electrostatic interaction between a Classical fragment and a particle.
+
+    Returns:
+        Electrostatic interaction energy between a Classical fragment and a particle from the perspective of particle1.
+    """
+    return (c_fragment.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]

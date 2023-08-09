@@ -1,8 +1,10 @@
 """Tests PyFraME.embedding.electrostatic_interactions.py"""
+import json
+import os
 import qcelemental
 import pytest
 import numpy as np
-from pyframe.embedding import particle, polytensor, electrostatic_interactions, constants
+from pyframe.embedding import particle, polytensor, electrostatic_interactions, constants, fragment
 from qcelemental import PhysicalConstantsContext
 
 phys_constants = PhysicalConstantsContext('CODATA2018')
@@ -115,6 +117,14 @@ water_fragment_dict = {
     }]
 }
 
+# Read fragments from JSON
+with open(f'{os.path.dirname(__file__)}/data/act_wat_test.json') as json_file:
+    input_data = json.load(json_file).get('classical_subsystem', None)
+
+classical_fragments = []
+for f in input_data['classical_fragments']:
+    classical_fragments.append(fragment.ClassicalFragment(**f))
+
 
 def test_compute_atoms_interaction():
     # Test Monopole-Monopole interaction
@@ -217,3 +227,38 @@ def test_compute_t_tensor():
                                                            potential_tensor_template).data
 
     assert np.allclose(t_tensor, ref_potential)
+
+
+def test_compute_fragment_nucleus_interaction():
+    water_fragment = fragment.ClassicalFragment(**water_fragment_dict)
+    interaction_energy = electrostatic_interactions.compute_atom_nucleus_interaction
+    es_energy = electrostatic_interactions.compute_fragment_nucleus_interaction(oxygen_nucleus,
+                                                                                water_fragment)
+    ref_energy = interaction_energy(water_fragment.atoms[0], oxygen_nucleus) \
+                 + interaction_energy(water_fragment.atoms[1], oxygen_nucleus) \
+                 + interaction_energy(water_fragment.atoms[2], oxygen_nucleus)
+    assert ref_energy == pytest.approx(es_energy, 1e-9)
+
+
+def test_compute_fragment_atom_interaction():
+    water_fragment = fragment.ClassicalFragment(**water_fragment_dict)
+    interaction_energy = electrostatic_interactions.compute_atoms_interaction
+    es_energy = electrostatic_interactions.compute_fragment_atom_interaction(oxygen_atom,
+                                                                             water_fragment)
+    ref_energy = interaction_energy(water_fragment.atoms[0], oxygen_atom) \
+                 + interaction_energy(water_fragment.atoms[1], oxygen_atom) \
+                 + interaction_energy(water_fragment.atoms[2], oxygen_atom)
+    assert ref_energy == pytest.approx(es_energy, 1e-9)
+
+
+def test_fragments_interaction():
+    water_fragment_1 = classical_fragments[0]
+    water_fragment_2 = classical_fragments[1]
+    interaction_energy = electrostatic_interactions.compute_atoms_interaction
+    es_energy = electrostatic_interactions.compute_fragments_interaction(water_fragment_1, water_fragment_2)
+    ref_energy = 0
+    for atoms in water_fragment_2.atoms:
+        ref_energy += interaction_energy(water_fragment_1.atoms[0], atoms) \
+                      + interaction_energy(water_fragment_1.atoms[1], atoms) \
+                      + interaction_energy(water_fragment_1.atoms[2], atoms)
+    assert ref_energy == pytest.approx(es_energy, 1e-9)
