@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pyframe.embedding import polytensor, tensor_tools, particle, constants, fragment
-from typing import Optional
+from pyframe.embedding import polytensor, tensor_tools, particle, constants, fragment, subsystem
+from typing import Optional, Union
 
 
 def compute_t_tensor(r_a: np.ndarray,
@@ -125,3 +125,25 @@ def compute_fragment_nucleus_interaction(nucleus: particle.Nucleus,
         Electrostatic interaction energy between a Classical fragment and a particle from the perspective of particle1.
     """
     return (c_fragment.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+
+
+def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
+                                      classical_subsystem: Union[subsystem.ClassicalSubsystem, list]
+                                      ) -> float:
+    """Calculates the electrostatic interaction between a Quantum subsystem and one or several Classical subsystems.
+
+    Returns:
+        Electrostatic interaction energy.
+    """
+    # h_es
+    if isinstance(classical_subsystem, list):
+        electrostatic_energy = 0
+        for c_subsystem in classical_subsystem:
+            for nucleus in quantum_subsystem.nuclei:
+                electrostatic_energy += (c_subsystem.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+    else:
+        electrostatic_energy = 0
+        for nucleus in quantum_subsystem.nuclei:
+            electrostatic_energy += (classical_subsystem.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+    # h_es*D missing -> will have to hand this function the vlx_integrals function, that is then called in here.
+    return electrostatic_energy

@@ -4,7 +4,7 @@ import os
 import qcelemental
 import pytest
 import numpy as np
-from pyframe.embedding import particle, polytensor, electrostatic_interactions, constants, fragment
+from pyframe.embedding import particle, polytensor, electrostatic_interactions, constants, fragment, subsystem
 from qcelemental import PhysicalConstantsContext
 
 phys_constants = PhysicalConstantsContext('CODATA2018')
@@ -262,3 +262,16 @@ def test_fragments_interaction():
                       + interaction_energy(water_fragment_1.atoms[1], atoms) \
                       + interaction_energy(water_fragment_1.atoms[2], atoms)
     assert ref_energy == pytest.approx(es_energy, 1e-9)
+
+
+def test_compute_electrostatic_interaction():
+    core = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+    env = subsystem.ClassicalSubsystem(name="Classical",
+                                       input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+    ref_energy = 0
+    for nucleus in core.nuclei:
+        for fragments in env.classical_fragments:
+            ref_energy += electrostatic_interactions.compute_fragment_nucleus_interaction(nucleus, fragments)
+        for atom in env.atoms:
+            ref_energy += electrostatic_interactions.compute_atom_nucleus_interaction(atom, nucleus)
+    assert electrostatic_interactions.compute_electrostatic_interaction(core, env) == pytest.approx(ref_energy, 1e-9)
