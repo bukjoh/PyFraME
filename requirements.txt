@@ -1,7 +1,8 @@
-daltools==1.1.6
-h5py==3.2.1
-loprop==0.3.4
-numpy==1.20.3
-pytest==6.2.4
-pytest-cov==2.12.1
-scipy==1.6.3
+daltools
+h5py
+loprop
+numpy
+pytest
+pytest-cov
+scipy
+qcelemental

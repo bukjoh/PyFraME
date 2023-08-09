@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple
+from typing import List, Tuple
 
 
 def compute_factorials(max_order: int) -> np.ndarray:
@@ -160,7 +160,7 @@ def convert_tensor_index(tensor_index: int, tensor_rank: int) -> Tuple[int, int,
                 i += 1
 
 
-def compute_interaction_tensor_element(multi_index: Tuple,
+def compute_interaction_tensor_element(multi_index: List[np.ndarray],
                                        distance_vector: np.ndarray,
                                        tensor_coefficients: np.ndarray) -> float:
     """Compute the element of an interaction tensor corresponding to the given multi-index containing the order of the
@@ -179,7 +179,7 @@ def compute_interaction_tensor_element(multi_index: Tuple,
         Element of the interaction tensor corresponding to a given multi-index and distance vector.
     """
     tensor_element = 0.0
-    i, j, k = multi_index
+    i, j, k = multi_index[0] + multi_index[1]
     norm = np.linalg.norm(distance_vector)
     for q in range(i + 1):
         cl = tensor_coefficients[q, i, 1] * (distance_vector[0] / norm) ** q
@@ -191,7 +191,7 @@ def compute_interaction_tensor_element(multi_index: Tuple,
                 cn = cm * tensor_coefficients[n, k, p] * (distance_vector[2] / norm) ** n
                 tensor_element += cn
     tensor_element /= norm ** (i + j + k + 1)
-    return tensor_element
+    return tensor_element * (-1)**np.sum(multi_index[1])
 
 
 def compute_tensor_coefficients(max_order: int) -> np.ndarray:
@@ -250,7 +250,7 @@ def compute_trace(tensor: np.ndarray, alpha: Tuple[int, int, int], trinomial_coe
     return tensor_trace
 
 
-def detrace(tensor: np.ndarray, factorials: np.ndarray, double_factorials: np. array,
+def detrace(tensor: np.ndarray, factorials: np.ndarray, double_factorials: np.array,
             trinomial_coefficients: np.ndarray) -> np.ndarray:
     """Remove the trace of a compressed Cartesian tensor.
 
@@ -288,8 +288,9 @@ def detrace(tensor: np.ndarray, factorials: np.ndarray, double_factorials: np. a
                         if norm != 1:
                             continue
                         sgn = (-1.0) ** norm
-                        trace_tensor[ti-1] += (sgn * double_factorials[(2 * tensor_rank - 2 * norm - 1)] * xn * yn * zn
-                                               * compute_trace(tensor, (ax - 2 * bx, ay - 2 * by, az - 2 * bz),
-                                                               trinomial_coefficients)) / divisor
+                        trace_tensor[ti - 1] += (sgn * double_factorials[
+                            (2 * tensor_rank - 2 * norm - 1)] * xn * yn * zn
+                                                 * compute_trace(tensor, (ax - 2 * bx, ay - 2 * by, az - 2 * bz),
+                                                                 trinomial_coefficients)) / divisor
     detraced_tensor = tensor + trace_tensor
     return detraced_tensor
