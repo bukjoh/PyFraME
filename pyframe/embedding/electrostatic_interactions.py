@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import numpy as np
-from pyframe.embedding import polytensor, tensor_tools, particle, constants, fragment, subsystem
-from typing import Optional, Union
+from pyframe.embedding import (polytensor, tensor_tools, particle, constants, fragment, subsystem, vlx_interface)
+from typing import Optional, Union, Tuple
 
 
 def compute_t_tensor(r_a: np.ndarray,
@@ -128,22 +128,47 @@ def compute_fragment_nucleus_interaction(nucleus: particle.Nucleus,
 
 
 def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
-                                      classical_subsystem: Union[subsystem.ClassicalSubsystem, list]
-                                      ) -> float:
+                                      classical_subsystem: Union[subsystem.ClassicalSubsystem, list],
+                                      integral_drv: vlx_interface.EmbeddingIntegralDriver
+                                      ) -> Tuple[float, np.ndarray]:
     """Calculates the electrostatic interaction between a Quantum subsystem and one or several Classical subsystems.
 
     Returns:
-        Electrostatic interaction energy.
+        Electrostatic nuclear electrostatic interaction energy and the electric Fock matrix contribution.
     """
-    # h_es
+    fock_matrix = None
     if isinstance(classical_subsystem, list):
-        electrostatic_energy = 0
+        nuclear_energy = 0
         for c_subsystem in classical_subsystem:
+            # E_nuc_es
             for nucleus in quantum_subsystem.nuclei:
-                electrostatic_energy += (c_subsystem.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+                nuclear_energy += (c_subsystem.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+            # F_el_es
+            fock_matrix = es_fock_matrix_contributions(classical_subsystem=c_subsystem,
+                                                       integral_drv=integral_drv)
     else:
-        electrostatic_energy = 0
+        nuclear_energy = 0
+        # E_nuc_es
         for nucleus in quantum_subsystem.nuclei:
-            electrostatic_energy += (classical_subsystem.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
-    # h_es*D missing -> will have to hand this function the vlx_integrals function, that is then called in here.
-    return electrostatic_energy
+            nuclear_energy += (classical_subsystem.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+        # F_el_es
+        fock_matrix = es_fock_matrix_contributions(classical_subsystem=classical_subsystem,
+                                                   integral_drv=integral_drv)
+    return nuclear_energy, fock_matrix
+
+
+def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
+                                 integral_drv: vlx_interface.EmbeddingIntegralDriver):
+    coordinates = []
+    charges = []
+    if hasattr(classical_subsystem, 'classical_fragments'):
+        for frags in classical_subsystem.classical_fragments:
+            for atom in frags.atoms:
+                coordinates.append(atom.coordinate)
+                charges.append(atom.multipoles_with_degeneracy.data[0] * atom.taylor_coefficients.data[0])
+    if hasattr(classical_subsystem, 'atoms'):
+        for atom in classical_subsystem.atoms:
+            coordinates.append(atom.coordinate)
+            charges.append(atom.multipoles_with_degeneracy.data[0] * atom.taylor_coefficients.data[0])
+    fock_matrix_contribution = integral_drv.multipole_potential_integrals(charges=charges, coordinates=coordinates)
+    return fock_matrix_contribution

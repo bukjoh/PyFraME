@@ -4,7 +4,10 @@ import os
 import qcelemental
 import pytest
 import numpy as np
-from pyframe.embedding import particle, polytensor, electrostatic_interactions, constants, fragment, subsystem
+import scipy
+import veloxchem as vlx
+from pyframe.embedding import (particle, polytensor, electrostatic_interactions, constants, fragment, subsystem,
+                               vlx_interface)
 from qcelemental import PhysicalConstantsContext
 
 phys_constants = PhysicalConstantsContext('CODATA2018')
@@ -265,13 +268,77 @@ def test_fragments_interaction():
 
 
 def test_compute_electrostatic_interaction():
+    # Internal test
     core = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
     env = subsystem.ClassicalSubsystem(name="Classical",
                                        input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+    act_xyz = """10
+    atc
+    C                    30.101                    29.705                    29.43
+    C                    30.889                    29.91                     30.735
+    C                    28.635                    30.016                    29.419
+    O                    30.67                     29.421                    28.396
+    H                    31.182                    30.941                    30.734
+    H                    30.307                    29.618                    31.604
+    H                    31.868                    29.391                    30.755
+    H                    28.215                    30.575                    30.327
+    H                    28.132                    29.059                    29.463
+    H                    28.339                    30.503                    28.446
+    """
+    driver = vlx_interface.EmbeddingIntegralDriver(act_xyz, 'sto-3g')
     ref_energy = 0
     for nucleus in core.nuclei:
         for fragments in env.classical_fragments:
             ref_energy += electrostatic_interactions.compute_fragment_nucleus_interaction(nucleus, fragments)
         for atom in env.atoms:
             ref_energy += electrostatic_interactions.compute_atom_nucleus_interaction(atom, nucleus)
-    assert electrostatic_interactions.compute_electrostatic_interaction(core, env) == pytest.approx(ref_energy, 1e-9)
+    es_fock_contr = electrostatic_interactions.es_fock_matrix_contributions(env, driver)
+    e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
+                                                                                     classical_subsystem=env,
+                                                                                     integral_drv=driver)
+    assert e_nuc_es == pytest.approx(ref_energy, 1e-9)
+    assert f_el_es == pytest.approx(es_fock_contr, 1e-9)
+
+    # Test against echembook
+    h2o_xyz = """3
+    water
+    O        0.0000000000      0.0000000000      0.0000000000                 
+    H        0.6891400000      0.8324710000      0.0000000000                 
+    H        0.7224340000     -0.8726890000      0.0000000000
+    """
+    molecule = vlx.Molecule.read_xyz_string(h2o_xyz)
+    basis = vlx.MolecularBasis.read(molecule, "cc-pvdz")
+    nocc = molecule.number_of_alpha_electrons()
+    V_nuc = molecule.nuclear_repulsion_energy()
+    # overlap
+    overlap_drv = vlx.OverlapIntegralsDriver()
+    S = overlap_drv.compute(molecule, basis).to_numpy()
+    # kinetic energy
+    kinetic_drv = vlx.KineticEnergyIntegralsDriver()
+    T = kinetic_drv.compute(molecule, basis).to_numpy()
+    # nuclear attraction
+    nucpot_drv = vlx.NuclearPotentialIntegralsDriver()
+    V = -1.0 * nucpot_drv.compute(molecule, basis).to_numpy()
+    # one-electron Hamiltonian
+    h = T + V
+    # two-electron Hamiltonian
+    eri_drv = vlx.ElectronRepulsionIntegralsDriver()
+    g = eri_drv.compute_in_memory(molecule, basis)
+    # initial guess
+    epsilon, C = scipy.linalg.eigh(h, S)
+    E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
+    # define core env
+    core = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    env = subsystem.ClassicalSubsystem(name="Classical",
+                                       input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    driver = vlx_interface.EmbeddingIntegralDriver(h2o_xyz, "cc-pvdz")
+    # calculate nuclear es energy and electric fock matrix
+    e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
+                                                                                     classical_subsystem=env,
+                                                                                     integral_drv=driver)
+    E_s, C_s = vlx_interface.scf_solver(h=h + f_el_es, V_nuc=V_nuc + e_nuc_es, C=C_HF, nocc=nocc, g=g, S=S)
+    D = 2 * np.einsum("ik,jk->ij", C_s[:, :nocc], C_s[:, :nocc])
+    e_el_es = np.einsum("ab, ab", D, f_el_es)
+    assert E_s == pytest.approx(-76.05504275, 1e-9)
+    assert e_nuc_es == pytest.approx(-0.08545956, 1e-7)
+    assert e_el_es == pytest.approx(0.00987780, 1e-6)

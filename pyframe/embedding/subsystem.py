@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import numpy as np
 from typing import Optional
-from pyframe.embedding import fragment, particle
+from pyframe.embedding import fragment, particle, density_matrix
 from pathlib import Path
 
 
@@ -40,7 +40,7 @@ class QuantumSubsystem(Subsystem):
             for frag in self._input_data['quantum_fragments']:
                 self.quantum_fragments.append(fragment.QuantumFragment(**frag))
         if self._input_data.get('density_matrix', None) is not None:
-            self.density_matrix = np.array(self._input_data['density_matrix'])
+            self.density_matrix = density_matrix.DensityMatrix(self._input_data['density_matrix'])
 
 
 class ClassicalSubsystem(Subsystem):

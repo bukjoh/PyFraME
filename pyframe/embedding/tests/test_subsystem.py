@@ -1,6 +1,6 @@
 """Tests PyFraME.embedding.subsystem.py"""
 import os
-from pyframe.embedding import subsystem
+from pyframe.embedding import subsystem, vlx_interface, electrostatic_interactions
 from qcelemental import PhysicalConstantsContext
 
 constants = PhysicalConstantsContext('CODATA2018')
@@ -11,10 +11,23 @@ def test_init_subsystem():
 
 
 def test_init_classical_subsystem():
-    subsystem.ClassicalSubsystem(name="2x H2O fragments, O and H particles",
-                                 input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+    a = subsystem.ClassicalSubsystem(name="2x H2O fragments, O and H particles",
+                                     input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+
+    h2o_xyz = """3
+    water
+    O        0.0000000000      0.0000000000      0.0000000000                 
+    H        0.6891400000      0.8324710000      0.0000000000                 
+    H        0.7224340000     -0.8726890000      0.0000000000
+    """
+    basis = 'sto-3g'
+    driver = vlx_interface.EmbeddingIntegralDriver(h2o_xyz, basis)
+    fock_contr = electrostatic_interactions.es_fock_matrix_contributions(classical_subsystem=a, integral_drv=driver)
+    print(fock_contr)
 
 
 def test_init_quantum_subsystem():
     subsystem.QuantumSubsystem(name="2x H2O fragments, O and H particles, H2O density",
                                input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+
+# test for potential missing?

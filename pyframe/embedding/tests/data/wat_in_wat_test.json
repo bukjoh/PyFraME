@@ -1,0 +1,208 @@
+{
+  "quantum_subsystem": {
+    "nuclei": [
+      {
+                "index": 1,
+                "element": "O",
+                "charge": 8.0,
+                "coordinate": [
+                 0.0,
+                 0.0 ,
+                 0.0
+                ]
+      },
+      {
+                "index": 2,
+                "element": "H",
+                "charge": 1.0,
+                "coordinate": [
+                 1.30228586,
+                 1.5731422,
+                 0.0
+                ]
+      },
+            {
+                "index": 3,
+                "element": "H",
+                "charge": 1.0,
+                "coordinate": [
+                 1.3652024,
+                 -1.6491432,
+                 0.0
+                ]
+      }
+    ]
+  },
+  "classical_subsystem": {
+    "atoms": [
+      {
+        "index": 1,
+        "element": "O",
+        "coordinate": [
+          2.07715105,
+          4.18896535,
+          0.5274698
+        ],
+        "multipoles": {
+          "elements": [
+            -0.834
+          ]
+        }
+      },
+      {
+        "index": 2,
+        "element": "H",
+        "coordinate": [
+          4.28467053,
+          4.25750383,
+          1.13640192
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      },
+      {
+        "index": 3,
+        "element": "H",
+        "coordinate": [
+          1.88671201,
+          5.30644733,
+          -1.10373045
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      },
+            {
+        "index": 4,
+        "element": "O",
+        "coordinate": [
+          -1.55405218,
+          0.40461682,
+          -4.49144625
+        ],
+        "multipoles": {
+          "elements": [
+            -0.834
+          ]
+        }
+      },
+      {
+        "index": 5,
+        "element": "H",
+        "coordinate": [
+          -3.02174955,
+          1.58892141,
+          -5.04535332
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      },
+      {
+        "index": 6,
+        "element": "H",
+        "coordinate": [
+          -0.88503622,
+          0.78456704,
+          -2.90359254
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      },
+            {
+        "index": 7,
+        "element": "O",
+        "coordinate": [
+          3.28386023,
+          -3.81127146,
+          -0.91861288
+        ],
+        "multipoles": {
+          "elements": [
+            -0.834
+          ]
+        }
+      },
+      {
+        "index": 8,
+        "element": "H",
+        "coordinate": [
+          3.92191492,
+          -4.24177186,
+          -2.58025851
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      },
+      {
+        "index": 9,
+        "element": "H",
+        "coordinate": [
+           3.14393168,
+          -5.19987812,
+          0.10274819
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      },
+            {
+        "index": 10,
+        "element": "O",
+        "coordinate": [
+          -2.03309965,
+          -0.50877663,
+          4.75066565
+        ],
+        "multipoles": {
+          "elements": [
+            -0.834
+          ]
+        }
+      },
+      {
+        "index": 11,
+        "element": "H",
+        "coordinate": [
+          -1.10032516,
+          -0.35675762,
+          2.84566298
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      },
+      {
+        "index": 12,
+        "element": "H",
+        "coordinate": [
+          -2.1982088,
+          1.33847223,
+          5.39865085
+        ],
+        "multipoles": {
+          "elements": [
+            0.417
+          ]
+        }
+      }
+    ]
+  }
+}
