@@ -1,26 +1,15 @@
 """Tests PyFraME.embedding.subsystem.py"""
 import os
-
 import pytest
 import veloxchem as vlx
 import numpy as np
 import scipy
 from pyframe.embedding import subsystem, vlx_interface, induction_interactions, electrostatic_interactions
 
-env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
-                                   input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-core = subsystem.QuantumSubsystem(name="1x H2O",
-                                  input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-h_minus = subsystem.ClassicalSubsystem(name="H^{-}",
-                                       input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
-h2 = subsystem.QuantumSubsystem(name="H2",
-                                input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
-
 
 def test_compute_induction_interation():
     # Test H^{-} -(2AA) ENV|QM H -(0.74AA) H QM|ENV -(2AA) H^{-}
     # static contributions
-    # VLX wants angstrom!
     h2_xyz = """2
         core H2                
         H        0.0000000000     0.0000000000      0.0000000000
@@ -29,30 +18,36 @@ def test_compute_induction_interation():
     basis = "sto-3g"
     driver = vlx_interface.EmbeddingIntegralDriver(h2_xyz, basis)
     static_drv = induction_interactions.compute_static_contributions
+    # core and env
+    h_minus = subsystem.ClassicalSubsystem(name="H^{-}",
+                                           input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
+    h2 = subsystem.QuantumSubsystem(name="H2",
+                                    input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
+    # calculate static contributions
     coordinates, multipole_fields, nuclear_fields, polarizabilities, classical_fragments = (
         static_drv(quantum_subsystem=h2,
                    classical_subsystem=h_minus))
     static_fields = multipole_fields + nuclear_fields
     # induced dipoles
-    ind_dipoles, electric_fields = induction_interactions.compute_induced_dipoles(density=h2.density_matrix.density,
-                                                                                  integral_drv=driver,
-                                                                                  coordinates=coordinates,
-                                                                                  static_fields=static_fields,
-                                                                                  polarizabilities=polarizabilities,
-                                                                                  classical_fragments=classical_fragments,
-                                                                                  threshold=1e-20)
+    ind_dip, electric_fields = induction_interactions.compute_induced_dipoles(density=h2.density_matrix.density,
+                                                                              integral_drv=driver,
+                                                                              coordinates=coordinates,
+                                                                              static_fields=static_fields,
+                                                                              polarizabilities=polarizabilities,
+                                                                              classical_fragments=classical_fragments,
+                                                                              threshold=1e-10)
     total_fields = static_fields + electric_fields
     ref_ind_dipole_1 = np.array([-0.039037184, 0., 0.])
     ref_ind_dipole_2 = np.array([0.039037184, 0., 0.])
-    assert ind_dipoles[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
-    assert ind_dipoles[1, 0] == pytest.approx(ref_ind_dipole_2[0], abs=1e-8)
+    assert ind_dip[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
+    assert ind_dip[1, 0] == pytest.approx(ref_ind_dipole_2[0], abs=1e-8)
     # induction energy and fock matrix contributions
     induction_energy, fock_matrix_contr = (induction_interactions.
-                                           compute_induction_interaction(induced_dipoles=ind_dipoles,
+                                           compute_induction_interaction(induced_dipoles=ind_dip,
                                                                          total_fields=total_fields,
                                                                          coordinates=coordinates,
                                                                          integral_drv=driver))
-    # h2o test ind dipoles
+    # echem test for induced dipoles
     h2o_xyz = """3
     water
     O        0.0000000000      0.0000000000      0.0000000000                 
@@ -80,27 +75,35 @@ def test_compute_induction_interation():
     # initial guess
     epsilon, C = scipy.linalg.eigh(h, S)
     E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
-    # define core env
-    core_ac = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-    env_ac = subsystem.ClassicalSubsystem(name="Classical",
-                                          input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    # define core and env
+    env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
+                                       input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    core = subsystem.QuantumSubsystem(name="1x H2O",
+                                      input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
     driver = vlx_interface.EmbeddingIntegralDriver(h2o_xyz, "cc-pvdz")
     # calculate nuclear es energy and electric fock matrix
-    e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core_ac,
-                                                                                     classical_subsystem=env_ac,
+    e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
+                                                                                     classical_subsystem=env,
                                                                                      integral_drv=driver)
-    E_s, C_s, ind_dip, e_ind, e_nuc_ind, e_mul_ind, e_el_ind = vlx_interface.scf_solver_with_ind(h=h + f_el_es,
-                                                                                                 V_nuc=V_nuc + e_nuc_es,
-                                                                                                 C=C_HF,
-                                                                                                 nocc=nocc, g=g, S=S,
-                                                                                                 embedding_driver=driver,
-                                                                                                 core=core_ac,
-                                                                                                 env=env_ac)
+    E_s, C_s, ind_dip, e_ind, e_nuc_ind, e_mul_ind, e_el_ind = vlx_interface.scf_pe_solver(h=h + f_el_es,
+                                                                                           V_nuc=V_nuc + e_nuc_es,
+                                                                                           C=C_HF,
+                                                                                           nocc=nocc, g=g, S=S,
+                                                                                           embedding_driver=driver,
+                                                                                           core=core,
+                                                                                           env=env)
     D = 2 * np.einsum("ik,jk->ij", C_s[:, :nocc], C_s[:, :nocc])
     e_el_es = np.einsum("ab, ab", D, f_el_es)
-
-    # setup test to compare to dalton
-
+    e_pe_total = e_el_ind + e_el_es + e_mul_ind + e_nuc_ind + e_nuc_es
+    assert e_el_es == pytest.approx(0.006804775749414373, abs=1e-9)
+    assert e_nuc_es == pytest.approx(-0.08545956246530774, abs=1e-9)
+    assert e_ind == pytest.approx(-0.01006509940518837, abs=1e-9)
+    assert e_nuc_ind == pytest.approx(-0.006052391164318287, abs=1e-9)
+    assert e_mul_ind == pytest.approx(-0.0009277338262916619, abs=1e-9)
+    assert e_el_ind == pytest.approx(-0.003084974414578435, abs=1e-9)
+    assert e_pe_total == pytest.approx(-0.08871988612108175, abs=1e-9)
+    assert E_s == pytest.approx(-76.06472693147695, rel=1e-10)
+    # Test in comparison to dalton
     # define molecule
     acrolein_xyz = """8
     C3OH4
@@ -157,23 +160,21 @@ def test_compute_induction_interation():
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core_ac,
                                                                                      classical_subsystem=env_ac,
                                                                                      integral_drv=driver)
-    E_s, C_s, ind_dip, e_ind, e_nuc_ind, e_mul_ind, e_el_ind = vlx_interface.scf_solver_with_ind(h=h + f_el_es,
-                                                                                                 V_nuc=V_nuc + e_nuc_es,
-                                                                                                 C=C_HF,
-                                                                                                 nocc=nocc, g=g, S=S,
-                                                                                                 embedding_driver=driver,
-                                                                                                 core=core_ac,
-                                                                                                 env=env_ac)
+    E_s, C_s, ind_dip, e_ind, e_nuc_ind, e_mul_ind, e_el_ind = vlx_interface.scf_pe_solver(h=h + f_el_es,
+                                                                                           V_nuc=V_nuc + e_nuc_es,
+                                                                                           C=C_HF,
+                                                                                           nocc=nocc, g=g, S=S,
+                                                                                           embedding_driver=driver,
+                                                                                           core=core_ac,
+                                                                                           env=env_ac)
     D = 2 * np.einsum("ik,jk->ij", C_s[:, :nocc], C_s[:, :nocc])
     e_el_es = np.einsum("ab, ab", D, f_el_es)
     e_pe_total = e_el_ind + e_el_es + e_mul_ind + e_nuc_ind + e_nuc_es
-    assert e_el_es == pytest.approx(-0.281816731033, abs=1e-7)
+    assert e_el_es == pytest.approx(-0.281816699842, abs=1e-8)
     assert e_nuc_es == pytest.approx(0.266706671106, abs=1e-8)
-    assert e_ind == pytest.approx(-0.000751933804, abs=1e-8)
-    assert e_nuc_ind == pytest.approx(0.042124827087, abs=1.5e-7)
-    assert e_mul_ind == pytest.approx(0.000114734523, abs=1e-9)
-    assert e_el_ind == pytest.approx(-0.042991495415, abs=1.5e-7)
-    assert e_pe_total == pytest.approx(-0.015861993732, abs=1e-7)
-    assert E_s == pytest.approx(-188.314434428374, abs=1e-7)
-    print(ind_dip)
-    print(E_HF, E_s, e_mul_ind, e_nuc_ind, e_el_ind, e_ind, e_el_es, e_nuc_es, e_pe_total)
+    assert e_ind == pytest.approx(-0.000751929428, abs=1e-9)
+    assert e_nuc_ind == pytest.approx(0.042124675086, abs=1e-8)
+    assert e_mul_ind == pytest.approx(0.000114734186, abs=1e-10)
+    assert e_el_ind == pytest.approx(-0.0429913387, abs=1e-8)
+    assert e_pe_total == pytest.approx(-0.015861958165, abs=1e-8)
+    assert E_s == pytest.approx(-188.314434428389, rel=1e-10)

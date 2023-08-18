@@ -56,9 +56,10 @@ class EmbeddingIntegralDriver:
         return -1.0 * (ef_results[0] + ef_results[1] + ef_results[2])
 
 
-def scf_solver(h, V_nuc, C, nocc, g, S):
+def scf_solver(h, V_nuc, C, nocc, g, S, conv_thresh: Optional[float] = None):
     max_iter = 100
-    conv_thresh = 1e-10
+    if conv_thresh is None:
+        conv_thresh = 1e-10
 
     print("iter      SCF energy    Error norm")
 
@@ -86,7 +87,7 @@ def scf_solver(h, V_nuc, C, nocc, g, S):
     return E, C
 
 
-def scf_solver_with_ind(h, V_nuc, C, nocc, g, S, embedding_driver, core, env):
+def scf_pe_solver(h, V_nuc, C, nocc, g, S, embedding_driver, core, env):
     max_iter = 100
     conv_thresh = 1e-10
     E, ind_dipoles, e_ind, electric_fields = None, None, None, None
@@ -136,12 +137,3 @@ def scf_solver_with_ind(h, V_nuc, C, nocc, g, S, embedding_driver, core, env):
     e_el_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles, fields=electric_fields)
     return E, C, ind_dipoles, e_ind, e_nuc_ind, e_mul_ind, e_el_ind
 
-
-def xyz_bohr_to_angstrom(xyz_str: str):
-    lines = xyz_str.split('\n')
-    header = xyz_str[0:2]
-    coordinates = xyz_str[2:]
-    # print(coordinates)
-    for coordinate in coordinates:
-        print(coordinate)
-        # coordinate.split()

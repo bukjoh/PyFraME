@@ -328,17 +328,19 @@ def test_compute_electrostatic_interaction():
     epsilon, C = scipy.linalg.eigh(h, S)
     E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
     # define core env
-    core = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-    env = subsystem.ClassicalSubsystem(name="Classical",
+    env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
                                        input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    core = subsystem.QuantumSubsystem(name="1x H2O",
+                                      input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
     driver = vlx_interface.EmbeddingIntegralDriver(h2o_xyz, "cc-pvdz")
     # calculate nuclear es energy and electric fock matrix
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
                                                                                      classical_subsystem=env,
                                                                                      integral_drv=driver)
-    E_s, C_s = vlx_interface.scf_solver(h=h + f_el_es, V_nuc=V_nuc + e_nuc_es, C=C_HF, nocc=nocc, g=g, S=S)
+    E_s, C_s = vlx_interface.scf_solver(h=h + f_el_es, V_nuc=V_nuc + e_nuc_es, C=C_HF, nocc=nocc, g=g, S=S,
+                                        conv_thresh=1e-4)
     D = 2 * np.einsum("ik,jk->ij", C_s[:, :nocc], C_s[:, :nocc])
     e_el_es = np.einsum("ab, ab", D, f_el_es)
-    assert E_s == pytest.approx(-76.05504275, 1e-9)
-    assert e_nuc_es == pytest.approx(-0.08545956, 1e-7)
-    assert e_el_es == pytest.approx(0.00987780, 1e-6)
+    assert E_s == pytest.approx(-76.05504275, rel=1e-10)
+    assert e_nuc_es == pytest.approx(-0.08545956, abs=1.5e-8)
+    assert e_el_es == pytest.approx(0.00987780, abs=1.5e-8)
