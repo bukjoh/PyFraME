@@ -37,8 +37,10 @@ class ClassicalFragment(Fragment):
                  ):
         Fragment.__init__(self, index=index, name=name)
         self.atoms = []
-        for a in atoms:
+        self.coordinates = np.zeros([len(atoms), 3])
+        for i, a in enumerate(atoms):
             a['coordinate'] = np.array(a['coordinate'])
+            self.coordinates[i, :] = a['coordinate']
             self.atoms.append(particle.Atom(**a))
         self.num_atoms = len(atoms)
 

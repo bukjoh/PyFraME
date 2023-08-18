@@ -294,3 +294,21 @@ def detrace(tensor: np.ndarray, factorials: np.ndarray, double_factorials: np.ar
                                                                  trinomial_coefficients)) / divisor
     detraced_tensor = tensor + trace_tensor
     return detraced_tensor
+
+
+def uncompress_symmetric_matrix(a : np.ndarray
+                                ) -> np.ndarray:
+    """Uncompresses a compressed symmetric matrix.
+
+    Args:
+         a: Compressed symmetric matrix.
+
+    Returns:
+        Uncompressed symmetric matrix
+    """
+    n = int(np.sqrt(a.size * 2))
+    r, c = np.triu_indices(n)
+    out = np.zeros((n, n))
+    out[r, c] = a
+    out[c, r] = a
+    return out

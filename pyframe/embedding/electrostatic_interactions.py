@@ -134,7 +134,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
     """Calculates the electrostatic interaction between a Quantum subsystem and one or several Classical subsystems.
 
     Returns:
-        Electrostatic nuclear electrostatic interaction energy and the electric Fock matrix contribution.
+        Electrostatic nuclear interaction energy and the electrostatic Fock matrix contribution.
     """
     fock_matrix = None
     if isinstance(classical_subsystem, list):
@@ -158,7 +158,14 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
 
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
-                                 integral_drv: vlx_interface.EmbeddingIntegralDriver):
+                                 integral_drv: vlx_interface.EmbeddingIntegralDriver
+                                 ) -> np.ndarray:
+    """Calculates the electrostatic Fock matrix contributions h_es (M*t) from a Classical subsystem and the one-electron
+    integrals.
+
+    Returns:
+        Electrostatic Fock matrix contribution.
+    """
     coordinates = []
     charges = []
     if hasattr(classical_subsystem, 'classical_fragments'):

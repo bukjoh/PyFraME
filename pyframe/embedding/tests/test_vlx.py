@@ -1,8 +1,11 @@
 import veloxchem as vlx
 import numpy as np
 import os
+
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+
 def integrals():
     h2o_xyz = """3
     water
@@ -28,30 +31,38 @@ def integrals():
     act_basis = vlx.MolecularBasis.read(act_moleule, "sto-3g")
     scf_drv = vlx.ScfRestrictedDriver()
     scf_act_results = scf_drv.compute(act_moleule, act_basis)
-    #print('HERE0000', repr(2 * scf_act_results['D_alpha']))
-
-
-
+    # print('HERE0000', repr(2 * scf_act_results['D_alpha']))
 
     molecule = vlx.Molecule.read_xyz_string(h2o_xyz)
     basis = vlx.MolecularBasis.read(molecule, "sto-3g")
     scf_results = scf_drv.compute(molecule, basis)
-    #print(scf_results)
+    # print(scf_results)
 
-    #electronic part
+    # electronic part
     mm_sites = [[1.0, 0.0, 0.0]]
     mm_charges = [1.0]
 
     pot_drv = vlx.NuclearPotentialIntegralsDriver()
     v_es = -1.0 * pot_drv.compute(molecule, basis, mm_charges, mm_sites).to_numpy()
     e_es = np.einsum('ij, ij', scf_results['D_alpha'], v_es)
-    #print(e_es)
+    # print(e_es)
     ef_drv = vlx.veloxchemlib.ElectricFieldIntegralsDriver()
-    ef_results = ef_drv.compute(molecule, basis, dipoles=np.array([[1.0, 1.0, 1.0]]),
-                                coordinates=np.array([[1.0, 0.0, 0.0]]))
-    #print("ef drv results!", ef_results ,ef_results.x_to_numpy() +  ef_results.y_to_numpy() + ef_results.z_to_numpy())
+    ef_results_1 = ef_drv.compute(molecule, basis, dipoles=np.array([[1.0, 1.0, 1.0]]),
+                                  coordinates=np.array([[1.0, 0.0, 0.0]])).to_numpy()
 
-    #print(v_es)
-    #print(e_es)
+    # print("ef drv results!", ef_results ,ef_results.x_to_numpy() +  ef_results.y_to_numpy() + ef_results.z_to_numpy())
+
+    coordinates = np.array([[-3.77945, 0., 0.], [5.177847, 0., 0.]])
+
+    dipoles = np.array([[-0.06625273, 0., 0.], [0.11807716, 0., 0.]])
+    h_xyz = """2
+        core H2                
+        H        0.0000000000     0.0000000000      0.0000000000
+        H        1.3983970000     0.0000000000      0.0000000000
+        """
+    molecule = vlx.Molecule.read_xyz_string(h_xyz)
+    basis = vlx.MolecularBasis.read(molecule, "sto-3g")
+    ef_results_2 = ef_drv.compute(molecule, basis, dipoles=dipoles, coordinates=coordinates).to_numpy()
+    print(ef_results_2[0], ef_results_2[1], ef_results_2[2])
 
 integrals()
