@@ -102,11 +102,13 @@ def scf_pe_solver(h, V_nuc, C, nocc, g, S, embedding_driver, core, env):
     for iter in range(max_iter):
         D_alpha = np.einsum("ik,jk->ij", C[:, :nocc], C[:, :nocc])
         core.update_density(2 * D_alpha)
+        print("iter", core.density_matrix.density)
         # take density -> recalculate the induced dipoles -> recalculate fock contributions
         ind_dipoles, electric_fields = ind_dip_drv(density=core.density_matrix.density,
                                                    integral_drv=embedding_driver,
                                                    coordinates=coordinates,
-                                                   static_fields=static_fields,
+                                                   multipole_fields=multipole_fields,
+                                                   nuclear_fields=nuclear_fields,
                                                    polarizabilities=polarizabilities,
                                                    classical_fragments=classical_fragments,
                                                    threshold=1e-10)

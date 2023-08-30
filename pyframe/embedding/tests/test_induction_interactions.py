@@ -27,16 +27,16 @@ def test_compute_induction_interation():
     coordinates, multipole_fields, nuclear_fields, polarizabilities, classical_fragments = (
         static_drv(quantum_subsystem=h2,
                    classical_subsystem=h_minus))
-    static_fields = multipole_fields + nuclear_fields
     # induced dipoles
     ind_dip, electric_fields = induction_interactions.compute_induced_dipoles(density=h2.density_matrix.density,
                                                                               integral_drv=driver,
                                                                               coordinates=coordinates,
-                                                                              static_fields=static_fields,
+                                                                              multipole_fields=multipole_fields,
+                                                                              nuclear_fields=nuclear_fields,
                                                                               polarizabilities=polarizabilities,
                                                                               classical_fragments=classical_fragments,
                                                                               threshold=1e-10)
-    total_fields = static_fields + electric_fields
+    total_fields = multipole_fields + nuclear_fields + electric_fields
     ref_ind_dipole_1 = np.array([-0.039037184, 0., 0.])
     ref_ind_dipole_2 = np.array([0.039037184, 0., 0.])
     assert ind_dip[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
@@ -178,3 +178,4 @@ def test_compute_induction_interation():
     assert e_el_ind == pytest.approx(-0.0429913387, abs=1e-8)
     assert e_pe_total == pytest.approx(-0.015861958165, abs=1e-8)
     assert E_s == pytest.approx(-188.314434428389, rel=1e-10)
+

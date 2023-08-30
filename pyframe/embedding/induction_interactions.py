@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import copy
 from pyframe.embedding import (constants, electrostatic_interactions, subsystem, vlx_interface, tensor_tools)
-from typing import Union, Tuple
+from typing import Union, Tuple, Optional
 
 
 def compute_static_contributions(quantum_subsystem: subsystem.QuantumSubsystem,
@@ -82,18 +82,20 @@ def compute_static_contributions(quantum_subsystem: subsystem.QuantumSubsystem,
 
 def compute_induced_dipoles(density: np.ndarray,
                             integral_drv: vlx_interface.EmbeddingIntegralDriver,
-                            static_fields: np.ndarray,
                             coordinates: np.ndarray,
                             polarizabilities: np.ndarray,
                             classical_fragments: np.ndarray,
-                            threshold
+                            threshold,
+                            multipole_fields: Optional[np.ndarray] = 0,
+                            nuclear_fields: Optional[np.ndarray] = 0
                             ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculates the induced dipoles iteratively.
 
     Args:
         density: Electron density.
         integral_drv: Integral driver to calculate the field of the density.
-        static_fields: Fields of the nuclei and multipoles.
+        multipole_fields: Fields of multipoles.
+        nuclear_fields: Fields of nuclei.
         coordinates: 2D-array (N_{atom}x3) of coordinates of all particle.Atom objects in the classical subsystem/s.
         polarizabilities: 3D-array (N_{atom}x3x3) of the polarizabilities of all particle.Atom objects in the classical
         subsystem/s.
@@ -104,14 +106,13 @@ def compute_induced_dipoles(density: np.ndarray,
     Returns:
         Induced dipoles and the total Field vector.
     """
-    ind_dipoles = np.zeros([len(static_fields), 3])
     residue_norm = 1.
-    # electric contribution to static fields
     electric_fields = integral_drv.electric_fields(coordinates=coordinates, density=density)
-    total_field = np.add(static_fields, electric_fields)
+    static_fields = multipole_fields + nuclear_fields + electric_fields
+    ind_dipoles = np.zeros([len(static_fields), 3])
     # calculate induced dipoles from static fields
-    static_induced_dipoles = np.zeros([len(total_field), 3])
-    for i, field in enumerate(total_field):
+    static_induced_dipoles = np.zeros([len(static_fields), 3])
+    for i, field in enumerate(static_fields):
         static_induced_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], field)
     # first guess for induced dipoles
     old_ind_dipoles = static_induced_dipoles
@@ -148,7 +149,7 @@ def compute_induced_dipoles(density: np.ndarray,
         for i, new_field in enumerate(new_fields):
             ind_dipoles[i, :] = np.einsum('ij, j',
                                           polarizabilities[i], np.add(new_field,
-                                                                      total_field[i]))
+                                                                      static_fields[i]))
         residue_norm = np.abs(np.linalg.norm(ind_dipoles - old_ind_dipoles) / np.linalg.norm(old_ind_dipoles))
         old_ind_dipoles = copy.deepcopy(ind_dipoles)
     print("Induced Dipoles Converged after:", f"{iteration:>2d}", " iterations!")
@@ -173,7 +174,7 @@ def compute_induction_interaction(induced_dipoles: np.ndarray,
     """
     fock_matrix = integral_drv.multipole_field_integrals(dipoles=induced_dipoles,
                                                          coordinates=coordinates)
-    return -0.5 * np.einsum('ij, ij', total_fields, induced_dipoles), fock_matrix
+    return compute_induction_energy(fields=total_fields, induced_dipoles=induced_dipoles), fock_matrix
 
 
 def compute_induction_energy(induced_dipoles: np.ndarray,
