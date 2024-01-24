@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import qcelemental
 from typing import Optional
-from pyframe.embedding import polytensor, tensor_tools, constants, electrostatic_interactions
+from pyframe.embedding import polytensor, tensor_tools, constants, interaction_tensor
 from scipy.optimize import root
 
 
@@ -110,20 +110,20 @@ class Atom(Particle):
             tensor_template = constants.values.potential_tensor_template
         else:
             tensor_template = constants.values.interaction_tensor_template
-        interaction_tensor = electrostatic_interactions.compute_t_tensor(r_a=self.coordinate,
-                                                                         r_b=coordinate,
-                                                                         rank_a=self.multipole_order,
-                                                                         rank_b=pot_derivative_order
-                                                                                + origin_derivative_order
-                                                                                + coord_multipole_order,
-                                                                         tensor_template=tensor_template,
-                                                                         start_rank_a=0,
-                                                                         start_rank_b=pot_derivative_order
-                                                                                      + origin_derivative_order)
-        interaction_tensor.data = interaction_tensor.data * (-1) ** origin_derivative_order
+        t_tensor = interaction_tensor.compute_t_tensor(r_a=self.coordinate,
+                                                       r_b=coordinate,
+                                                       rank_a=self.multipole_order,
+                                                       rank_b=pot_derivative_order
+                                                              + origin_derivative_order
+                                                              + coord_multipole_order,
+                                                       tensor_template=tensor_template,
+                                                       start_rank_a=0,
+                                                       start_rank_b=pot_derivative_order
+                                                                    + origin_derivative_order)
+        t_tensor.data = t_tensor.data * (-1) ** origin_derivative_order
         return polytensor.FirstDegreePolytensor. \
             multiply_elementwise(self.multipoles_with_degeneracy, self.taylor_coefficients). \
-            multiply_first_degree_second_degree(interaction_tensor).data
+            multiply_first_degree_second_degree(t_tensor).data
 
 
 def multipole_len_to_order(x) -> int:
@@ -196,19 +196,19 @@ class Nucleus(Particle):
             tensor_template = constants.values.potential_tensor_template
         else:
             tensor_template = constants.values.interaction_tensor_template
-        interaction_tensor = electrostatic_interactions.compute_t_tensor(r_a=self.coordinate,
-                                                                         r_b=coordinate,
-                                                                         rank_a=0,
-                                                                         rank_b=pot_derivative_order
-                                                                                + origin_derivative_order
-                                                                                + coord_multipole_order,
-                                                                         tensor_template=tensor_template,
-                                                                         start_rank_a=0,
-                                                                         start_rank_b=pot_derivative_order
-                                                                                      + origin_derivative_order)
-        interaction_tensor.data = interaction_tensor.data * (-1) ** origin_derivative_order
+        t_tensor = interaction_tensor.compute_t_tensor(r_a=self.coordinate,
+                                                       r_b=coordinate,
+                                                       rank_a=0,
+                                                       rank_b=pot_derivative_order
+                                                              + origin_derivative_order
+                                                              + coord_multipole_order,
+                                                       tensor_template=tensor_template,
+                                                       start_rank_a=0,
+                                                       start_rank_b=pot_derivative_order
+                                                                    + origin_derivative_order)
+        t_tensor.data = t_tensor.data * (-1) ** origin_derivative_order
         return polytensor.FirstDegreePolytensor(rank=0, tensor_data=self.charge). \
-            multiply_first_degree_second_degree(interaction_tensor).data
+            multiply_first_degree_second_degree(t_tensor).data
 
 
 class VirtualParticle(Particle):

@@ -294,7 +294,7 @@ def test_compute_interaction_tensor_element():
     assert math.isclose(-9.8765395046408577e-10, tensor_tools.compute_interaction_tensor_element(multi_indices_4, r_ji,
                                                                                                  tensor_coefficient))
     # second test
-    r = np.array([2, 0, 0])
+    r = np.array([2.0, 0, 0])
     multi_indices_2 = [np.array([0, 0, 0]), np.array([0, 0, 0])]
     multi_indices_4 = [np.array([1, 0, 0]), np.array([0, 0, 0])]
     multi_indices_5 = [np.array([0, 1, 0]), np.array([0, 0, 0])]

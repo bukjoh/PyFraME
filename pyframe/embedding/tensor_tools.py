@@ -191,7 +191,7 @@ def compute_interaction_tensor_element(multi_index: List[np.ndarray],
                 cn = cm * tensor_coefficients[n, k, p] * (distance_vector[2] / norm) ** n
                 tensor_element += cn
     tensor_element /= norm ** (i + j + k + 1)
-    return tensor_element * (-1)**np.sum(multi_index[1])
+    return tensor_element * (-1) ** (multi_index[1][0] + multi_index[1][1] + multi_index[1][2])
 
 
 def compute_tensor_coefficients(max_order: int) -> np.ndarray:

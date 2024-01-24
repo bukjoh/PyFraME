@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import copy
-from pyframe.embedding import (constants, electrostatic_interactions, subsystem, vlx_interface, tensor_tools)
+from pyframe.embedding import (constants, interaction_tensor, subsystem, vlx_interface, tensor_tools)
 from typing import Union, Tuple, Optional
 
 
@@ -132,7 +132,7 @@ def compute_induced_dipoles(density: np.ndarray,
                         continue
                     for coordinate_j in fragment_j.coordinates:
                         # changed template to potential rather than interaction! could be wrong though..
-                        field_component += np.einsum('ij, j', electrostatic_interactions.
+                        field_component += np.einsum('ij, j', interaction_tensor.
                                                      compute_t_tensor(r_a=coordinate_j,
                                                                       r_b=coordinate_i,
                                                                       rank_a=1,
