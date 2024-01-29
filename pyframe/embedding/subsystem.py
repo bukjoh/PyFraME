@@ -174,8 +174,6 @@ class ClassicalSubsystem(Subsystem):
     def solve_induced_dipoles(self,
                               external_fields,
                               threshold):
-        print(external_fields)
-        print(self.multipole_fields)
         static_fields = self.multipole_fields + external_fields
         # First guess for induced dipoles
         if np.all(self.induced_dipoles == 0):
@@ -196,9 +194,11 @@ class ClassicalSubsystem(Subsystem):
             for fragment_i in self.classical_fragments:
                 for i, atom_i in enumerate(fragment_i.atoms):
                     field_component = np.zeros(3)
+                    m = 0
                     for fragment_j in self.classical_fragments:
                         for j, atom_j in enumerate(fragment_j.atoms):
                             if atom_j.index in atom_i.exclusions:
+                                m += 1
                                 continue
                             # Changed template to potential rather than interaction! could be wrong though..
                             field_component += np.einsum('ij, j', interaction_tensor.
@@ -210,7 +210,8 @@ class ClassicalSubsystem(Subsystem):
                                                                           start_rank_b=1,
                                                                           tensor_template=constants.values.
                                                                           potential_tensor_template).data,
-                                                         old_ind_dipoles[j])
+                                                         old_ind_dipoles[m])
+                            m += 1
                     new_fields[k, :] = field_component
                     k += 1
             # Calculate total induced dipoles
@@ -221,7 +222,6 @@ class ClassicalSubsystem(Subsystem):
             residue_norm = np.abs(np.linalg.norm(ind_dipoles - old_ind_dipoles) / np.linalg.norm(old_ind_dipoles))
             old_ind_dipoles = copy.deepcopy(ind_dipoles)
         print("Induced Dipoles Converged after:", f"{iteration:>2d}", " iterations!")
-        print(ind_dipoles)
         self.induced_dipoles = ind_dipoles
         self.inducing_fields = static_fields + new_fields
 
