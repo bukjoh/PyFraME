@@ -4,7 +4,7 @@ import pytest
 import veloxchem as vlx
 import numpy as np
 import scipy
-from pyframe.embedding import subsystem, vlx_interface, induction_interactions, electrostatic_interactions
+from pyframe.embedding import subsystem, vlx_interface, induction_interactions, electrostatic_interactions, read_input
 
 
 def test_compute_induction_interation():
@@ -17,36 +17,54 @@ def test_compute_induction_interation():
         """
     basis = "sto-3g"
     driver = vlx_interface.EmbeddingIntegralDriver(h2_xyz, basis)
-    static_drv = induction_interactions.compute_static_contributions
+    #static_drv = induction_interactions.compute_static_contributions
     # core and env
-    h_minus = subsystem.ClassicalSubsystem(name="H^{-}",
-                                           input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
-    h2 = subsystem.QuantumSubsystem(name="H2",
-                                    input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
+    #h_minus = subsystem.ClassicalSubsystem(name="H^{-}",
+    #                                       input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
+    #h2 = subsystem.QuantumSubsystem(name="H2",
+    #                                input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
+    h2, h_minus = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
     # calculate static contributions
-    coordinates, multipole_fields, nuclear_fields, polarizabilities, classical_fragments = (
-        static_drv(quantum_subsystem=h2,
-                   classical_subsystem=h_minus))
+    electric_fields = h2.compute_electric_fields(coordinates=h_minus.coordinates, integral_drv=driver)
+    nuclear_fields = h2.compute_nuclear_fields(coordinates=h_minus.coordinates)
+    external_fields = electric_fields + nuclear_fields
+    h_minus.solve_induced_dipoles(external_fields=external_fields, threshold=1e-10)
+
+
+    #coordinates, multipole_fields, nuclear_fields, polarizabilities, classical_fragments = (
+    #    static_drv(quantum_subsystem=h2,
+    #               classical_subsystem=h_minus))
     # induced dipoles
-    ind_dip, electric_fields = induction_interactions.compute_induced_dipoles(density=h2.density_matrix.density,
-                                                                              integral_drv=driver,
-                                                                              coordinates=coordinates,
-                                                                              multipole_fields=multipole_fields,
-                                                                              nuclear_fields=nuclear_fields,
-                                                                              polarizabilities=polarizabilities,
-                                                                              classical_fragments=classical_fragments,
-                                                                              threshold=1e-10)
-    total_fields = multipole_fields + nuclear_fields + electric_fields
+    #ind_dip, electric_fields = induction_interactions.compute_induced_dipoles(density=h2.density_matrix.density,
+    #                                                                          integral_drv=driver,
+    #                                                                          coordinates=coordinates,
+    #                                                                          multipole_fields=multipole_fields,
+    #                                                                          nuclear_fields=nuclear_fields,
+    #                                                                          polarizabilities=polarizabilities,
+    #                                                                          classical_fragments=classical_fragments,
+    #                                                                          threshold=1e-10)
+    total_fields =  h_minus.inducing_fields #multipole_fields + nuclear_fields + electric_fields
     ref_ind_dipole_1 = np.array([-0.039037184, 0., 0.])
     ref_ind_dipole_2 = np.array([0.039037184, 0., 0.])
-    assert ind_dip[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
-    assert ind_dip[1, 0] == pytest.approx(ref_ind_dipole_2[0], abs=1e-8)
+    assert h_minus.induced_dipoles[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
+    assert h_minus.induced_dipoles[1, 0] == pytest.approx(ref_ind_dipole_2[0], abs=1e-8)
     # induction energy and fock matrix contributions
     induction_energy, fock_matrix_contr = (induction_interactions.
                                            compute_induction_interaction(induced_dipoles=ind_dip,
                                                                          total_fields=total_fields,
                                                                          coordinates=coordinates,
                                                                          integral_drv=driver))
+
+    ind_dip, electric_fields = induction_interactions.compute_induced_dipoles2(density=h2.density_matrix.density,
+                                                                              integral_drv=driver,
+                                                                              coordinates=coordinates,
+                                                                              multipole_fields=multipole_fields,
+                                                                              exclusion_list=[(0,), (1,)],
+                                                                              nuclear_fields=nuclear_fields,
+                                                                              polarizabilities=polarizabilities,
+                                                                              threshold=1e-10)
+    assert ind_dip[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
+    assert ind_dip[1, 0] == pytest.approx(ref_ind_dipole_2[0], abs=1e-8)
     # echem test for induced dipoles
     h2o_xyz = """3
     water
@@ -76,10 +94,12 @@ def test_compute_induction_interation():
     epsilon, C = scipy.linalg.eigh(h, S)
     E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
     # define core and env
-    env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
-                                       input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-    core = subsystem.QuantumSubsystem(name="1x H2O",
-                                      input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    #env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
+    #                                   input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    #core = subsystem.QuantumSubsystem(name="1x H2O",
+    #                                  input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
     driver = vlx_interface.EmbeddingIntegralDriver(h2o_xyz, "cc-pvdz")
     # calculate nuclear es energy and electric fock matrix
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
@@ -151,10 +171,12 @@ def test_compute_induction_interation():
     C = scf_results['C']
     E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
     # define core and env
-    core_ac = subsystem.QuantumSubsystem(name="1x C3OH4",
-                                         input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
-    env_ac = subsystem.ClassicalSubsystem(name="2x H2O atoms + X on their bonds",
-                                          input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
+    #core_ac = subsystem.QuantumSubsystem(name="1x C3OH4",
+    #                                     input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
+    #env_ac = subsystem.ClassicalSubsystem(name="2x H2O atoms + X on their bonds",
+    #                                      input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
+
+    core_ac, env_ac = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
     driver = vlx_interface.EmbeddingIntegralDriver(acrolein_xyz, basis_str)
     # calculate nuclear es energy and electric fock matrix
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core_ac,

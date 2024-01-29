@@ -1,6 +1,7 @@
 {
   "quantum_subsystem": {
-    "_comment": "Density matrix of h2o in the cc-pvdz basis run with vlx ScfRestrictedDriver",
+    "name": "QM sys",
+    "comment": "Density matrix of h2o in the cc-pvdz basis run with vlx ScfRestrictedDriver",
     "density_matrix": [[ 2.00299568e+00, -3.81768375e-03, -1.23572710e-02,
                          8.26341783e-05,  1.12334620e-03, -2.06852679e-04,
                          8.66597362e-04,  5.91732628e-04,  3.75773968e-04,
@@ -229,12 +230,13 @@
   "classical_subsystem": {
     "classical_fragments": [
       {
-        "index": 1,
+        "index": 0,
         "name" : "H20",
         "atoms": [
       {
-        "index": 1,
+        "index": 0,
         "element": "O",
+        "exclusions": [0, 1, 2],
         "coordinate": [
           2.07715105,
           4.18896535,
@@ -259,8 +261,9 @@
                                "lj_epsilon": 0.00024238662638979524, "vdw_method": "6-12"}
       },
       {
-        "index": 2,
+        "index": 1,
         "element": "H",
+        "exclusions": [0, 1, 2],
         "coordinate": [
           4.28467053,
           4.25750383,
@@ -283,8 +286,9 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 3,
+        "index": 2,
         "element": "H",
+        "exclusions": [0, 1, 2],
         "coordinate": [
           1.88671201,
           5.30644733,
@@ -309,12 +313,13 @@
         ]
       },
       {
-        "index": 2,
+        "index": 1,
         "name" : "H20",
         "atoms": [
       {
-        "index": 1,
+        "index": 3,
         "element": "O",
+        "exclusions": [3, 4, 5],
         "coordinate": [
           -1.55405218,
           0.40461682,
@@ -339,8 +344,9 @@
                                "lj_epsilon": 0.00024238662638979524, "vdw_method": "6-12"}
       },
       {
-        "index": 2,
+        "index": 4,
         "element": "H",
+        "exclusions": [3, 4, 5],
         "coordinate": [
           -3.02174955,
           1.58892141,
@@ -363,8 +369,9 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 3,
+        "index": 5,
         "element": "H",
+        "exclusions": [3, 4, 5],
         "coordinate": [
           -0.88503622,
           0.78456704,
@@ -389,12 +396,13 @@
         ]
       },
       {
-        "index": 3,
+        "index": 2,
         "name" : "H20",
         "atoms": [
       {
-        "index": 1,
+        "index": 6,
         "element": "O",
+        "exclusions": [6, 7, 8],
         "coordinate": [
           3.28386023,
           -3.81127146,
@@ -419,8 +427,9 @@
                                "lj_epsilon": 0.00024238662638979524, "vdw_method": "6-12"}
       },
       {
-        "index": 2,
+        "index": 7,
         "element": "H",
+        "exclusions": [6, 7, 8],
         "coordinate": [
           3.92191492,
           -4.24177186,
@@ -443,8 +452,9 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 3,
+        "index": 8,
         "element": "H",
+        "exclusions": [6, 7, 8],
         "coordinate": [
            3.14393168,
           -5.19987812,
@@ -469,12 +479,13 @@
         ]
       },
       {
-        "index": 4,
+        "index": 3,
         "name" : "H20",
         "atoms": [
       {
-        "index": 1,
+        "index": 9,
         "element": "O",
+        "exclusions": [9, 10, 11],
         "coordinate": [
           -2.03309965,
           -0.50877663,
@@ -499,8 +510,9 @@
                                "lj_epsilon": 0.00024238662638979524, "vdw_method": "6-12"}
       },
       {
-        "index": 2,
+        "index": 10,
         "element": "H",
+        "exclusions": [9, 10, 11],
         "coordinate": [
           -1.10032516,
           -0.35675762,
@@ -523,7 +535,8 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 3,
+        "index": 11,
+        "exclusions": [9, 10, 11],
         "element": "H",
         "coordinate": [
           -2.1982088,

@@ -23,7 +23,7 @@ class Particle:
                  coordinate: np.ndarray,
                  mass: Optional[float] = None
                  ):
-        self._index = index
+        self.index = index
         self._mass = mass
         self.coordinate = coordinate
         self.particle_variables = constants.values
@@ -46,6 +46,8 @@ class Atom(Particle):
     def __init__(self,
                  index: int,
                  coordinate: np.array,
+                 name: Optional[str] = None,
+                 exclusions: Optional[list] = None,
                  mass: Optional[float] = None,
                  element: Optional[str] = None,
                  vdw: Optional[dict] = None,
@@ -53,6 +55,9 @@ class Atom(Particle):
                  polarizabilities: Optional[dict] = None,
                  ):
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
+        self.name = name
+        if exclusions is not None and isinstance(exclusions, list):
+            self.exclusions = tuple(exclusions)
         self._element = element
         if vdw is not None:
             self._vdw_method = vdw.get('vdw_method', None)

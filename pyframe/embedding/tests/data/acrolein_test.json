@@ -62,8 +62,9 @@
         "name" : "H20",
         "atoms": [
       {
-        "index": 1,
+        "index": 0,
         "element": "O",
+        "exclusions": [0, 1, 2, 3, 4],
         "coordinate": [-6.29004978e+00, -1.95076428e-01, -7.86126068e-04],
         "multipoles": {"elements": [
                             -0.7423294438
@@ -82,8 +83,9 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 2,
+        "index": 1,
         "element": "H",
+        "exclusions": [0, 1, 2, 3, 4],
         "coordinate": [-4.73148682e+00,  7.80874519e-01,  6.40617156e-04],
         "multipoles": {"elements": [
                             0.3699305781
@@ -102,8 +104,9 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 3,
+        "index": 2,
         "element": "H",
+        "exclusions": [0, 1, 2, 3, 4],
         "coordinate": [-7.63300822e+00,  1.03316807e+00, -1.60626721e-03],
         "multipoles": {"elements": [
                             0.3723988657
@@ -122,8 +125,9 @@
                         ], "order": [1, 1]}
     },
           {
-        "index": 4,
+        "index": 3,
         "element": "X",
+        "exclusions": [0, 1, 2, 3, 4],
         "coordinate": [-5.51076830e+00,  2.92899046e-01, -7.27544558e-05],
         "multipoles": {"elements": [
                             0.0
@@ -142,8 +146,9 @@
                         ], "order": [1, 1]}
     },
           {
-        "index": 5,
+        "index": 4,
         "element": "X",
+        "exclusions": [0, 1, 2, 3, 4],
         "coordinate": [-6.96152900e+00,  4.19045823e-01, -1.19619664e-03],
         "multipoles": {"elements": [
                             0.0
@@ -168,8 +173,9 @@
         "name" : "H20",
         "atoms": [
       {
-        "index": 1,
+        "index": 5,
         "element": "O",
+        "exclusions": [5, 6, 7, 8, 9],
         "coordinate": [ 3.29246416e+00,  4.42453105e+00, -1.40784596e-03],
         "multipoles": {"elements": [
                             -0.7424407021
@@ -188,8 +194,9 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 2,
+        "index": 6,
         "element": "H",
+        "exclusions": [5, 6, 7, 8, 9],
         "coordinate": [ 1.59054091e+00,  3.72617520e+00, -1.54957542e-03],
         "multipoles": {"elements": [
                             0.3699635356
@@ -208,8 +215,9 @@
                         ], "order": [1, 1]}
       },
       {
-        "index": 3,
+        "index": 7,
         "element": "H",
+        "exclusions": [5, 6, 7, 8, 9],
         "coordinate": [ 3.08508939e+00,  6.23288557e+00,  7.84992232e-03],
         "multipoles": {"elements": [
                             0.3724771666
@@ -228,8 +236,9 @@
                         ], "order": [1, 1]}
     },
           {
-        "index": 4,
+        "index": 8,
         "element": "X",
+        "exclusions": [5, 6, 7, 8, 9],
         "coordinate": [ 2.44150253e+00,  4.07535312e+00, -1.47871069e-03],
         "multipoles": {"elements": [
                             0.0
@@ -248,8 +257,9 @@
                         ], "order": [1, 1]}
     },
           {
-        "index": 5,
+        "index": 9,
         "element": "X",
+        "exclusions": [5, 6, 7, 8, 9],
         "coordinate":  [ 3.18877678e+00,  5.32870831e+00,  3.22103818e-03],
         "multipoles": {"elements": [
                             0.0

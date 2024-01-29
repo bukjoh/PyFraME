@@ -359,54 +359,15 @@
         ]
     },
     "classical_subsystem": {
-        "atoms": [
-            {
-                "index": 1,
-                "element": "O",
-                "coordinate": [
-                    30.514,
-                    37.243,
-                    44.334
-                ],
-                "multipoles": {"elements": [
-                    -0.71543374,
-                    0.11412407,
-                    -0.27166543,
-                    0.07772714,
-                    -4.71453229,
-                    -0.05566867,
-                    0.46147879,
-                    -4.19504704,
-                    0.33577098,
-                    -3.77169662
-                ]},
-                "polarizabilities": {"elements": [
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    4.70788802,
-                    0.33755124,
-                    -0.41867523,
-                    3.74951294,
-                    -0.04025344,
-                    4.09400356
-                ],
-                    "order": [
-                    1,
-                    1
-                ]},
-                "vdw":{"lj_sigma": 5.953790026666053,
-                "lj_epsilon": 0.00024238662638979524, "vdw_method": "6-12"}
-            }],
         "classical_fragments": [
             {
                 "index": 1,
                 "name": "H2O",
                 "atoms": [
                     {
-                        "index": 1,
+                        "index": 0,
                         "element": "O",
+                        "exclusions": [0, 1, 2],
                         "coordinate": [
                             29.514,
                             37.243,
@@ -441,8 +402,9 @@
                                "lj_epsilon": 0.00024238662638979524, "vdw_method": "6-12"}
                     },
                     {
-                        "index": 2,
+                        "index": 1,
                         "element": "H",
+                        "exclusions": [0, 1, 2],
                         "coordinate": [
                             29.502,
                             36.434,
@@ -474,8 +436,9 @@
                         ], "order": [1, 1]}
                     },
                     {
-                        "index": 3,
+                        "index": 2,
                         "element": "H",
+                        "exclusions": [0, 1, 2],
                         "coordinate": [
                             29.965,
                             37.007,
@@ -513,8 +476,9 @@
                 "name": "H2O",
                 "atoms": [
                     {
-                        "index": 4,
+                        "index": 3,
                         "element": "O",
+                        "exclusions": [3, 4, 5],
                         "coordinate": [
                             39.242,
                             25.949,
@@ -548,8 +512,9 @@
                                "lj_epsilon": 0.00024238662638979524, "vdw_method": "6-12"}
                     },
                     {
-                        "index": 5,
+                        "index": 4,
                         "element": "H",
+                        "exclusions": [3, 4, 5],
                         "coordinate": [
                             39.524,
                             26.764,
@@ -581,8 +546,9 @@
                         ], "order": [1, 1]}
                     },
                     {
-                        "index": 6,
+                        "index": 5,
                         "element": "H",
+                        "exclusions": [3, 4, 5],
                         "coordinate": [
                             38.435,
                             25.714,

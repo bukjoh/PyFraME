@@ -7,7 +7,7 @@ import numpy as np
 import scipy
 import veloxchem as vlx
 from pyframe.embedding import (particle, polytensor, electrostatic_interactions, constants, fragment, subsystem,
-                               vlx_interface)
+                               vlx_interface, read_input)
 from qcelemental import PhysicalConstantsContext
 
 phys_constants = PhysicalConstantsContext('CODATA2018')
@@ -227,9 +227,14 @@ def test_fragments_interaction():
 
 def test_compute_electrostatic_interaction():
     # Internal test
-    core = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
-    env = subsystem.ClassicalSubsystem(name="Classical",
-                                       input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+
+    #core = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+    #env = subsystem.ClassicalSubsystem(name="Classical",
+    #                                   input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
+
+    # exclusion so far only within the same fragment
+
     act_xyz = """10
     atc
     C                    30.101                    29.705                    29.43
@@ -248,8 +253,6 @@ def test_compute_electrostatic_interaction():
     for nucleus in core.nuclei:
         for fragments in env.classical_fragments:
             ref_energy += electrostatic_interactions.compute_fragment_particle_interactions(nucleus, fragments)
-        for atom in env.atoms:
-            ref_energy += electrostatic_interactions.compute_particle_interactions(atom, nucleus)
     es_fock_contr = electrostatic_interactions.es_fock_matrix_contributions(env, driver)
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
                                                                                      classical_subsystem=env,
@@ -286,10 +289,12 @@ def test_compute_electrostatic_interaction():
     epsilon, C = scipy.linalg.eigh(h, S)
     E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
     # define core env
-    env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
-                                       input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-    core = subsystem.QuantumSubsystem(name="1x H2O",
-                                      input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+
+    #env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
+    #                                   input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
+    #core = subsystem.QuantumSubsystem(name="1x H2O",
+    #                                  input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
     driver = vlx_interface.EmbeddingIntegralDriver(h2o_xyz, "cc-pvdz")
     # calculate nuclear es energy and electric fock matrix
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
