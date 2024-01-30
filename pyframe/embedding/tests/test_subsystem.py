@@ -6,7 +6,7 @@ from qcelemental import PhysicalConstantsContext
 constants = PhysicalConstantsContext('CODATA2018')
 
 # should not test init put potential + total energy?!
-
+# TODO
 def test_init_subsystem():
     subsystem.Subsystem(name="2x H2O fragments, O and H particles")
 

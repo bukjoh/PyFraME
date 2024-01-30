@@ -40,12 +40,14 @@ class Atom(Particle):
         coordinate: The cartesian coordinates of the atom.
         multipoles: Dictionary of multipoles of the atoms under 'elements' up-to the order under 'order'.
         polarizabilities: Dictionary of polarizabilities of the atoms under 'elements' of the order under 'order'.
+        exclusions:
         vdw: Dictionary containing the 'vdw_method', 'lj_sigma', and 'lj_epsilon'.
     """
 
     def __init__(self,
                  index: int,
                  coordinate: np.array,
+                 induced_dipole: Optional[np.ndarray] = None,
                  name: Optional[str] = None,
                  exclusions: Optional[list] = None,
                  mass: Optional[float] = None,
@@ -56,6 +58,7 @@ class Atom(Particle):
                  ):
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
         self.name = name
+        self.induced_dipole = induced_dipole
         if exclusions is not None and isinstance(exclusions, list):
             self.exclusions = tuple(exclusions)
         self._element = element

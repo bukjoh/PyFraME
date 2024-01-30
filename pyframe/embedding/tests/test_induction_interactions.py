@@ -22,12 +22,10 @@ def test_compute_induction_interation():
     nuclear_fields = h2.compute_nuclear_fields(coordinates=h_minus.coordinates)
     external_fields = electric_fields + nuclear_fields
     h_minus.solve_induced_dipoles(external_fields=external_fields, threshold=1e-10)
-    total_fields =  h_minus.inducing_fields
     ref_ind_dipole_1 = np.array([-0.039037184, 0., 0.])
     ref_ind_dipole_2 = np.array([0.039037184, 0., 0.])
-    ref_total_fields = np.array([])
-    assert h_minus.induced_dipoles[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
-    assert h_minus.induced_dipoles[1, 0] == pytest.approx(ref_ind_dipole_2[0], abs=1e-8)
+    assert h_minus.induced_dipoles.induced_dipoles[0, 0] == pytest.approx(ref_ind_dipole_1[0], abs=1e-8)
+    assert h_minus.induced_dipoles.induced_dipoles[1, 0] == pytest.approx(ref_ind_dipole_2[0], abs=1e-8)
 
     # echem test for induced dipoles
     h2o_xyz = """3
@@ -58,11 +56,6 @@ def test_compute_induction_interation():
     epsilon, C = scipy.linalg.eigh(h, S)
     E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
     # define core and env
-    #env = subsystem.ClassicalSubsystem(name="4x H2O atoms",
-    #                                   input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-    #core = subsystem.QuantumSubsystem(name="1x H2O",
-    #                                  input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
-
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
     driver = vlx_interface.EmbeddingIntegralDriver(h2o_xyz, "cc-pvdz")
     # calculate nuclear es energy and electric fock matrix

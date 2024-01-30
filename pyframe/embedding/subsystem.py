@@ -1,9 +1,8 @@
 from __future__ import annotations
-
+from dataclasses import dataclass
 import numpy as np
-import copy
 from typing import Optional
-from pyframe.embedding import density_matrix, tensor_tools, constants, interaction_tensor, vlx_interface
+from pyframe.embedding import density_matrix, tensor_tools, vlx_interface, solvers
 
 
 class Subsystem:
@@ -13,9 +12,9 @@ class Subsystem:
 
     def __init__(self,
                  name: Optional[str]):
-        self._name = name
+        self.name = name
 
-
+# TODO incorporate potential of the density?
 # TODO
 # some kind of self energy function? MM/MM energies? thats multipole - multipole
 # how to do the QM/QM energy? thats like veloxchem total energy of the core sys
@@ -26,7 +25,9 @@ class QuantumSubsystem(Subsystem):
     """A QuantumSubsystem represents a collection of QuantumFragments, Nuclei and DensityMatrices.
 
     Args:
-        input_data: Filepath to JSON file that contains the input data.
+        nuclei: List of Nuclei.
+        dens_mat: Density Matrix.
+        quantum_fragments: Fragments of the QuantumSubsystem.
         name: Name of the QuantumSubsystem.
     """
     def __init__(self,
@@ -72,8 +73,6 @@ class QuantumSubsystem(Subsystem):
         if array_of_potentials is True:
             return np.array(pot)
 
-        # TODO incorporate potential of the density?
-
 
     def compute_nuclear_fields(self,
                                coordinates):
@@ -103,7 +102,7 @@ class ClassicalSubsystem(Subsystem):
     """A ClassicalSubsystem represents a collection of ClassicalFragments and/or Particles.
 
     Args:
-        input_data: Filepath to JSON file that contains the input data.
+        classical_fragments: Fragments of the ClassicalSubsystem.
         name: Name of the ClassicalSubsystem.
     """
     def __init__(self,
@@ -117,15 +116,21 @@ class ClassicalSubsystem(Subsystem):
             self.num_atoms += len(fragments.atoms)
 
         self.coordinates = np.zeros([self.num_atoms, 3])
+        self.exclusions = []
         self.polarizabilities = np.zeros([self.num_atoms, 3, 3])
+        self.indices = np.zeros(self.num_atoms)
+        self.exclusions = []
         k = 0
         for fragments in self.classical_fragments:
             for atom in fragments.atoms:
+                self.indices[k] = atom.index
                 self.polarizabilities[k, :, :] = tensor_tools.uncompress_symmetric_matrix(atom.polarizability[4:10])
                 self.coordinates[k, :] = atom.coordinate[:]
+                self.exclusions.append(atom.exclusions)
                 k += 1
         self.induced_dipoles = np.zeros([self.num_atoms, 3])
         self.multipole_fields = np.zeros([self.num_atoms, 3])
+        self.induced_dipole_fields = None
         k = 0
         for fragment_i in self.classical_fragments:
             for i, atom_i in enumerate(fragment_i.atoms):
@@ -138,7 +143,6 @@ class ClassicalSubsystem(Subsystem):
                                                             pot_derivative_order=1)
                 self.multipole_fields[k, :] = field_component
                 k += 1
-        self.inducing_fields = None
     def potential(self,
                   coordinate: np.ndarray,
                   pot_derivative_order: Optional[int] = 0,
@@ -181,49 +185,32 @@ class ClassicalSubsystem(Subsystem):
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
         else:
-            starting_guess = self.induced_dipoles
-        # Calculate induced dipoles from other induced dipoles
-        old_ind_dipoles = starting_guess
-        ind_dipoles = np.zeros([len(external_fields), 3])
-        residue_norm = 1.
-        iteration = 0
-        while residue_norm > threshold:
-            iteration += 1
-            new_fields = np.zeros([len(old_ind_dipoles), 3])
-            k = 0
-            for fragment_i in self.classical_fragments:
-                for i, atom_i in enumerate(fragment_i.atoms):
-                    field_component = np.zeros(3)
-                    m = 0
-                    for fragment_j in self.classical_fragments:
-                        for j, atom_j in enumerate(fragment_j.atoms):
-                            if atom_j.index in atom_i.exclusions:
-                                m += 1
-                                continue
-                            # Changed template to potential rather than interaction! could be wrong though..
-                            field_component += np.einsum('ij, j', interaction_tensor.
-                                                         compute_t_tensor(r_a=atom_j.coordinate,
-                                                                          r_b=atom_i.coordinate,
-                                                                          rank_a=1,
-                                                                          rank_b=1,
-                                                                          start_rank_a=1,
-                                                                          start_rank_b=1,
-                                                                          tensor_template=constants.values.
-                                                                          potential_tensor_template).data,
-                                                         old_ind_dipoles[m])
-                            m += 1
-                    new_fields[k, :] = field_component
-                    k += 1
-            # Calculate total induced dipoles
-            for i, new_field in enumerate(new_fields):
-                ind_dipoles[i, :] = np.einsum('ij, j',
-                                              self.polarizabilities[i], np.add(new_field,
-                                                                          static_fields[i]))
-            residue_norm = np.abs(np.linalg.norm(ind_dipoles - old_ind_dipoles) / np.linalg.norm(old_ind_dipoles))
-            old_ind_dipoles = copy.deepcopy(ind_dipoles)
-        print("Induced Dipoles Converged after:", f"{iteration:>2d}", " iterations!")
-        self.induced_dipoles = ind_dipoles
-        self.inducing_fields = static_fields + new_fields
+            starting_guess = self.induced_dipoles.induced_dipoles
+
+        induced_dipoles, induced_dipoles_fields = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
+                                                                                 polarizabilities=self.polarizabilities,
+                                                                                 exclusions=self.exclusions,
+                                                                                 indices=self.indices,
+                                                                                 fields=static_fields,
+                                                                                 starting_guess=starting_guess,
+                                                                                 threshold=threshold)
+        k = 0
+        for fragment in self.classical_fragments:
+            for atom in fragment.atoms:
+                atom.induced_dipole = induced_dipoles[k]
+                k += 1
+        self.induced_dipoles = InducedDipoles(induced_dipoles=induced_dipoles,
+                                              external_fields=external_fields,
+                                              induced_dipole_fields=induced_dipoles_fields)
+
+
+@dataclass
+class InducedDipoles(ClassicalSubsystem):
+    """Class for keeping track of induced dipoles and the corresponding set of external fields.
+    """
+    induced_dipoles: np.ndarray
+    external_fields: np.ndarray
+    induced_dipole_fields: np.ndarray
 
 
 class ContinuumSubsystem(Subsystem):

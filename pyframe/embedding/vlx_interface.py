@@ -92,31 +92,21 @@ def scf_pe_solver(h, V_nuc, C, nocc, g, S, embedding_driver, core, env):
     conv_thresh = 1e-10
     E, ind_dipoles, e_ind, electric_fields = None, None, None, None
     print("iter      SCF energy    Error norm")
-    static_drv = induction_interactions.compute_static_contributions
-    ind_dip_drv = induction_interactions.compute_induced_dipoles
     ind_int_drv = induction_interactions.compute_induction_interaction
-    coordinates, multipole_fields, nuclear_fields, polarizabilities, classical_fragments = (
-        static_drv(quantum_subsystem=core,
-                   classical_subsystem=env))
-    static_fields = multipole_fields + nuclear_fields
+    nuclear_fields = core.compute_nuclear_fields(coordinates=env.coordinates)
     for iter in range(max_iter):
         D_alpha = np.einsum("ik,jk->ij", C[:, :nocc], C[:, :nocc])
         core.update_density(2 * D_alpha)
-        print("iter", core.density_matrix.density)
-        # take density -> recalculate the induced dipoles -> recalculate fock contributions
-        ind_dipoles, electric_fields = ind_dip_drv(density=core.density_matrix.density,
-                                                   integral_drv=embedding_driver,
-                                                   coordinates=coordinates,
-                                                   multipole_fields=multipole_fields,
-                                                   nuclear_fields=nuclear_fields,
-                                                   polarizabilities=polarizabilities,
-                                                   classical_fragments=classical_fragments,
-                                                   threshold=1e-10)
-        total_fields = static_fields + electric_fields
-        e_ind, h_ind = ind_int_drv(induced_dipoles=ind_dipoles,
-                                   total_fields=total_fields,
-                                   coordinates=coordinates,
-                                   integral_drv=embedding_driver)
+        electric_fields = core.compute_electric_fields(coordinates=env.coordinates, integral_drv=embedding_driver)
+        env.solve_induced_dipoles(external_fields=(nuclear_fields + electric_fields), threshold=1e-10)
+        ind_dipoles = env.induced_dipoles.induced_dipoles
+        h_ind = ind_int_drv(induced_dipoles=ind_dipoles,
+                            coordinates=env.coordinates,
+                            integral_drv=embedding_driver)
+        e_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles,
+                                                                total_fields=(env.induced_dipoles.external_fields
+                                                                              + env.multipole_fields))
+
         J = np.einsum("ijkl,kl->ij", g, D_alpha)
         K = np.einsum("ilkj,kl->ij", g, D_alpha)
         F = h + 2 * J - K - h_ind
@@ -134,8 +124,11 @@ def scf_pe_solver(h, V_nuc, C, nocc, g, S, embedding_driver, core, env):
             break
 
         epsilon, C = scipy.linalg.eigh(F, S)
-    e_nuc_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles, fields=nuclear_fields)
-    e_mul_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles, fields=multipole_fields)
-    e_el_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles, fields=electric_fields)
+    e_nuc_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles,
+                                                                total_fields=nuclear_fields)
+    e_mul_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles,
+                                                                total_fields=env.multipole_fields)
+    e_el_ind = induction_interactions.compute_induction_energy(induced_dipoles=ind_dipoles,
+                                                               total_fields=electric_fields)
     return E, C, ind_dipoles, e_ind, e_nuc_ind, e_mul_ind, e_el_ind
 
