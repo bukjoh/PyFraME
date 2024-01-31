@@ -1,8 +1,8 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
-from typing import Optional
-from pyframe.embedding import density_matrix, tensor_tools, vlx_interface, solvers
+from typing import Optional, Any
+from pyframe.embedding import density_matrix, tensor_tools, solvers
 
 
 class Subsystem:
@@ -37,10 +37,13 @@ class QuantumSubsystem(Subsystem):
                  name: Optional[str] = None,
                  ):
         Subsystem.__init__(self, name=name)
+        self.num_nuclei = len(nuclei)
         self.nuclei = nuclei
         self.density_matrix = dens_mat
         self.quantum_fragments = quantum_fragments
-
+        self.coordinates = np.zeros([self.num_nuclei, 3])
+        for i, nucleus in enumerate(nuclei):
+            self.coordinates[i, :] = nucleus.coordinate[:]
     def potential(self,
                   coordinate: np.ndarray,
                   pot_derivative_order: Optional[int] = 0,
@@ -87,8 +90,8 @@ class QuantumSubsystem(Subsystem):
 
 
     def compute_electric_fields(self,
-                                coordinates,
-                                integral_drv: vlx_interface.EmbeddingIntegralDriver):
+                                coordinates: np.ndarray,
+                                integral_drv: Any):
         return integral_drv.electric_fields(coordinates=coordinates, density=self.density_matrix.density)
 
 
@@ -130,7 +133,6 @@ class ClassicalSubsystem(Subsystem):
                 k += 1
         self.induced_dipoles = np.zeros([self.num_atoms, 3])
         self.multipole_fields = np.zeros([self.num_atoms, 3])
-        self.induced_dipole_fields = None
         k = 0
         for fragment_i in self.classical_fragments:
             for i, atom_i in enumerate(fragment_i.atoms):
@@ -180,13 +182,28 @@ class ClassicalSubsystem(Subsystem):
                               threshold):
         static_fields = self.multipole_fields + external_fields
         # First guess for induced dipoles
+
+        # TODO tests for: if dipoles with external field exist and then check how similar both are
         if np.all(self.induced_dipoles == 0):
             starting_guess = np.zeros([self.num_atoms, 3])
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
         else:
-            starting_guess = self.induced_dipoles.induced_dipoles
-
+            residue_norm = np.abs(np.linalg.norm(external_fields - self.induced_dipoles.external_fields)
+                                  / np.linalg.norm(self.induced_dipoles.external_fields))
+            if residue_norm == 0:
+                print("Residue norm between new and old external fields is 0, induced dipoles will not be recalculated.")
+                return
+            elif residue_norm < 1e-6:
+                print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will be"
+                      " used as a starting guess.")
+                starting_guess = self.induced_dipoles.induced_dipoles
+            else:
+                print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
+                      "not be used as a starting guess.")
+                starting_guess = np.zeros([self.num_atoms, 3])
+                for i, field in enumerate(static_fields):
+                    starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
         induced_dipoles, induced_dipoles_fields = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
                                                                                  polarizabilities=self.polarizabilities,
                                                                                  exclusions=self.exclusions,

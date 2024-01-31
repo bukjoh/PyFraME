@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from pyframe.embedding import polytensor, particle, fragment, subsystem
-from typing import Union
-
+from typing import Union, Any, Tuple
+import numpy as np
 
 def compute_particle_interactions(particle_1: particle, particle_2: particle):
     """Calculates the electrostatic interaction between two Particles."""
@@ -56,7 +56,7 @@ def compute_fragment_particle_interactions(c_particle: particle,
 
 def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
                                       classical_subsystem: Union[subsystem.ClassicalSubsystem, list],
-                                      integral_drv: vlx_interface.EmbeddingIntegralDriver
+                                      integral_drv: Any
                                       ) -> Tuple[float, np.ndarray]:
     """Calculates the electrostatic interaction between a Quantum subsystem and one or several Classical subsystems.
 
@@ -85,7 +85,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
 
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
-                                 integral_drv: vlx_interface.EmbeddingIntegralDriver
+                                 integral_drv: Any
                                  ) -> np.ndarray:
     """Calculates the electrostatic Fock matrix contributions h_es (M*t) from a Classical subsystem and the one-electron
     integrals.

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import numpy as np
-from pyframe.embedding import vlx_interface
+from typing import Any
 
 
 def compute_induction_interaction(induced_dipoles: np.ndarray,
                                   coordinates: np.ndarray,
-                                  integral_drv: vlx_interface.EmbeddingIntegralDriver
+                                  integral_drv: Any
                                   ) -> np.ndarray:
     """Calculates the induction fock matrix contribution.
 
