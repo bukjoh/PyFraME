@@ -41,6 +41,4 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                                                                       fields[i]))
         residue_norm = np.abs(np.linalg.norm(ind_dipoles - old_ind_dipoles) / np.linalg.norm(old_ind_dipoles))
         old_ind_dipoles = copy.deepcopy(ind_dipoles)
-    print("Induced Dipoles Converged after:", f"{iteration:>2d}", " iterations!")
-
-    return ind_dipoles, new_fields
+    return ind_dipoles, new_fields, iteration

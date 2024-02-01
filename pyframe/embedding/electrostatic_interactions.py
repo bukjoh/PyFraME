@@ -4,6 +4,7 @@ from pyframe.embedding import polytensor, particle, fragment, subsystem
 from typing import Union, Any, Tuple
 import numpy as np
 
+
 def compute_particle_interactions(particle_1: particle, particle_2: particle):
     """Calculates the electrostatic interaction between two Particles."""
     if isinstance(particle_1, particle.Atom) and isinstance(particle_2, particle.Atom):
@@ -32,6 +33,8 @@ def compute_fragment_interactions(c_fragment_1: fragment.ClassicalFragment,
     electrostatic_energy = 0
     for atom_1 in c_fragment_1.atoms:
         for atom_2 in c_fragment_2.atoms:
+            if atom_2.index in atom_1.exclusions:
+                continue
             electrostatic_energy += compute_particle_interactions(atom_1, atom_2)
     return electrostatic_energy
 
@@ -52,6 +55,14 @@ def compute_fragment_particle_interactions(c_particle: particle,
 
     if isinstance(c_particle, particle.Nucleus):
         return (c_fragment.potential(coordinate=c_particle.coordinate) * c_particle.charge)[0]
+
+
+def compute_classical_self_energy(classical_fragments: list):
+    energy = 0
+    for i, frag in enumerate(classical_fragments):
+        for j in range(i, len(classical_fragments)):
+            energy += compute_fragment_interactions(frag, classical_fragments[j])
+    return energy
 
 
 def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,

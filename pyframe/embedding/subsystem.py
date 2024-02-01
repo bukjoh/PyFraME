@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import numpy as np
 from typing import Optional, Any
-from pyframe.embedding import density_matrix, tensor_tools, solvers
+from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions
 
 
 class Subsystem:
@@ -36,6 +36,8 @@ class QuantumSubsystem(Subsystem):
                  quantum_fragments: Optional[list] = None,
                  name: Optional[str] = None,
                  ):
+        if not nuclei:
+            raise ValueError("QuantumSubsystem must have at least one Nucleus.")
         Subsystem.__init__(self, name=name)
         self.num_nuclei = len(nuclei)
         self.nuclei = nuclei
@@ -44,7 +46,7 @@ class QuantumSubsystem(Subsystem):
         self.coordinates = np.zeros([self.num_nuclei, 3])
         for i, nucleus in enumerate(nuclei):
             self.coordinates[i, :] = nucleus.coordinate[:]
-    def potential(self,
+    def static_potential(self,
                   coordinate: np.ndarray,
                   pot_derivative_order: Optional[int] = 0,
                   origin_derivative_order: Optional[int] = 0,
@@ -58,21 +60,20 @@ class QuantumSubsystem(Subsystem):
             pot_derivative_order: Order of the derivative of the potential.
             origin_derivative_order: Order of derivative with respect to the origin of the potential.
             coord_multipole_order: Multipole order at coordinate.
-            array_of_potentials: Parameter that indicates if the sum of all potentials and its derivatives is returned,
-            or an array with the individual contributions.
+            array_of_potentials: Parameter that indicates if the sum of all potentials and its derivatives of all nuclei
+             is returned, or an array with the individual contributions.
         Returns:
             Electrostatic potential or its derivative of the fragment at coordinates. If coord_multipole_order is given,
             the derivatives with respect to the charge or multipole at coordinate are included.
         """
         pot = []
-        if hasattr(self, 'nuclei'):
-            for nucleus in self.nuclei:
-                pot.append(nucleus.potential(coordinate=coordinate,
-                                             pot_derivative_order=pot_derivative_order,
-                                             origin_derivative_order=origin_derivative_order,
-                                             coord_multipole_order=coord_multipole_order))
+        for i, nucleus in enumerate(self.nuclei):
+            pot.append(nucleus.potential(coordinate=coordinate,
+                                         pot_derivative_order=pot_derivative_order,
+                                         origin_derivative_order=origin_derivative_order,
+                                         coord_multipole_order=coord_multipole_order))
         if array_of_potentials is False:
-            return np.array(sum(pot))
+            return np.einsum('ij->j', np.array(pot))
         if array_of_potentials is True:
             return np.array(pot)
 
@@ -112,6 +113,8 @@ class ClassicalSubsystem(Subsystem):
                  classical_fragments: list,
                  name: Optional[str] = None
                  ):
+        if not classical_fragments:
+            raise ValueError("ClassicalSubsystem must have at least one ClassicalFragment.")
         Subsystem.__init__(self, name=name)
         self.classical_fragments = classical_fragments
         self.num_atoms = 0
@@ -145,13 +148,13 @@ class ClassicalSubsystem(Subsystem):
                                                             pot_derivative_order=1)
                 self.multipole_fields[k, :] = field_component
                 k += 1
-    def potential(self,
-                  coordinate: np.ndarray,
-                  pot_derivative_order: Optional[int] = 0,
-                  origin_derivative_order: Optional[int] = 0,
-                  coord_multipole_order: Optional[int] = 0,
-                  array_of_potentials: Optional[bool] = False
-                  ) -> float | np.ndarray:
+    def static_potential(self,
+                         coordinate: np.ndarray,
+                         pot_derivative_order: Optional[int] = 0,
+                         origin_derivative_order: Optional[int] = 0,
+                         coord_multipole_order: Optional[int] = 0,
+                         array_of_potentials: Optional[bool] = False
+                         ) -> float | np.ndarray:
         """Calculates the sum of electrostatic potential and its derivatives of the atoms in a ClassicalFragment.
 
         Args:
@@ -175,6 +178,10 @@ class ClassicalSubsystem(Subsystem):
             return np.array(sum(pot))
         if array_of_potentials is True:
             return np.array(pot)
+
+
+    def self_energy(self):
+        return electrostatic_interactions.compute_classical_self_energy(self.classical_fragments)
 
 
     def solve_induced_dipoles(self,
@@ -204,13 +211,13 @@ class ClassicalSubsystem(Subsystem):
                 starting_guess = np.zeros([self.num_atoms, 3])
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
-        induced_dipoles, induced_dipoles_fields = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
-                                                                                 polarizabilities=self.polarizabilities,
-                                                                                 exclusions=self.exclusions,
-                                                                                 indices=self.indices,
-                                                                                 fields=static_fields,
-                                                                                 starting_guess=starting_guess,
-                                                                                 threshold=threshold)
+        induced_dipoles, induced_dipoles_fields, num_iter = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
+                                                                                           polarizabilities=self.polarizabilities,
+                                                                                           exclusions=self.exclusions,
+                                                                                           indices=self.indices,
+                                                                                           fields=static_fields,
+                                                                                           starting_guess=starting_guess,
+                                                                                           threshold=threshold)
         k = 0
         for fragment in self.classical_fragments:
             for atom in fragment.atoms:
@@ -218,7 +225,8 @@ class ClassicalSubsystem(Subsystem):
                 k += 1
         self.induced_dipoles = InducedDipoles(induced_dipoles=induced_dipoles,
                                               external_fields=external_fields,
-                                              induced_dipole_fields=induced_dipoles_fields)
+                                              induced_dipole_fields=induced_dipoles_fields,
+                                              number_of_iterations=num_iter)
 
 
 @dataclass
@@ -228,6 +236,7 @@ class InducedDipoles(ClassicalSubsystem):
     induced_dipoles: np.ndarray
     external_fields: np.ndarray
     induced_dipole_fields: np.ndarray
+    number_of_iterations: int
 
 
 class ContinuumSubsystem(Subsystem):
