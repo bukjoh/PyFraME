@@ -28,7 +28,7 @@ class TestQuantumSubsystem:
             subsystem.QuantumSubsystem(nuclei=[], dens_mat=core.density_matrix)
 
 
-    def test_quantum_static_potential(self):
+    def test_static_potential(self):
         ref_pot_array = np.array([1.9344114763470204, 2.034614421586786,
                          1.8647970050316007, 3.0783131716387415,
                          3.045876112078533, 3.2202498546909775])
@@ -95,13 +95,59 @@ class TestClassicalSubsystem:
 
 
     def test_self_energy(self):
-        # TODO test again lsdalton etc.
         assert env.self_energy() == -2.2376361011309555e-05
         core_wat, env_wat = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
         assert env_wat.self_energy() == -0.00718198734326498
-# ToDO
+        # value tested against dalton and pelib
+        core_ac, env_ac = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
+        assert pytest.approx(0.001012591928, abs=1e-9) == env_ac.self_energy()
+
+
     def test_static_potential(self):
-        return
+        ref_pot = np.array([0.00158312, 0.00097756, 0.00153459,
+                            0.00216101, 0.00095463, 0.00092537,
+                            0.00054562, 0.0012971, 0.00155222,
+                            0.00170403])
+        ref_field = np.array([[-3.57871685e-05, -6.08385213e-05, -4.16530095e-04],
+                              [-2.68149742e-04,  4.86543506e-05, -3.00432016e-04],
+                              [ 6.23813670e-05, -7.74281397e-05, -2.51253113e-04],
+                              [ 8.65448666e-05, -1.40820676e-04, -6.35728002e-04],
+                              [-2.30570996e-04,  4.57958753e-05, -2.72489018e-04],
+                              [-2.46673973e-04,  5.46186536e-05, -1.37596052e-04],
+                              [-0.00052421,  0.00014397, -0.00039426],
+                              [ 2.67417460e-05, -6.70011124e-05, -1.47749387e-04],
+                              [ 7.84632264e-05, -5.54709547e-05, -2.38816559e-04],
+                              [ 0.00014484, -0.0001176 , -0.00025409]])
+        ref_field_deriv = np.array(
+            [[-9.69852521e-05,  1.70233222e-05, -1.29555083e-04, -9.70810591e-06, 6.33704988e-05, 1.06693358e-04],
+            [-1.60077407e-04,  6.96123686e-05, -7.39728226e-05, -1.33963213e-05, 5.05605259e-05, 1.73473728e-04],
+            [-4.03908839e-05,  1.41900109e-06, -7.99330085e-05, -2.05042679e-05, 3.42781058e-05, 6.08951518e-05],
+            [-8.29657867e-05, -1.42127811e-05, -2.16956071e-04,  4.06983586e-06, 9.94223097e-05, 7.88959508e-05],
+            [-1.25008276e-04,  8.21396573e-05, -6.71466847e-05, -3.63421262e-05, 4.33944129e-05, 1.61350402e-04],
+            [-1.38184163e-04,  5.06788325e-05, -3.85966621e-05, -1.75111041e-05, 3.53465208e-05, 1.55695267e-04],
+            [-2.69440850e-04,  1.26287375e-04, -6.11783426e-05,  1.27560083e-05, 5.94434260e-05, 2.56684841e-04],
+            [-4.54833255e-05,  1.00924511e-05, -4.81027873e-05, -2.66102992e-05, 2.34740318e-05, 7.20936248e-05],
+            [-3.32816075e-05, -2.77890089e-06, -7.86157006e-05, -2.17500263e-05, 2.83560955e-05, 5.50316338e-05],
+            [-8.57569968e-06, -1.22453942e-05, -7.85203841e-05, -1.87806155e-05, 3.13399924e-05,  2.73563152e-05]])
+        for i, coordinates in enumerate(core.coordinates):
+            assert pytest.approx(ref_pot[i], abs=1e-8) == env.static_potential(coordinate=coordinates,
+                                                                               pot_derivative_order=0,
+                                                                               origin_derivative_order=0,
+                                                                               coord_multipole_order=0,
+                                                                               array_of_potentials=False)[0]
+            assert  np.allclose(ref_field[i], env.static_potential(coordinate=coordinates,
+                                                                   pot_derivative_order=1,
+                                                                   origin_derivative_order=0,
+                                                                   coord_multipole_order=0,
+                                                                   array_of_potentials=False),
+                                atol=1e-8)
+
+            assert  np.allclose(ref_field_deriv[i], env.static_potential(coordinate=coordinates,
+                                                          pot_derivative_order=2,
+                                                          origin_derivative_order=0,
+                                                          coord_multipole_order=0,
+                                                          array_of_potentials=False),
+                                atol=1e-8)
 
 
     def test_solve_induced_dipoles(self):
@@ -140,19 +186,19 @@ class TestClassicalSubsystem:
                           "not be used as a starting guess.\n" == captured_output.getvalue())
 
 
-        def test_induced_dipoles_dataclass(self):
-            induced_dipoles = np.full((3, 3), 1)
-            external_fields = np.full((3, 3), 2)
-            induced_dipole_fields = np.full((3, 3), 3)
-            num_iter = 1
-            data = subsystem.InducedDipoles(induced_dipoles=induced_dipoles,
-                                            external_fields=external_fields,
-                                            induced_dipole_fields=induced_dipole_fields,
-                                            number_of_iterations=num_iter)
-            assert np.allclose(data.induced_dipoles, induced_dipoles)
-            assert np.allclose(data.external_fields, external_fields)
-            assert np.allclose(data.induced_dipole_fields, induced_dipole_fields)
-            assert np.allclose(data.number_of_iterations, num_iter)
+    def test_induced_dipoles_dataclass(self):
+        induced_dipoles = np.full((3, 3), 1)
+        external_fields = np.full((3, 3), 2)
+        induced_dipole_fields = np.full((3, 3), 3)
+        num_iter = 1
+        data = subsystem.InducedDipoles(induced_dipoles=induced_dipoles,
+                                        external_fields=external_fields,
+                                        induced_dipole_fields=induced_dipole_fields,
+                                        number_of_iterations=num_iter)
+        assert np.allclose(data.induced_dipoles, induced_dipoles)
+        assert np.allclose(data.external_fields, external_fields)
+        assert np.allclose(data.induced_dipole_fields, induced_dipole_fields)
+        assert np.allclose(data.number_of_iterations, num_iter)
 
 
 class DummyIntegralDriver:

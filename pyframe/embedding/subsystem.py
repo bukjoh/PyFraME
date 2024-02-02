@@ -14,12 +14,6 @@ class Subsystem:
                  name: Optional[str]):
         self.name = name
 
-# TODO incorporate potential of the density?
-# TODO
-# some kind of self energy function? MM/MM energies? thats multipole - multipole
-# how to do the QM/QM energy? thats like veloxchem total energy of the core sys
-# + QM/MM energies? -> nuclei - multipole, density - multipole energy
-
 
 class QuantumSubsystem(Subsystem):
     """A QuantumSubsystem represents a collection of QuantumFragments, Nuclei and DensityMatrices.
@@ -175,7 +169,7 @@ class ClassicalSubsystem(Subsystem):
                                            origin_derivative_order=origin_derivative_order,
                                            coord_multipole_order=coord_multipole_order))
         if array_of_potentials is False:
-            return np.array(sum(pot))
+            return np.einsum('ij->j', np.array(pot))
         if array_of_potentials is True:
             return np.array(pot)
 
@@ -189,8 +183,6 @@ class ClassicalSubsystem(Subsystem):
                               threshold):
         static_fields = self.multipole_fields + external_fields
         # First guess for induced dipoles
-
-        # TODO tests for: if dipoles with external field exist and then check how similar both are
         if np.all(self.induced_dipoles == 0):
             starting_guess = np.zeros([self.num_atoms, 3])
             for i, field in enumerate(static_fields):
