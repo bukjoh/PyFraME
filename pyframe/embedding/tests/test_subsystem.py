@@ -13,9 +13,7 @@ class TestQuantumSubsystem:
         dens_mat = core.density_matrix  # Provide appropriate DensityMatrix instance for testing
         quantum_fragments = core.quantum_fragments  # Provide appropriate QuantumFragments instances for testing
         name = "TestQuantumSubsystem"
-
         q_subsystem = subsystem.QuantumSubsystem(nuclei=nuclei, dens_mat=dens_mat, quantum_fragments=quantum_fragments, name=name)
-
         assert q_subsystem.name == name
         assert q_subsystem.nuclei == nuclei
         assert q_subsystem.density_matrix == dens_mat

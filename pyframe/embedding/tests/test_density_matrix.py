@@ -1,6 +1,7 @@
 """Tests PyFraME.embedding.fragment.py"""
 from pyframe.embedding import density_matrix
 import numpy as np
+import pytest
 
 # cc-pVDZ Water
 density = np.array([[1.00195224e+00, -2.94047228e-03, -6.55364650e-03,
@@ -189,5 +190,16 @@ density = np.array([[1.00195224e+00, -2.94047228e-03, -6.55364650e-03,
                      -8.78181741e-05, 2.12136585e-19, 3.08701668e-05]])
 
 
-def test_init():
-    density_matrix.DensityMatrix(density=density)
+class TestDensityMatrix:
+ def test_init_with_numpy_array(self):
+  dens_mat = density_matrix.DensityMatrix(density=density)
+  assert np.array_equal(dens_mat.density, density)
+
+ def test_init_with_list(self):
+  density_list = [[1.0, 0.0], [0.0, 1.0]]
+  dens_mat = density_matrix.DensityMatrix(density=density_list)
+  assert np.array_equal(dens_mat.density, np.array(density_list))
+
+ def test_init_with_invalid_density_type(self):
+  with pytest.raises(ValueError, match="Density must be a numpy array or a list"):
+   density_matrix.DensityMatrix(density="invalid_type")
