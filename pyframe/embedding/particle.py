@@ -57,6 +57,8 @@ class Atom(Particle):
                  polarizabilities: Optional[dict] = None,
                  ):
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
+        if exclusions is not None and not isinstance(exclusions, list):
+            raise ValueError("Exclusions must be a list.")
         self.name = name
         self.induced_dipole = induced_dipole
         if exclusions is not None and isinstance(exclusions, list):
@@ -135,9 +137,10 @@ class Atom(Particle):
 
 
 def multipole_len_to_order(x) -> int:
+    if not isinstance(x, int) or x < 0:
+        raise ValueError("Input must be a non-negative integer.")
     def equation(t):
         return ((t + 1) * (t + 2) * (t + 3)) / 6 - x
-
     solution = root(equation, np.array([0]))
     return round(solution.x[0])
 

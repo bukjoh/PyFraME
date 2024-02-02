@@ -3,17 +3,237 @@ import pytest
 import qcelemental
 import copy
 import numpy as np
-from pyframe.embedding import particle, tensor_tools
+from pyframe.embedding import particle, tensor_tools, constants, polytensor
 from pyframe.embedding.tests import test_electrostatic_interactions
 from qcelemental import PhysicalConstantsContext
 
 phys_constants = PhysicalConstantsContext('CODATA2018')
 
+class TestParticle:
+    def test_init_with_valid_arguments(self):
+        index = 1
+        coordinate = np.array([-5.3285510, -0.1032300, -0.0004160]) / phys_constants.bohr2angstroms
+        mass = qcelemental.periodictable.to_mass('Ti')
+        particle_inst = particle.Particle(index=index, coordinate=coordinate, mass=mass)
+        assert particle_inst.index == index
+        assert particle_inst.coordinate is coordinate
+        assert particle_inst._mass == mass
+        assert particle_inst.particle_variables is constants.values
 
-def test_particle_init():
-    particle.Particle(index=0,
-                      mass=qcelemental.periodictable.to_mass('Ti'),
-                      coordinate=(np.array([-5.3285510, -0.1032300, -0.0004160]) / phys_constants.bohr2angstroms))
+class TestAtom:
+    def test_init_with_valid_arguments(self):
+        index = 1
+        coordinate = np.array([0.0, 0.0, 0.0])
+        induced_dipole = np.array([1.0, 2.0, 3.0])
+        name = "Atom1"
+        exclusions = [2, 3]
+        mass = 12.01
+        element = "C"
+        vdw = {'vdw_method': "6-12", 'lj_sigma': 3.0, 'lj_epsilon': 0.5}
+        multipoles = {'elements': [-0.71543374,
+                                    0.11412407,
+                                    -0.27166543,
+                                    0.07772714,
+                                    -4.71453229,
+                                    -0.05566867,
+                                    0.46147879,
+                                    -4.19504704,
+                                    0.33577098,
+                                    -3.77169662],
+                      'order': 2}
+        polarizabilities ={"elements": [0.0,
+                                        0.0,
+                                        0.0,
+                                        0.0,
+                                        4.70788802,
+                                        0.33755124,
+                                        -0.41867523,
+                                        3.74951294,
+                                        -0.04025344,
+                                        4.09400356
+                                        ],
+                           "order": [1, 1]}
+        atom = particle.Atom(index=index,
+                             coordinate=coordinate,
+                             induced_dipole=induced_dipole,
+                             name=name,
+                             exclusions=exclusions,
+                             mass=mass,
+                             element=element,
+                             vdw=vdw,
+                             multipoles=multipoles,
+                             polarizabilities=polarizabilities)
+        assert atom.index == index
+        assert atom.coordinate is coordinate
+        assert np.array_equal(atom.induced_dipole, induced_dipole)
+        assert atom.name == name
+        assert atom.exclusions == tuple(exclusions)
+        assert atom._mass == mass
+        assert atom._element == element
+        assert atom._vdw_method == vdw['vdw_method']
+        assert atom._lj_sigma == vdw['lj_sigma']
+        assert atom._lj_epsilon == vdw['lj_epsilon']
+        assert atom.multipole_order == multipoles['order']
+        assert isinstance(atom.multipoles, polytensor.FirstDegreePolytensor)
+        assert np.array_equal(atom.polarizability_order, polarizabilities['order'])
+        assert np.array_equal(atom.polarizability, np.array(polarizabilities['elements']))
+        # Test data
+        oxygen_data = {
+            "index": 0,
+            "element": 'O',
+            "exclusions": [0, 1],
+            "mass": qcelemental.periodictable.to_mass('O'),
+            "coordinate": (np.array([1.7422970, 2.3413610, -0.0007450]) / phys_constants.bohr2angstroms),
+            "multipoles": {"elements": [-0.7424407021, -0.2840371815, 0.1671869101,
+                                         0.0013661730, -4.4188113058, 0.2801417448,
+                                         0.0002126277, -4.1129942280, 0.0039064597,
+                                         -5.0206529493, 0.0330216712, 0.0760732530,
+                                         -0.0003899377, 0.0087745562, 0.0009840165,
+                                         -0.1813726316, -0.1218544851, -0.0016261873,
+                                         0.1033223765, 0.0025668497],
+                        "order": 3},
+            "polarizabilities": {"elements": np.array([0., 0., 0., 0., 2.2823444229, -0.4207398269,
+                                                      -0.0006457588, 1.8324399300, -0.0069062619,
+                                                      3.3666855109]), "order": [1, 1]}
+        }
+
+        hydrogen_data = {
+            "index": 1,
+            "element": 'H',
+            "exclusions": [0, 1],
+            "mass": qcelemental.periodictable.to_mass('H'),
+            "coordinate": (np.array([0.8416780, 1.9718070, -0.0008200]) / phys_constants.bohr2angstroms),
+            "multipoles": {"elements": [0.3699635356, 0.1039146227, 0.0490621032,
+                                         0.0000401115, -0.6455428297, -0.0041180935,
+                                         0.0001453595, -0.5362599824, 0.0001224056,
+                                         -0.5596286658, 0.0810557396, 0.0035896134,
+                                         0.0001532545, -0.0090165544, -0.0002204117,
+                                         0.0757377031, 0.2842212967, 0.0003840935,
+                                         0.1046774555, 0.0011004803],
+                        "order": 3},
+            "polarizabilities": {"elements": np.array([0., 0., 0., 0., 0.8132771942, 0.1387943320,
+                                                      0.0004103386, 0.5814638105, -0.0000004496,
+                                                      0.5927954021]), "order": [1, 1]}
+        }
+
+        # Create Atom instances
+        oxygen_atom = particle.Atom(**oxygen_data)
+        hydrogen_atom = particle.Atom(**hydrogen_data)
+
+        # Test attributes
+        assert oxygen_atom.index == oxygen_data["index"]
+        assert np.array_equal(oxygen_atom.coordinate, oxygen_data["coordinate"])
+        assert np.array_equal(oxygen_atom.induced_dipole, None)
+        assert oxygen_atom.name is None
+        assert np.array_equal(oxygen_atom.exclusions, oxygen_data["exclusions"])
+        assert oxygen_atom._element == oxygen_data["element"]
+        assert oxygen_atom.multipole_order == oxygen_data["multipoles"]["order"]
+        assert isinstance(oxygen_atom.multipoles, polytensor.FirstDegreePolytensor)
+        assert np.array_equal(oxygen_atom.polarizability_order, oxygen_data["polarizabilities"]["order"])
+        assert np.array_equal(oxygen_atom.polarizability, oxygen_data["polarizabilities"]["elements"])
+
+        assert hydrogen_atom.index == hydrogen_data["index"]
+        assert np.array_equal(hydrogen_atom.coordinate, hydrogen_data["coordinate"])
+        assert np.array_equal(hydrogen_atom.induced_dipole, None)
+        assert hydrogen_atom.name is None
+        assert np.array_equal(hydrogen_atom.exclusions, hydrogen_data["exclusions"])
+        assert hydrogen_atom._element == hydrogen_data["element"]
+        assert hydrogen_atom.multipole_order == hydrogen_data["multipoles"]["order"]
+        assert isinstance(hydrogen_atom.multipoles, polytensor.FirstDegreePolytensor)
+        assert np.array_equal(hydrogen_atom.polarizability_order, hydrogen_data["polarizabilities"]["order"])
+        assert np.array_equal(hydrogen_atom.polarizability, hydrogen_data["polarizabilities"]["elements"])
+
+    def test_init_with_invalid_exclusions(self):
+        with pytest.raises(ValueError, match="Exclusions must be a list."):
+            particle.Atom(index=1, coordinate=np.array([0.0, 0.0, 0.0]), exclusions="invalid_input")
+
+    def test_detrace_of_atom_multipoles(self):
+        # Provided test data
+        oxygen_atom = particle.Atom(index=0, element='O',
+                            mass=qcelemental.periodictable.to_mass('O'),
+                            coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
+                                        / phys_constants.bohr2angstroms),
+                            multipoles={"elements": [0., 0., 0., 0., -3.9516312016, -0.0561791973,
+                                                     0.0008348984, -4.5778807726, 0.0000430036,
+                                                     -5.0206878337],
+                                        "order": 2})
+
+        # Expected result after detracing
+        quadrupole = np.array([-3.9516312016, -0.0561791973, 0.0008348984, -4.5778807726, 0.0000430036, -5.0206878337])
+        traceless_quadrupole = copy.deepcopy(quadrupole)
+        trace_quadrupole = np.sum([quadrupole[0], quadrupole[3], quadrupole[5]]) / 3.0
+        traceless_quadrupole[[0, 3, 5]] -= trace_quadrupole
+
+        # Test detrace
+        assert np.allclose(oxygen_atom.multipoles.data[4:10], traceless_quadrupole)
+
+    def test_taylor_coefficient(self):
+        # Provided test data
+        oxygen_atom = particle.Atom(index=0, element='O',
+                            mass=qcelemental.periodictable.to_mass('O'),
+                            coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
+                                        / phys_constants.bohr2angstroms),
+                            multipoles={"elements": [0., 0., 0., 0., -3.9516312016, -0.0561791973,
+                                                     0.0008348984, -4.5778807726, 0.0000430036,
+                                                     -5.0206878337],
+                                        "order": 2})
+
+        # Expected result for taylor_coefficient
+        ref_taylor_coefficient = np.array([1., -1., -1., -1., 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+
+        # Test taylor_coefficient
+        assert np.allclose(oxygen_atom.taylor_coefficients.data, ref_taylor_coefficient)
+
+    def test_degeneracy(self):
+        # Provided test data
+        oxygen_atom = particle.Atom(index=0, element='O',
+                                    mass=qcelemental.periodictable.to_mass('O'),
+                                    coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
+                                                / phys_constants.bohr2angstroms),
+                                    multipoles={"elements": [0., 0., 0., 0., -3.9516312016, -0.0561791973,
+                                                             0.0008348984, -4.5778807726, 0.0000430036,
+                                                             -5.0206878337],
+                                                "order": 2})
+
+        # Expected result for degeneracy tensor
+        ref_degeneracy_tensor = np.array([1., 1., 1., 1., 1., 2., 2., 1., 2., 1.])
+
+        # Test degeneracy tensor
+        assert np.allclose(ref_degeneracy_tensor, oxygen_atom.degeneracy_tensor.data)
+
+    def test_multipole_with_degeneracy(self):
+        # Provided test data
+        oxygen_atom = particle.Atom(index=0, element='O',
+                                    mass=qcelemental.periodictable.to_mass('O'),
+                                    coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
+                                                / phys_constants.bohr2angstroms),
+                                    multipoles={"elements": [0., 0., 0., 0., -3.9516312016, -0.0561791973,
+                                                             0.0008348984, -4.5778807726, 0.0000430036,
+                                                             -5.0206878337],
+                                                "order": 2})
+
+        # Expected result for multipole_with_degeneracy
+        ref_degeneracy_tensor = np.array([1., 1., 1., 1., 1., 2., 2., 1., 2., 1.])
+        ref_multipole_tensor = np.array([0., 0., 0., 0., -3.9516312016, -0.0561791973, 0.0008348984, -4.5778807726,
+                                         0.0000430036, -5.0206878337])
+        ref_multipole_tensor[4:10] = tensor_tools.detrace(ref_multipole_tensor[4:10],
+                                                          oxygen_atom.particle_variables.factorials,
+                                                          oxygen_atom.particle_variables.double_factorials,
+                                                          oxygen_atom.particle_variables.trinomials)
+        ref_multipole_tensor_with_degeneracy = np.multiply(ref_multipole_tensor, ref_degeneracy_tensor)
+
+        # Test multipole_with_degeneracy
+        assert np.allclose(ref_multipole_tensor_with_degeneracy, oxygen_atom.multipoles_with_degeneracy.data)
+
+    def test_multipole_len_to_order(self):
+        x = 10
+        expected_order = 2
+        result = particle.multipole_len_to_order(x)
+        assert result == expected_order
+        # Test case with a negative input, expecting a ValueError
+        x = -5
+        with pytest.raises(ValueError, match="Input must be a non-negative integer."):
+            particle.multipole_len_to_order(x)
 
 
 def test_init_nucleus():
@@ -28,72 +248,7 @@ def test_init_nucleus():
                          coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
                                      / phys_constants.bohr2angstroms))
 
-
-def test_init_atom():
-    particle.Atom(index=0, element='O',
-                  mass=qcelemental.periodictable.to_mass('O'),
-                  coordinate=(np.array([1.7422970, 2.3413610, -0.0007450])
-                              / phys_constants.bohr2angstroms),
-                  multipoles={"elements": [-0.7424407021, -0.2840371815, 0.1671869101,
-                                           0.0013661730, -4.4188113058, 0.2801417448,
-                                           0.0002126277, -4.1129942280, 0.0039064597,
-                                           -5.0206529493, 0.0330216712, 0.0760732530,
-                                           -0.0003899377, 0.0087745562, 0.0009840165,
-                                           -0.1813726316, -0.1218544851, -0.0016261873,
-                                           0.1033223765, 0.0025668497],
-                              "order": 3},
-                  polarizabilities={"elements": np.array([0., 0., 0., 0., 2.2823444229, -0.4207398269,
-                                                          -0.0006457588, 1.8324399300, -0.0069062619,
-                                                          3.3666855109]), "order": [1, 1]})
-    particle.Atom(index=1, element='H',
-                  mass=qcelemental.periodictable.to_mass('H'),
-                  coordinate=(np.array([0.8416780, 1.9718070, -0.0008200])
-                              / phys_constants.bohr2angstroms),
-                  multipoles={"elements": [0.3699635356, 0.1039146227, 0.0490621032,
-                                           0.0000401115, -0.6455428297, -0.0041180935,
-                                           0.0001453595, -0.5362599824, 0.0001224056,
-                                           -0.5596286658, 0.0810557396, 0.0035896134,
-                                           0.0001532545, -0.0090165544, -0.0002204117,
-                                           0.0757377031, 0.2842212967, 0.0003840935,
-                                           0.1046774555, 0.0011004803],
-                              "order": 3},
-                  polarizabilities={"elements": np.array([0., 0., 0., 0., 0.8132771942, 0.1387943320,
-                                                          0.0004103386, 0.5814638105, -0.0000004496,
-                                                          0.5927954021]), "order": [1, 1]})
-    # Test detrace of Atom multipoles
-    oxygen_atom = particle.Atom(index=0, element='O',
-                                mass=qcelemental.periodictable.to_mass('O'),
-                                coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
-                                            / phys_constants.bohr2angstroms),
-                                multipoles={"elements": [0., 0., 0., 0., -3.9516312016, -0.0561791973,
-                                                         0.0008348984, -4.5778807726, 0.0000430036,
-                                                         -5.0206878337],
-                                            "order": 2})
-
-    # Test detrace of multipoles in atom
-    quadrupole = np.array([-3.9516312016, -0.0561791973, 0.0008348984, -4.5778807726, 0.0000430036, -5.0206878337])
-    traceless_quadrupole = copy.deepcopy(quadrupole)
-    trace_quadrupole = np.sum([quadrupole[0], quadrupole[3], quadrupole[5]]) / 3.0
-    traceless_quadrupole[[0, 3, 5]] -= trace_quadrupole
-    assert np.allclose(oxygen_atom.multipoles.data[4:10], traceless_quadrupole)
-    # Test taylor_coefficient
-    ref_taylor_coefficient = np.array([1., -1., -1., -1., 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-    assert np.allclose(oxygen_atom.taylor_coefficients.data, ref_taylor_coefficient)
-    # Test degeneracy
-    ref_degeneracy_tensor = np.array([1., 1., 1., 1., 1., 2., 2., 1., 2., 1.])
-    assert np.allclose(ref_degeneracy_tensor, oxygen_atom.degeneracy_tensor.data)
-    # Test multipole_with_degeneracy
-    ref_degeneracy_tensor = np.array([1., 1., 1., 1., 1., 2., 2., 1., 2., 1.])
-    ref_multipole_tensor = np.array([0., 0., 0., 0., -3.9516312016, -0.0561791973, 0.0008348984, -4.5778807726,
-                                     0.0000430036, -5.0206878337])
-    ref_multipole_tensor[4:10] = tensor_tools.detrace(ref_multipole_tensor[4:10],
-                                                      oxygen_atom.particle_variables.factorials,
-                                                      oxygen_atom.particle_variables.double_factorials,
-                                                      oxygen_atom.particle_variables.trinomials)
-    ref_multipole_tensor_with_degeneracy = np.multiply(ref_multipole_tensor, ref_degeneracy_tensor)
-    assert np.allclose(ref_multipole_tensor_with_degeneracy, oxygen_atom.multipoles_with_degeneracy.data)
-
-
+#TODO
 def test_potential():
     # For Atom.potential() and Nucleus.potential
     # Test 0th order derivative
