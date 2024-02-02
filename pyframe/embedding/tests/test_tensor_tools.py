@@ -1,7 +1,6 @@
 """Tests PyFraME.embedding.tensor_tools.py"""
-import copy
+import copy, math, pytest
 import numpy as np
-import math
 from pyframe.embedding import tensor_tools
 
 
@@ -75,7 +74,7 @@ def test_compute_degeneracy_tensor():
                                                               trinomial_coefficients=trinomial_coefficients), g_ref)
 
 
-def test_get_tensor_rank():
+def test_rank():
     # length 0
     tensor = np.zeros(0)
     assert -1 == tensor_tools.rank(tensor)
@@ -103,7 +102,7 @@ def test_get_tensor_rank():
     assert 2 == tensor_tools.rank(tensor)
 
 
-def test_get_tensor_length():
+def test_length():
     # 0th rank
     assert 1 == tensor_tools.length(tensor_rank=0)
     # 1st rank
@@ -139,18 +138,6 @@ def test_convert_tensor_index():
                 ref_multiindex = np.array([i, j, k])
                 assert np.allclose(ref_multiindex, tensor_tools.convert_tensor_index(idx, rank))
                 idx += 1
-
-
-def test_compute_tensor_coefficients():
-    max_order = 3
-    tensor_coefficients = tensor_tools.compute_tensor_coefficients(max_order)
-    expected_shape = (max_order + 1, max_order + 1, 2 * max_order + 2)
-    assert tensor_coefficients.shape == expected_shape
-
-    # Test some specific values of the tensor coefficients
-    assert np.allclose(tensor_coefficients[0, 0, 0], 1.0)
-    assert np.allclose(tensor_coefficients[2, 2, 3], 15.0)
-    assert np.allclose(tensor_coefficients[1, 3, 7], 189.0)
 
 
 def test_compute_interaction_tensor_element():
@@ -314,6 +301,18 @@ def test_compute_interaction_tensor_element():
     assert third_derivative_x_element == -0.375
 
 
+def test_compute_tensor_coefficients():
+    max_order = 3
+    tensor_coefficients = tensor_tools.compute_tensor_coefficients(max_order)
+    expected_shape = (max_order + 1, max_order + 1, 2 * max_order + 2)
+    assert tensor_coefficients.shape == expected_shape
+
+    # Test some specific values of the tensor coefficients
+    assert np.allclose(tensor_coefficients[0, 0, 0], 1.0)
+    assert np.allclose(tensor_coefficients[2, 2, 3], 15.0)
+    assert np.allclose(tensor_coefficients[1, 3, 7], 189.0)
+
+
 def test_compute_trace():
     binomial_coefficients = tensor_tools.compute_binomial_coefficients(6, 2)
     trinomial_coefficients = tensor_tools.compute_trinomial_coefficients(2, 2, 2, binomial_coefficients)
@@ -369,3 +368,17 @@ def test_detrace():
     detraced_octopole_2 = tensor_tools.detrace(detraced_octopole, factorial, double_factorial,
                                                trinomial_coefficients)
     assert np.allclose(detraced_octopole_2, detraced_octopole)
+
+
+def test_uncompress_symmetric_matrix():
+    compressed_matrix = np.array([1, 2, 3, 4, 5, 6])
+    expected_uncompressed_matrix = np.array([[1, 2, 3],
+                                             [2, 4, 5],
+                                             [3, 5, 6]])
+    result = tensor_tools.uncompress_symmetric_matrix(compressed_matrix)
+    assert np.array_equal(result, expected_uncompressed_matrix)
+    invalid_input = np.array([1, 2, 3, 4, 5])  # Not a valid size for a compressed symmetric matrix
+
+    with pytest.raises(ValueError, match="Invalid size for compressed symmetric matrix."):
+        tensor_tools.uncompress_symmetric_matrix(invalid_input)
+

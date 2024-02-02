@@ -307,6 +307,8 @@ def uncompress_symmetric_matrix(a : np.ndarray
         Uncompressed symmetric matrix
     """
     n = int(np.sqrt(a.size * 2))
+    if n * (n + 1) != a.size * 2:
+        raise ValueError("Invalid size for compressed symmetric matrix.")
     r, c = np.triu_indices(n)
     out = np.zeros((n, n))
     out[r, c] = a
