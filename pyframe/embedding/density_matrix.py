@@ -4,7 +4,7 @@ import numpy as np
 
 
 class DensityMatrix:
-    """A DensityMatrices object represents a matrix that represents an electron density matrix.
+    """A DensityMatrix object is a matrix that represents a density.
     Args:
         density: Two dimensional tensor representing the measure of the probability of the object being present at an
         infinitesimal element of space surrounding any given point.

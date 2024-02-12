@@ -6,7 +6,17 @@ import numpy as np
 
 
 def compute_particle_interactions(particle_1: particle, particle_2: particle):
-    """Calculates the electrostatic interaction between two Particles."""
+    """Calculates the electrostatic interaction between two Particles.
+
+    Args:
+        particle_1: Particle 1.
+        particle_2: Particle 2.
+    Returns:
+        Electrostatic interaction energy.
+        """
+    if not isinstance(particle_1, (particle.Atom, particle.Nucleus)) or \
+            not isinstance(particle_2, (particle.Atom, particle.Nucleus)):
+        raise TypeError("Arguments must be instances of Atom or Nucleus")
     if isinstance(particle_1, particle.Atom) and isinstance(particle_2, particle.Atom):
         return polytensor.FirstDegreePolytensor(rank=particle_1.multipole_order,
                                                 tensor_data=particle_1.
@@ -27,9 +37,15 @@ def compute_fragment_interactions(c_fragment_1: fragment.ClassicalFragment,
                                   ) -> float:
     """Calculates the electrostatic interaction between two Classical fragments.
 
+    Args:
+        c_fragment_1: Classical fragment 1.
+        c_fragment_2: Classical fragment 2.
     Returns:
         Electrostatic interaction energy.
     """
+    if not isinstance(c_fragment_1, fragment.ClassicalFragment) or \
+            not isinstance(c_fragment_2, fragment.ClassicalFragment):
+        raise TypeError("Arguments must be instances of ClassicalFragment")
     electrostatic_energy = 0
     for atom_1 in c_fragment_1.atoms:
         for atom_2 in c_fragment_2.atoms:
@@ -47,6 +63,8 @@ def compute_fragment_particle_interactions(c_particle: particle,
     Returns:
         Electrostatic interaction energy between a Classical fragment and a particle from the perspective of particle.
     """
+    if not isinstance(c_fragment, fragment.ClassicalFragment):
+        raise TypeError("c_fragment must be an instance of ClassicalFragment")
     if isinstance(c_particle, particle.Atom):
         electrostatic_energy = 0
         for atoms in c_fragment.atoms:
@@ -74,6 +92,8 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
     Returns:
         Electrostatic nuclear interaction energy and the electrostatic Fock matrix contribution.
     """
+    if not isinstance(quantum_subsystem, subsystem.QuantumSubsystem):
+        raise TypeError("quantum_subsystem must be an instance of QuantumSubsystem")
     fock_matrix = None
     if isinstance(classical_subsystem, list):
         nuclear_energy = 0

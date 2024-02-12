@@ -129,11 +129,11 @@ def test_compute_induction_interation():
     E_HF, C_HF = vlx_interface.scf_solver(h=h, V_nuc=V_nuc, C=C, nocc=nocc, g=g, S=S)
     # define core and env
     #core_ac = subsystem.QuantumSubsystem(name="1x C3OH4",
-    #                                     input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
+    #                                     input_data=f'{os.path.dirname(__file__)}/data/acrolein_wat_test.json')
     #env_ac = subsystem.ClassicalSubsystem(name="2x H2O atoms + X on their bonds",
-    #                                      input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
+    #                                      input_data=f'{os.path.dirname(__file__)}/data/acrolein_wat_test.json')
 
-    core_ac, env_ac = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/acrolein_test.json')
+    core_ac, env_ac = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/acrolein_wat_test.json')
     driver = vlx_interface.EmbeddingIntegralDriver(acrolein_xyz, basis_str)
     # calculate nuclear es energy and electric fock matrix
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core_ac,

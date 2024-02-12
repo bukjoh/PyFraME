@@ -114,7 +114,6 @@ class ClassicalSubsystem(Subsystem):
         self.num_atoms = 0
         for fragments in self.classical_fragments:
             self.num_atoms += len(fragments.atoms)
-
         self.coordinates = np.zeros([self.num_atoms, 3])
         self.exclusions = []
         self.polarizabilities = np.zeros([self.num_atoms, 3, 3])

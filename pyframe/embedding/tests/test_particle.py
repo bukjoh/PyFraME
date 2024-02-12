@@ -4,12 +4,11 @@ import qcelemental
 import copy
 import numpy as np
 from pyframe.embedding import particle, tensor_tools, constants, polytensor
-from qcelemental import PhysicalConstantsContext
-
-phys_constants = PhysicalConstantsContext('CODATA2018')
 
 class TestParticle:
-    def test_init_with_valid_arguments(self):
+    def test_init_with_valid_arguments(self,
+                                       phys_constants
+                                       ):
         index = 1
         coordinate = np.array([-5.3285510, -0.1032300, -0.0004160]) / phys_constants.bohr2angstroms
         mass = qcelemental.periodictable.to_mass('Ti')
@@ -117,21 +116,27 @@ class TestAtom:
         # Test detrace
         assert np.allclose(oxygen_atom2.multipoles.data[4:10], traceless_quadrupole)
 
-    def test_taylor_coefficient(self, oxygen_atom2):
+    def test_taylor_coefficient(self,
+                                oxygen_atom2
+                                ):
         # Expected result for taylor_coefficient
         ref_taylor_coefficient = np.array([1., -1., -1., -1., 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
 
         # Test taylor_coefficient
         assert np.allclose(oxygen_atom2.taylor_coefficients.data, ref_taylor_coefficient)
 
-    def test_degeneracy(self, oxygen_atom2):
+    def test_degeneracy(self,
+                        oxygen_atom2
+                        ):
         # Expected result for degeneracy tensor
         ref_degeneracy_tensor = np.array([1., 1., 1., 1., 1., 2., 2., 1., 2., 1.])
 
         # Test degeneracy tensor
         assert np.allclose(ref_degeneracy_tensor, oxygen_atom2.degeneracy_tensor.data)
 
-    def test_multipole_with_degeneracy(self, oxygen_atom2):
+    def test_multipole_with_degeneracy(self,
+                                       oxygen_atom2
+                                       ):
         # Expected result for multipole_with_degeneracy
         ref_degeneracy_tensor = np.array([1., 1., 1., 1., 1., 2., 2., 1., 2., 1.])
         ref_multipole_tensor = np.array([0., 0., 0., 0., -3.9516312016, -0.0561791973, 0.0008348984, -4.5778807726,
@@ -156,7 +161,9 @@ class TestAtom:
             particle.multipole_len_to_order(x)
 
 
-def test_init_nucleus():
+def test_init_nucleus(
+phys_constants
+):
     particle.Nucleus(index=0, charge=8.0, element='O',
                      mass=qcelemental.periodictable.to_mass('O'),
                      coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
@@ -171,10 +178,10 @@ def test_init_nucleus():
 #TODO
 def test_potential(
         oxygen_atom1,
-hydrogen_atom,
-oxygen_nucleus,
-hydrogen1_nucleus,
-hydrogen2_nucleus
+        hydrogen_atom,
+        oxygen_nucleus,
+        hydrogen1_nucleus,
+        hydrogen2_nucleus
 ):
     # For Atom.potential() and Nucleus.potential
     # Test 0th order derivative
@@ -251,6 +258,8 @@ hydrogen2_nucleus
                                               origin_derivative_order=1), ref * (-1))
 
 
-def test_init_virtual_particle():
+def test_init_virtual_particle(
+        phys_constants
+):
     particle.VirtualParticle(index=0, coordinate=np.array([1.2919875, 2.156584, -0.0007825])
                                                  / phys_constants.bohr2angstroms)
