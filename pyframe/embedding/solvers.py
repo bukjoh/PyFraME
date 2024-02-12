@@ -7,8 +7,11 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                            exclusions: np.ndarray,
                            indices: np.ndarray,
                            fields: np.ndarray,
-                           starting_guess,
-                           threshold):
+                           starting_guess: np.ndarray,
+                           threshold: float):
+    """
+
+    """
     # Calculate induced dipoles from other induced dipoles
     old_ind_dipoles = starting_guess
     ind_dipoles = np.zeros([len(fields), 3])

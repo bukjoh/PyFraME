@@ -1,135 +1,27 @@
 """Tests PyFraME.embedding.electrostatic_interactions.py"""
 import json
 import os
-import qcelemental
 import pytest
 import numpy as np
 import scipy
 import veloxchem as vlx
-from pyframe.embedding import (particle, polytensor, electrostatic_interactions, constants, fragment, subsystem,
-                               vlx_interface, read_input)
-from qcelemental import PhysicalConstantsContext
-
-phys_constants = PhysicalConstantsContext('CODATA2018')
-
-# Setup Oxygen Atom and Oxygen Nucleus
-oxygen_nucleus = particle.Nucleus(index=0, charge=8.0, element='O',
-                                  mass=qcelemental.periodictable.to_mass('O'),
-                                  coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
-                                              / phys_constants.bohr2angstroms))
-oxygen_atom = particle.Atom(index=0, element='O',
-                            mass=qcelemental.periodictable.to_mass('O'),
-                            coordinate=(np.array([1.7422970, 2.3413610, -0.0007450]) / phys_constants.bohr2angstroms),
-                            multipoles={'elements': np.array([-0.7424407021, -0.2840371815, 0.1671869101,
-                                                              0.0013661730, -4.4188113058, 0.2801417448,
-                                                              0.0002126277, -4.1129942280, 0.0039064597,
-                                                              -5.0206529493, 0.0330216712, 0.0760732530,
-                                                              -0.0003899377, 0.0087745562, 0.0009840165,
-                                                              -0.1813726316, -0.1218544851, -0.0016261873,
-                                                              0.1033223765, 0.0025668497])},
-                            polarizabilities={'elements': np.array([0., 0., 0., 0., 2.2823444229, -0.4207398269,
-                                                                    -0.0006457588, 1.8324399300, -0.0069062619,
-                                                                    3.3666855109]), 'order': [1, 1]})
-# Setup Hydrogen Nuclei
-hydrogen1_nucleus = particle.Nucleus(index=1, charge=1.0, element='H', mass=qcelemental.periodictable.to_mass('H'),
-                                     coordinate=(np.array([-2.5037950, 0.4132210, 0.0003390])
-                                                 / phys_constants.bohr2angstroms))
-hydrogen2_nucleus = particle.Nucleus(index=2, charge=1.0, element='H', mass=qcelemental.periodictable.to_mass('H'),
-                                     coordinate=(np.array([-4.0392140, 0.5467290, -0.0008500])
-                                                 / phys_constants.bohr2angstroms))
-# Setup Hydrogen Atom
-hydrogen_atom = particle.Atom(index=1, element='H',
-                              mass=qcelemental.periodictable.to_mass('H'),
-                              coordinate=(np.array([0.8416780, 1.9718070, -0.0008200])
-                                          / phys_constants.bohr2angstroms),
-                              multipoles={'elements': np.array([0.3699635356, 0.1039146227, 0.0490621032,
-                                                                0.0000401115, -0.6455428297, -0.0041180935,
-                                                                0.0001453595, -0.5362599824, 0.0001224056,
-                                                                -0.5596286658, 0.0810557396, 0.0035896134,
-                                                                0.0001532545, -0.0090165544, -0.0002204117,
-                                                                0.0757377031, 0.2842212967, 0.0003840935,
-                                                                0.1046774555, 0.0011004803])},
-                              polarizabilities={'elements': np.array([0., 0., 0., 0., 0.8132771942, 0.1387943320,
-                                                                      0.0004103386, 0.5814638105, -0.0000004496,
-                                                                      0.5927954021]), 'order': [1, 1]})
-# Setup Hydrogen Atoms for Monopole Electrostatic energy test
-hydrogen_atom1 = particle.Atom(index=1, element='H',
-                               mass=qcelemental.periodictable.to_mass('H'),
-                               coordinate=(np.array([1.0, 0.0, 0.0])
-                                           / phys_constants.bohr2angstroms),
-                               multipoles={'elements': np.array([1.0])}, )
-hydrogen_atom2 = particle.Atom(index=1, element='H',
-                               mass=qcelemental.periodictable.to_mass('H'),
-                               coordinate=(np.array([1.0, 1.0, 0.0])
-                                           / phys_constants.bohr2angstroms),
-                               multipoles={'elements': np.array([1.0])})
-# Setup Hydrogen Atoms for Dipole Electrostatic energy test
-hydrogen_atom_dipole_z = particle.Atom(index=1, element='H',
-                                       mass=qcelemental.periodictable.to_mass('H'),
-                                       coordinate=(np.array([0.0, 0.0, 0.0])
-                                                   / phys_constants.bohr2angstroms),
-                                       multipoles={'elements': np.array([0.0, 0.0, 0.0, 1.0])})
-hydrogen_atom_dipole_y = particle.Atom(index=1, element='H',
-                                       mass=qcelemental.periodictable.to_mass('H'),
-                                       coordinate=(np.array([1.0, 0.0, 0.0])
-                                                   / phys_constants.bohr2angstroms),
-                                       multipoles={'elements': np.array([1.0, 0.0, 1.0, 0.0])})
-hydrogen_atom_dipole_z_translated_x = particle.Atom(index=1, element='H',
-                                                    mass=qcelemental.periodictable.to_mass('H'),
-                                                    coordinate=(np.array([1.0, 0.0, 0.0])
-                                                                / phys_constants.bohr2angstroms),
-                                                    multipoles={'elements': np.array([0.0, 0.0, 0.0, 1.0])})
-hydrogen_atom_dipole_z_translated_z = particle.Atom(index=1, element='H',
-                                                    mass=qcelemental.periodictable.to_mass('H'),
-                                                    coordinate=(np.array([0.0, 0.0, 1.0])
-                                                                / phys_constants.bohr2angstroms),
-                                                    multipoles={'elements': np.array([0.0, 0.0, 0.0, 1.0])})
-hydrogen_atom_dipole_translated = particle.Atom(index=1, element='H',
-                                                mass=qcelemental.periodictable.to_mass('H'),
-                                                coordinate=(np.array([5.0, 13.0, 1.0])
-                                                            / phys_constants.bohr2angstroms),
-                                                multipoles={'elements': np.array([0.0, 2.0, -7.0, 10.0])})
-# Setup fragment dictionary
-water_fragment_dict = {
-    "index": 1,
-    "name": "H2O",
-    "atoms": [{
-        "index": 1,
-        "element": "O",
-        "coordinate": [29.514, 37.243, 44.334],
-        "multipoles": {'elements': [-0.71543374, 0.11412407, -0.27166543, 0.07772714, -4.71453229, -0.05566867,
-                                    0.46147879, -4.19504704, 0.33577098, -3.77169662]},
-        "polarizabilities": {'elements': [4.70788802, 0.33755124, -0.41867523, 3.74951294, -0.04025344, 4.09400356],
-                             'order': [1, 1]}
-    }, {
-        "index": 2,
-        "element": "H",
-        "coordinate": [29.502, 36.434, 43.822],
-        "multipoles": {'elements': [0.35771989, 0.00677109, 0.14724014, 0.1028778, -0.44388795, -0.00418109, 0.0053025,
-                                    -0.13726601, 0.17783555, -0.32940875]},
-        "polarizabilities": {'elements': [0.54070423, 0.05950662, -0.1316576, 2.1100446, 1.02222807, 0.95665643],
-                             'order': [1, 1]}
-    }, {
-        "index": 3,
-        "element": "H",
-        "coordinate": [29.965, 37.007, 45.145],
-        "multipoles": {'elements': [0.35771384, -0.08352935, 0.03548195, -0.15515376, -0.35386318, -0.05563024,
-                                    0.16460186, -0.40252281, -0.09043114, -0.1541939]},
-        "polarizabilities": {'elements': [1.08814028, -0.25332613, 0.83702697, 0.49714845, -0.60912036, 2.02223557],
-                             'order': [1, 1]}
-    }]
-}
-
-# Read fragments from JSON
-with open(f'{os.path.dirname(__file__)}/data/act_wat_test.json') as json_file:
-    input_data = json.load(json_file).get('classical_subsystem', None)
-
-classical_fragments = []
-for f in input_data['classical_fragments']:
-    classical_fragments.append(fragment.ClassicalFragment(**f))
+from pyframe.embedding import (polytensor, electrostatic_interactions,fragment, vlx_interface, read_input)
 
 
-def test_compute_particle_interactions():
+def test_compute_particle_interactions(
+        phys_constants,
+        hydrogen_atom1,
+        hydrogen_atom2,
+        hydrogen_atom_dipole_z,
+        hydrogen_atom_dipole_y,
+        hydrogen_atom_dipole_z_translated_x,
+        hydrogen_atom_dipole_z_translated_z,
+        hydrogen_atom_dipole_translated,
+        hydrogen1_nucleus,
+        hydrogen2_nucleus,
+        oxygen_atom1,
+        oxygen_nucleus
+):
     # Test atoms interaction
     # Test Monopole-Monopole interaction
     ref_interaction_energy_monopole = 2.30707755234174E-18
@@ -181,19 +73,24 @@ def test_compute_particle_interactions():
          -1.6741238607204253e-3, 6.2537563711756675e-9, -8.1382806153557845e-4,
          3.2858187970137201e-7], dtype=np.float64)
     ref_polytensor = polytensor.FirstDegreePolytensor(rank=3, tensor_data=ref_potential)
-    taylor_coefficient = oxygen_atom.taylor_coefficients.data
+    taylor_coefficient = oxygen_atom1.taylor_coefficients.data
     ref_interaction_energy = ref_polytensor.dot_first_degree(polytensor.FirstDegreePolytensor.
-                                                             multiply_elementwise(oxygen_atom.
+                                                             multiply_elementwise(oxygen_atom1.
                                                                                   multipoles_with_degeneracy,
                                                                                   taylor_coefficient))
-    assert electrostatic_interactions.compute_particle_interactions(oxygen_atom, oxygen_nucleus) \
+    assert electrostatic_interactions.compute_particle_interactions(oxygen_atom1, oxygen_nucleus) \
            == pytest.approx(ref_interaction_energy, 1e-9)
 
-    assert electrostatic_interactions.compute_particle_interactions(oxygen_nucleus, oxygen_atom) \
+    assert electrostatic_interactions.compute_particle_interactions(oxygen_nucleus, oxygen_atom1) \
            == pytest.approx(ref_interaction_energy, 1e-9)
 
 
-def test_compute_fragment_particle_interactions():
+def test_compute_fragment_particle_interactions(
+    phys_constants,
+    water_fragment_dict,
+    oxygen_nucleus,
+        oxygen_atom1
+):
     water_fragment = fragment.ClassicalFragment(**water_fragment_dict)
     interaction_energy = electrostatic_interactions.compute_particle_interactions
     # Test fragment nucleus
@@ -204,17 +101,21 @@ def test_compute_fragment_particle_interactions():
                  + interaction_energy(water_fragment.atoms[2], oxygen_nucleus)
     assert ref_energy == pytest.approx(es_energy, 1e-9)
     # Test fragment atom
-    es_energy = electrostatic_interactions.compute_fragment_particle_interactions(oxygen_atom,
+    es_energy = electrostatic_interactions.compute_fragment_particle_interactions(oxygen_atom1,
                                                                                   water_fragment)
-    ref_energy = interaction_energy(water_fragment.atoms[0], oxygen_atom) \
-                 + interaction_energy(water_fragment.atoms[1], oxygen_atom) \
-                 + interaction_energy(water_fragment.atoms[2], oxygen_atom)
+    ref_energy = interaction_energy(water_fragment.atoms[0], oxygen_atom1) \
+                 + interaction_energy(water_fragment.atoms[1], oxygen_atom1) \
+                 + interaction_energy(water_fragment.atoms[2], oxygen_atom1)
     assert ref_energy == pytest.approx(es_energy, 1e-9)
 
 
-def test_fragments_interaction():
-    water_fragment_1 = classical_fragments[0]
-    water_fragment_2 = classical_fragments[1]
+def test_fragments_interaction(
+    phys_constants,
+    water_fragments
+):
+
+    water_fragment_1 = water_fragments[0]
+    water_fragment_2 = water_fragments[1]
     interaction_energy = electrostatic_interactions.compute_particle_interactions
     es_energy = electrostatic_interactions.compute_fragment_interactions(water_fragment_1, water_fragment_2)
     ref_energy = 0
@@ -228,12 +129,6 @@ def test_fragments_interaction():
 def test_compute_electrostatic_interaction():
     # Internal test
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
-
-    #core = subsystem.QuantumSubsystem(name="QM", input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
-    #env = subsystem.ClassicalSubsystem(name="Classical",
-    #                                   input_data=f'{os.path.dirname(__file__)}/data/act_wat_test.json')
-
-    # exclusion so far only within the same fragment
 
     act_xyz = """10
     atc

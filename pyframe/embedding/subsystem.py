@@ -177,7 +177,7 @@ class ClassicalSubsystem(Subsystem):
     def self_energy(self):
         return electrostatic_interactions.compute_classical_self_energy(self.classical_fragments)
 
-
+# TODO make external field optional -> if statement
     def solve_induced_dipoles(self,
                               external_fields,
                               threshold):

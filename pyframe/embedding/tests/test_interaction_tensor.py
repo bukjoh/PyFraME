@@ -1,13 +1,12 @@
 """Tests PyFraME.embedding.electrostatic_interactions.py"""
 import numpy as np
 from pyframe.embedding import interaction_tensor, constants
-from pyframe.embedding.tests import test_electrostatic_interactions
-
-oxygen_nucleus = test_electrostatic_interactions.oxygen_nucleus
-oxygen_atom = test_electrostatic_interactions.oxygen_atom
 
 
-def test_compute_t_tensor():
+def test_compute_t_tensor(
+oxygen_nucleus,
+        oxygen_atom1
+):
     # Test with interaction_tensor_template
     ref_potential = np.array(
         [0.75202669489040475, 6.3679443173877762e-2, 3.0699045537920477e-2, -4.1315647410858666e-6,
@@ -18,9 +17,9 @@ def test_compute_t_tensor():
          -1.6741238607204253e-3, 6.2537563711756675e-9, -8.1382806153557845e-4,
          3.2858187970137201e-7], dtype=np.float64) / 8.0
     t_tensor = interaction_tensor.compute_t_tensor(r_a=oxygen_nucleus.coordinate,
-                                                   r_b=oxygen_atom.coordinate,
+                                                   r_b=oxygen_atom1.coordinate,
                                                    rank_a=0,
-                                                   rank_b=oxygen_atom.multipole_order,
+                                                   rank_b=oxygen_atom1.multipole_order,
                                                    tensor_template=constants.values.
                                                    interaction_tensor_template).data
 
@@ -35,9 +34,9 @@ def test_compute_t_tensor():
          1.6741238607204253e-3, -6.2537563711756675e-9, 8.1382806153557845e-4,
          -3.2858187970137201e-7], dtype=np.float64) / 8.0
     t_tensor = interaction_tensor.compute_t_tensor(r_a=oxygen_nucleus.coordinate,
-                                                   r_b=oxygen_atom.coordinate,
+                                                   r_b=oxygen_atom1.coordinate,
                                                    rank_a=0,
-                                                   rank_b=oxygen_atom.multipole_order,
+                                                   rank_b=oxygen_atom1.multipole_order,
                                                    tensor_template=constants.values.
                                                    potential_tensor_template).data
     assert np.allclose(t_tensor, ref_potential)
