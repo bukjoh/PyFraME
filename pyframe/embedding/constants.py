@@ -19,6 +19,11 @@ class Constants:
                  max_order: Optional[int] = 42,
                  t_rank: Optional[int] = 15
                  ):
+        if max_order < 0:
+            raise ValueError("max_order must be non-negative")
+        if t_rank < 0:
+            raise ValueError("t_rank must be non-negative")
+
         if not self.initialized:
             self.max_order = max_order
             t_int_obj = polytensor.SecondDegreePolytensor(rank_1=t_rank, rank_2=t_rank, data_type=object)
