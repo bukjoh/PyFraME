@@ -1,0 +1,29 @@
+{
+  "quantum_subsystem": {
+    "_comment": "Density matrix of h2 in the sto-3g basis run with vlx ScfRestrictedDriver",
+    "density_matrix": [[0.77139152, 0.77139152],
+                      [0.77139152, 0.77139152]],
+    "nuclei": [
+      {
+                "index": 1,
+                "element": "H",
+                "charge": 1.0,
+                "coordinate": [
+                 0.0000000000,
+                 0.0000000000,
+                 0.0000000000
+                ]
+      },
+      {
+                "index": 1,
+                "element": "H",
+                "charge": 1.0,
+                "coordinate": [
+                 1.3983970000,
+                 0.0000000000,
+                 0.0000000000
+                ]
+      }
+    ]
+  }
+}

@@ -161,11 +161,13 @@ class Nucleus(Particle):
                  index: int,
                  coordinate: np.array,
                  charge: float,
+                 name: Optional[str] = None,
                  mass: Optional[float] = None,
                  element: Optional[str] = None,
                  vdw: Optional[dict] = None,
                  ):
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
+        self.name = name
         self.charge = np.array([charge])
         if element is not None:
             self._element = element

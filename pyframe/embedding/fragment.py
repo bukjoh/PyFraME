@@ -83,7 +83,7 @@ class QuantumFragment(Fragment):
     def __init__(self,
                  index: int,
                  nuclei: list,
-                 e_density_matrix: density_matrix.DensityMatrix,
+                 e_density_matrix: np.ndarray | list,
                  name: Optional[str] = None
                  ):
         Fragment.__init__(self, index=index, name=name)
@@ -92,4 +92,4 @@ class QuantumFragment(Fragment):
             n['coordinate'] = np.array(n['coordinate'])
             self.nuclei.append(particle.Nucleus(**n))
         self.num_nuclei = len(nuclei)
-        self.density = e_density_matrix.density
+        self.e_density_matrix = density_matrix.DensityMatrix(e_density_matrix)

@@ -123,7 +123,8 @@ class ClassicalSubsystem(Subsystem):
         for fragments in self.classical_fragments:
             for atom in fragments.atoms:
                 self.indices[k] = atom.index
-                self.polarizabilities[k, :, :] = tensor_tools.uncompress_symmetric_matrix(atom.polarizability[4:10])
+                if len(atom.polarizability) == 10:
+                    self.polarizabilities[k, :, :] = tensor_tools.uncompress_symmetric_matrix(atom.polarizability[4:10])
                 self.coordinates[k, :] = atom.coordinate[:]
                 self.exclusions.append(atom.exclusions)
                 k += 1

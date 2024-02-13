@@ -1,0 +1,66 @@
+{"classical_subsystem": {
+    "classical_fragments": [
+      {
+        "index": 0,
+        "name" : "H-",
+        "atoms": [
+          {
+        "index": 0,
+        "element": "H",
+        "exclusions": [0],
+        "coordinate": [
+         -3.7794500000,
+          0.0000000000,
+          0.0000000000
+        ],
+        "multipoles": {"elements": [
+                            -1.0
+                        ]},
+                        "polarizabilities": {"elements":  [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            0.0,
+                            1.0
+                        ], "order": [1, 1]}
+      }]
+      }
+      ,
+      {
+        "index": 1,
+        "name" : "H",
+        "atoms": [
+          {
+        "index": 1,
+        "element": "H",
+        "exclusions": [1],
+        "coordinate": [
+         5.1778470000,
+          0.0000000000,
+          0.0000000000
+        ],
+        "multipoles": {"elements": [
+                            -1.0
+                        ]},
+                        "polarizabilities": {"elements":  [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            0.0,
+                            0.0,
+                            1.0,
+                            0.0,
+                            1.0
+                        ], "order": [1, 1]}
+      }]
+      }
+    ]
+  }
+}

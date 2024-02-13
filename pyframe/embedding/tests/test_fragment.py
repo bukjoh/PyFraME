@@ -88,14 +88,13 @@ class TestQuantumFragment:
         self.index = 1
         self.nuclei = [{'element': 'H', 'coordinate': [0, 0, 0], 'index': 0, 'charge': 1},
                   {'element': 'O', 'coordinate': [1, 1, 1], 'index': 1, 'charge': 8}]
-        self.e_density_matrix = density_matrix.DensityMatrix(np.zeros((3, 3)))  # Dummy density matrix
+        self.e_density_matrix = np.zeros((3, 3))  # Dummy density matrix
         self.test_fragment = fragment.QuantumFragment(self.index, self.nuclei, self.e_density_matrix)
 
     def test_initialization(self,
                             water_density,
                             hydrogen_nucleus_in_nuclei_list
                             ):
-        water_density = density_matrix.DensityMatrix(density=water_density)
         test_fragment2 = fragment.QuantumFragment(index=1, nuclei=hydrogen_nucleus_in_nuclei_list, name="H2O",
                                                   e_density_matrix=water_density)
         assert self.test_fragment.num_nuclei == 2
@@ -104,5 +103,5 @@ class TestQuantumFragment:
         assert isinstance(test_fragment2.nuclei[0], particle.Nucleus)
 
     def test_density_matrix(self):
-        assert np.array_equal(self.test_fragment.density, self.e_density_matrix.density)
+        assert np.array_equal(self.test_fragment.e_density_matrix.density, self.e_density_matrix)
 
