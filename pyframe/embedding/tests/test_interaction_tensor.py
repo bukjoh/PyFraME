@@ -3,8 +3,10 @@ import numpy as np
 from pyframe.embedding import interaction_tensor, constants
 
 
+
+
 def test_compute_t_tensor(
-oxygen_nucleus,
+        oxygen_nucleus,
         oxygen_atom1
 ):
     # Test with interaction_tensor_template
@@ -22,7 +24,7 @@ oxygen_nucleus,
                                                    rank_b=oxygen_atom1.multipole_order,
                                                    tensor_template=constants.values.
                                                    interaction_tensor_template).data
-
+    assert t_tensor.data.shape == (1, 20)
     assert np.allclose(t_tensor, ref_potential)
     # Test with potential_tensor_template
     ref_potential = np.array(
@@ -39,4 +41,6 @@ oxygen_nucleus,
                                                    rank_b=oxygen_atom1.multipole_order,
                                                    tensor_template=constants.values.
                                                    potential_tensor_template).data
+    # TODO test different results for potential tensor template and interaction tensor template
+    assert t_tensor.data.shape == (1, 20)
     assert np.allclose(t_tensor, ref_potential)

@@ -80,12 +80,16 @@ def test_potential_tensor_shape():
     assert constants.values.potential_tensor_template.shape == (816, 816)
 
 def test_interaction_tensor_values():
-    assert np.allclose(constants.values.interaction_tensor_template[0, 0], [np.array([0, 0, 0]), np.array([0, 0, 0])])
-    assert np.allclose(constants.values.interaction_tensor_template[815, 815], [np.array([0, 0, 15]), np.array([0, 0, 15])])
+    assert np.allclose(constants.values.interaction_tensor_template[0, 0],
+                       [np.array([0, 0, 0]), np.array([0, 0, 0])])
+    assert np.allclose(constants.values.interaction_tensor_template[815, 815],
+                       [np.array([0, 0, 15]), np.array([0, 0, 15])])
 
 def test_potential_tensor_values():
-    assert np.allclose(constants.values.potential_tensor_template[0, 0], [np.array([0, 0, 0]), np.array([0, 0, 0])])
-    assert np.allclose(constants.values.potential_tensor_template[815, 815], [np.array([0, 0, 30]), np.array([0, 0, 0])])
+    assert np.allclose(constants.values.potential_tensor_template[0, 0],
+                       [np.array([0, 0, 0]), np.array([0, 0, 0])])
+    assert np.allclose(constants.values.potential_tensor_template[815, 815],
+                       [np.array([0, 0, 30]), np.array([0, 0, 0])])
 
 def test_max_order():
     assert constants.values.max_order == 42

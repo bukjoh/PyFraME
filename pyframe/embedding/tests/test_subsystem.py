@@ -1,7 +1,7 @@
 """Tests PyFraME.embedding.subsystem.py"""
-import os, sys, io, pytest
+import sys, io, pytest
 import numpy as np
-from pyframe.embedding import read_input, subsystem
+from pyframe.embedding import subsystem
 
 
 class TestQuantumSubsystem:
