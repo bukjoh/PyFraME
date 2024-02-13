@@ -177,11 +177,15 @@ class ClassicalSubsystem(Subsystem):
     def self_energy(self):
         return electrostatic_interactions.compute_classical_self_energy(self.classical_fragments)
 
-# TODO make external field optional -> if statement
     def solve_induced_dipoles(self,
-                              external_fields,
-                              threshold):
-        static_fields = self.multipole_fields + external_fields
+                              threshold: float = 1e-10,
+                              solver: Optional[str] = 'induced_dipoles_jacobi',
+                              external_fields: Optional[np.ndarray] = None
+                              ):
+        if external_fields is not None:
+            static_fields = self.multipole_fields + external_fields
+        else:
+            static_fields = self.multipole_fields
         # First guess for induced dipoles
         if np.all(self.induced_dipoles == 0):
             starting_guess = np.zeros([self.num_atoms, 3])
@@ -191,11 +195,12 @@ class ClassicalSubsystem(Subsystem):
             residue_norm = np.abs(np.linalg.norm(external_fields - self.induced_dipoles.external_fields)
                                   / np.linalg.norm(self.induced_dipoles.external_fields))
             if residue_norm == 0:
-                print("Residue norm between new and old external fields is 0, induced dipoles will not be recalculated.")
+                print("Residue norm between new and old external fields is 0, induced dipoles will not be "
+                      "recalculated.")
                 return
             elif residue_norm < 1e-6:
-                print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will be"
-                      " used as a starting guess.")
+                print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
+                      "be used as a starting guess.")
                 starting_guess = self.induced_dipoles.induced_dipoles
             else:
                 print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
@@ -203,13 +208,16 @@ class ClassicalSubsystem(Subsystem):
                 starting_guess = np.zeros([self.num_atoms, 3])
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
-        induced_dipoles, induced_dipoles_fields, num_iter = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
-                                                                                           polarizabilities=self.polarizabilities,
-                                                                                           exclusions=self.exclusions,
-                                                                                           indices=self.indices,
-                                                                                           fields=static_fields,
-                                                                                           starting_guess=starting_guess,
-                                                                                           threshold=threshold)
+        if solver == 'induced_dipoles_jacobi':
+            induced_dipoles, induced_dipoles_fields, num_iter = (solvers.
+                                                                 induced_dipoles_jacobi(coordinates=self.coordinates,
+                                                                                        polarizabilities=self.
+                                                                                        polarizabilities,
+                                                                                        exclusions=self.exclusions,
+                                                                                        indices=self.indices,
+                                                                                        fields=static_fields,
+                                                                                        starting_guess=starting_guess,
+                                                                                        threshold=threshold))
         k = 0
         for fragment in self.classical_fragments:
             for atom in fragment.atoms:
@@ -218,17 +226,21 @@ class ClassicalSubsystem(Subsystem):
         self.induced_dipoles = InducedDipoles(induced_dipoles=induced_dipoles,
                                               external_fields=external_fields,
                                               induced_dipole_fields=induced_dipoles_fields,
-                                              number_of_iterations=num_iter)
+                                              number_of_iterations=num_iter,
+                                              solver=solver)
 
 
 @dataclass
 class InducedDipoles(ClassicalSubsystem):
-    """Class for keeping track of induced dipoles and the corresponding set of external fields.
+    """DataClass for induced dipoles. Contains array of induced dipoles, the external fields used to induce these
+    dipoles, the field produced by the induced dipoles, the number of iterations it took to calculate the induced
+    dipoles, and the name of the solver used.
     """
     induced_dipoles: np.ndarray
     external_fields: np.ndarray
     induced_dipole_fields: np.ndarray
     number_of_iterations: int
+    solver: str
 
 
 class ContinuumSubsystem(Subsystem):

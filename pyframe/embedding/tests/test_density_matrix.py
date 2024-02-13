@@ -5,7 +5,9 @@ import pytest
 
 
 class TestDensityMatrix:
- def test_init_with_numpy_array(self, water_density):
+ def test_init_with_numpy_array(self,
+                                water_density
+                                ):
   dens_mat = density_matrix.DensityMatrix(density=water_density)
   assert np.array_equal(dens_mat.density, water_density)
 
