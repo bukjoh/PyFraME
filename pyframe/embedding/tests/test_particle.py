@@ -160,106 +160,136 @@ class TestAtom:
         with pytest.raises(ValueError, match="Input must be a non-negative integer."):
             particle.multipole_len_to_order(x)
 
+    def test_potential(self,
+                       hydrogen_atom,
+                       oxygen_atom1,
+                       oxygen_nucleus,
 
-def test_init_nucleus(
-phys_constants
-):
-    particle.Nucleus(index=0, charge=8.0, element='O',
-                     mass=qcelemental.periodictable.to_mass('O'),
-                     coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
-                                 / phys_constants.bohr2angstroms))
-    # Test element to nucleus
-    with pytest.raises(ValueError):
-        particle.Nucleus(index=0, charge=8.0, element='N',
-                         mass=qcelemental.periodictable.to_mass('O'),
-                         coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
-                                     / phys_constants.bohr2angstroms))
+                       ):
+        # Test 0th order derivative
+        assert hydrogen_atom.potential(coordinate=oxygen_atom1.coordinate) \
+               == pytest.approx(0.2023997479735371, 1e-9)
+        assert oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate) \
+               == pytest.approx(-6.7735786708826934e-2, 1e-9)
+        # Test 1st order derivative
+        ref = np.array([-5.5956485010021746e-3, -2.5226526034117761e-3, 1.0334216193982794e-6])
+        assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
+                                                  origin_derivative_order=1), ref * (-1))
+        assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
+                                                  pot_derivative_order=1,
+                                                  origin_derivative_order=0), ref)
+        # Test 2nd order derivative
+        ref = np.array([-8.1960563414034619e-4, -6.2660333024683009e-4, 1.8883791746125624e-7,
+                        2.7461891397905321e-4, 1.7140147595889211e-7, 5.4498672016129260e-4])
+        assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
+                                                  origin_derivative_order=2), ref)
+        assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
+                                                  pot_derivative_order=1,
+                                                  origin_derivative_order=1), ref * (-1))
+        # Test 3rd order derivative
+        ref = np.array([-1.5061439556848243e-4, -1.9495759751591218e-4, 2.9483606775445033e-8,
+                        1.9229830800340373e-5, 5.8440852920764875e-8, 1.3138456476814194e-4,
+                        1.3470095565551845e-4, 2.3611770228146266e-8, 6.0256641860393659e-5,
+                        -5.3095377003591325e-8])
+        assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
+                                                  pot_derivative_order=0,
+                                                  origin_derivative_order=3), ref * (-1))
+        assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
+                                                  pot_derivative_order=3,
+                                                  origin_derivative_order=0), ref)
+        assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
+                                                  pot_derivative_order=2,
+                                                  origin_derivative_order=1), ref * (-1))
 
-#TODO
-def test_potential(
-        oxygen_atom1,
-        hydrogen_atom,
-        oxygen_nucleus,
-        hydrogen1_nucleus,
-        hydrogen2_nucleus
-):
-    # For Atom.potential() and Nucleus.potential
-    # Test 0th order derivative
-    assert hydrogen_atom.potential(coordinate=oxygen_atom1.coordinate) \
-           == pytest.approx(0.2023997479735371, 1e-9)
-    assert oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate) \
-           == pytest.approx(-6.7735786708826934e-2, 1e-9)
-    assert oxygen_nucleus.potential(coordinate=oxygen_atom1.coordinate) \
-           == pytest.approx(0.75202669489040475, 1e-9)
-    assert hydrogen1_nucleus.potential(coordinate=hydrogen2_nucleus.coordinate,
-                                       pot_derivative_order=0,
-                                       origin_derivative_order=0) \
-           == pytest.approx(0.34335113566514336, 1e-9)
-    assert hydrogen2_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
-                                       pot_derivative_order=0,
-                                       origin_derivative_order=0) \
-           == pytest.approx(0.34335113566514336, 1e-9)
-    assert hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
-                                       pot_derivative_order=0,
-                                       origin_derivative_order=0) \
-           == float('inf')
-    # Test 1st order derivative
-    ref = np.array([-6.3679443173877762e-2, -3.0699045537920477e-2, 4.1315647410858666e-6])
-    assert np.allclose(oxygen_nucleus.potential(coordinate=oxygen_atom1.coordinate,
-                                                pot_derivative_order=1), ref)
-    ref = np.array([-5.5956485010021746e-3, -2.5226526034117761e-3, 1.0334216193982794e-6])
-    assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
-                                              origin_derivative_order=1), ref * (-1))
-    assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
-                                              pot_derivative_order=1,
-                                              origin_derivative_order=0), ref)
-    ref = np.array([1.17446815e-01, -1.02122543e-02, 9.09486352e-05])
-    assert np.allclose(hydrogen1_nucleus.potential(coordinate=hydrogen2_nucleus.
-                                                   coordinate,
-                                                   pot_derivative_order=0,
-                                                   origin_derivative_order=1), ref * (-1))
-    assert np.allclose(hydrogen1_nucleus.potential(coordinate=hydrogen2_nucleus.
-                                                   coordinate,
-                                                   pot_derivative_order=1,
-                                                   origin_derivative_order=0), ref)
-    assert np.allclose(hydrogen2_nucleus.potential(coordinate=hydrogen1_nucleus.
-                                                   coordinate,
-                                                   pot_derivative_order=0,
-                                                   origin_derivative_order=1), ref)
-    assert np.allclose(hydrogen2_nucleus.potential(coordinate=hydrogen1_nucleus.
-                                                   coordinate,
-                                                   pot_derivative_order=1,
-                                                   origin_derivative_order=0), ref * (-1))
-    for i in range(3):
-        assert np.isnan(hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
-                                                    pot_derivative_order=0,
-                                                    origin_derivative_order=1)[i])
-    # Test 2nd order derivative
-    ref = np.array([-8.1960563414034619e-4, -6.2660333024683009e-4, 1.8883791746125624e-7,
-                    2.7461891397905321e-4, 1.7140147595889211e-7, 5.4498672016129260e-4])
-    assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
-                                              origin_derivative_order=2), ref)
-    assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
-                                              pot_derivative_order=1,
-                                              origin_derivative_order=1), ref * (-1))
-    # Test 3rd order derivative
-    ref = np.array([-1.5061439556848243e-4, -1.9495759751591218e-4, 2.9483606775445033e-8,
-                    1.9229830800340373e-5, 5.8440852920764875e-8, 1.3138456476814194e-4,
-                    1.3470095565551845e-4, 2.3611770228146266e-8, 6.0256641860393659e-5,
-                    -5.3095377003591325e-8])
-    assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
-                                              pot_derivative_order=0,
-                                              origin_derivative_order=3), ref * (-1))
-    assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
-                                              pot_derivative_order=3,
-                                              origin_derivative_order=0), ref)
-    assert np.allclose(oxygen_atom1.potential(coordinate=oxygen_nucleus.coordinate,
-                                              pot_derivative_order=2,
-                                              origin_derivative_order=1), ref * (-1))
+class TestNucleus:
+    def test_creation(self):
+        index = 1
+        coordinate = np.array([0.0, 0.0, 0.0])
+        charge = 2.0
+        nucleus = particle.Nucleus(index, coordinate, charge)
+        assert nucleus.index == index
+        assert np.array_equal(nucleus.coordinate, coordinate)
+        assert nucleus.charge == np.array([charge])
 
+    def test_charge_to_element(self,
+                               phys_constants
+                               ):
+        index = 1
+        coordinate = np.array([0.0, 0.0, 0.0])
+        charge = 2.0
+        nucleus = particle.Nucleus(index, coordinate, charge)
+        assert nucleus.charge_to_element() == "Helium"  # Assuming atomic number 2 corresponds to Helium
+        # Test with wrong input
+        with pytest.raises(ValueError):
+            particle.Nucleus(index=0, charge=8.0, element='N',
+                             mass=qcelemental.periodictable.to_mass('O'),
+                             coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
+                                         / phys_constants.bohr2angstroms))
+    def test_element_to_charge(self):
+        index = 1
+        coordinate = np.array([0.0, 0.0, 0.0])
+        charge = 2.0
+        nucleus = particle.Nucleus(index, coordinate, charge)
+        assert nucleus.element_to_charge() == charge
 
-def test_init_virtual_particle(
-        phys_constants
-):
-    particle.VirtualParticle(index=0, coordinate=np.array([1.2919875, 2.156584, -0.0007825])
-                                                 / phys_constants.bohr2angstroms)
+    def test_potential(self,
+                       oxygen_nucleus,
+                       hydrogen1_nucleus,
+                       hydrogen2_nucleus,
+                       oxygen_atom1
+                       ):
+        index = 1
+        coordinate_nucleus = np.array([0.0, 0.0, 0.0])
+        coordinate = np.array([1.0, 1.0, 1.0])
+        charge = 2.0
+        nucleus = particle.Nucleus(index, coordinate_nucleus, charge)
+        potential = nucleus.potential(coordinate)
+        assert isinstance(potential, (float, np.ndarray))  # Checking the returned type
+        assert oxygen_nucleus.potential(coordinate=oxygen_atom1.coordinate) \
+               == pytest.approx(0.75202669489040475, 1e-9)
+        assert hydrogen1_nucleus.potential(coordinate=hydrogen2_nucleus.coordinate,
+                                           pot_derivative_order=0,
+                                           origin_derivative_order=0) \
+               == pytest.approx(0.34335113566514336, 1e-9)
+        assert hydrogen2_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
+                                           pot_derivative_order=0,
+                                           origin_derivative_order=0) \
+               == pytest.approx(0.34335113566514336, 1e-9)
+        assert hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
+                                           pot_derivative_order=0,
+                                           origin_derivative_order=0) \
+               == float('inf')
+        # Test 1st order derivative
+        ref = np.array([-6.3679443173877762e-2, -3.0699045537920477e-2, 4.1315647410858666e-6])
+        assert np.allclose(oxygen_nucleus.potential(coordinate=oxygen_atom1.coordinate,
+                                                    pot_derivative_order=1), ref)
+        ref = np.array([1.17446815e-01, -1.02122543e-02, 9.09486352e-05])
+        assert np.allclose(hydrogen1_nucleus.potential(coordinate=hydrogen2_nucleus.
+                                                       coordinate,
+                                                       pot_derivative_order=0,
+                                                       origin_derivative_order=1), ref * (-1))
+        assert np.allclose(hydrogen1_nucleus.potential(coordinate=hydrogen2_nucleus.
+                                                       coordinate,
+                                                       pot_derivative_order=1,
+                                                       origin_derivative_order=0), ref)
+        assert np.allclose(hydrogen2_nucleus.potential(coordinate=hydrogen1_nucleus.
+                                                       coordinate,
+                                                       pot_derivative_order=0,
+                                                       origin_derivative_order=1), ref)
+        assert np.allclose(hydrogen2_nucleus.potential(coordinate=hydrogen1_nucleus.
+                                                       coordinate,
+                                                       pot_derivative_order=1,
+                                                       origin_derivative_order=0), ref * (-1))
+        for i in range(3):
+            assert np.isnan(hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
+                                                        pot_derivative_order=0,
+                                                        origin_derivative_order=1)[i])
+
+class TestVirtualParticle:
+    def test_init_virtual_particle(self,
+                                   phys_constants
+                                   ):
+        virtual_particle = particle.VirtualParticle(index=0, coordinate=np.array([1.2919875, 2.156584, -0.0007825])
+                                                     / phys_constants.bohr2angstroms)
+        assert virtual_particle.index == 0
+        assert virtual_particle.coordinate.shape == (3,)
