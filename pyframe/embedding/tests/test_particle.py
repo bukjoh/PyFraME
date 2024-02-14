@@ -6,6 +6,7 @@ import numpy as np
 
 from pyframe.embedding import particle, tensor_tools, constants, polytensor
 
+
 class TestParticle:
     def test_init_with_valid_arguments(self,
                                        phys_constants
@@ -19,8 +20,9 @@ class TestParticle:
         assert particle_inst._mass == mass
         assert particle_inst.particle_variables is constants.values
 
+
 class TestAtom:
-    def test_init_with_valid_arguments(self,oxygen_data, hydrogen_data):
+    def test_init_with_valid_arguments(self, oxygen_data, hydrogen_data):
         index = 1
         coordinate = np.array([0.0, 0.0, 0.0])
         induced_dipole = np.array([1.0, 2.0, 3.0])
@@ -30,28 +32,28 @@ class TestAtom:
         element = "C"
         vdw = {'vdw_method': "6-12", 'lj_sigma': 3.0, 'lj_epsilon': 0.5}
         multipoles = {'elements': [-0.71543374,
-                                    0.11412407,
-                                    -0.27166543,
-                                    0.07772714,
-                                    -4.71453229,
-                                    -0.05566867,
-                                    0.46147879,
-                                    -4.19504704,
-                                    0.33577098,
-                                    -3.77169662],
+                                   0.11412407,
+                                   -0.27166543,
+                                   0.07772714,
+                                   -4.71453229,
+                                   -0.05566867,
+                                   0.46147879,
+                                   -4.19504704,
+                                   0.33577098,
+                                   -3.77169662],
                       'order': 2}
-        polarizabilities ={"elements": [0.0,
-                                        0.0,
-                                        0.0,
-                                        0.0,
-                                        4.70788802,
-                                        0.33755124,
-                                        -0.41867523,
-                                        3.74951294,
-                                        -0.04025344,
-                                        4.09400356
-                                        ],
-                           "order": [1, 1]}
+        polarizabilities = {"elements": [0.0,
+                                         0.0,
+                                         0.0,
+                                         0.0,
+                                         4.70788802,
+                                         0.33755124,
+                                         -0.41867523,
+                                         3.74951294,
+                                         -0.04025344,
+                                         4.09400356
+                                         ],
+                            "order": [1, 1]}
         atom = particle.Atom(index=index,
                              coordinate=coordinate,
                              induced_dipole=induced_dipole,
@@ -202,6 +204,7 @@ class TestAtom:
                                                   pot_derivative_order=2,
                                                   origin_derivative_order=1), ref * (-1))
 
+
 class TestNucleus:
     def test_creation(self):
         index = 1
@@ -226,6 +229,7 @@ class TestNucleus:
                              mass=qcelemental.periodictable.to_mass('O'),
                              coordinate=(np.array([-3.3285510, -0.1032300, -0.0004160])
                                          / phys_constants.bohr2angstroms))
+
     def test_element_to_charge(self):
         index = 1
         coordinate = np.array([0.0, 0.0, 0.0])
@@ -286,11 +290,12 @@ class TestNucleus:
                                                         pot_derivative_order=0,
                                                         origin_derivative_order=1)[i])
 
+
 class TestVirtualParticle:
     def test_init_virtual_particle(self,
                                    phys_constants
                                    ):
         virtual_particle = particle.VirtualParticle(index=0, coordinate=np.array([1.2919875, 2.156584, -0.0007825])
-                                                     / phys_constants.bohr2angstroms)
+                                                    / phys_constants.bohr2angstroms)
         assert virtual_particle.index == 0
         assert virtual_particle.coordinate.shape == (3,)

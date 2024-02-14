@@ -124,12 +124,12 @@ class Atom(Particle):
                                                        r_b=coordinate,
                                                        rank_a=self.multipole_order,
                                                        rank_b=pot_derivative_order
-                                                              + origin_derivative_order
-                                                              + coord_multipole_order,
+                                                       + origin_derivative_order
+                                                       + coord_multipole_order,
                                                        tensor_template=tensor_template,
                                                        start_rank_a=0,
                                                        start_rank_b=pot_derivative_order
-                                                                    + origin_derivative_order)
+                                                       + origin_derivative_order)
         t_tensor.data = t_tensor.data * (-1) ** origin_derivative_order
         return polytensor.FirstDegreePolytensor. \
             multiply_elementwise(self.multipoles_with_degeneracy, self.taylor_coefficients). \
@@ -147,8 +147,10 @@ def multipole_len_to_order(multipoles) -> int:
     """
     if not isinstance(multipoles, int) or multipoles < 0:
         raise ValueError("Input must be a non-negative integer.")
+
     def equation(t):
         return ((t + 1) * (t + 2) * (t + 3)) / 6 - multipoles
+
     solution = root(equation, np.array([0]))
     return round(solution.x[0])
 
@@ -231,12 +233,12 @@ class Nucleus(Particle):
                                                        r_b=coordinate,
                                                        rank_a=0,
                                                        rank_b=pot_derivative_order
-                                                              + origin_derivative_order
-                                                              + coord_multipole_order,
+                                                       + origin_derivative_order
+                                                       + coord_multipole_order,
                                                        tensor_template=tensor_template,
                                                        start_rank_a=0,
                                                        start_rank_b=pot_derivative_order
-                                                                    + origin_derivative_order)
+                                                       + origin_derivative_order)
         t_tensor.data = t_tensor.data * (-1) ** origin_derivative_order
         return polytensor.FirstDegreePolytensor(rank=0, tensor_data=self.charge). \
             multiply_first_degree_second_degree(t_tensor).data

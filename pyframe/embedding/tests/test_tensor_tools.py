@@ -1,5 +1,7 @@
 """Tests PyFraME.embedding.tensor_tools.py"""
-import copy, math, pytest
+import copy
+import math
+import pytest
 import numpy as np
 
 from pyframe.embedding import tensor_tools
@@ -221,9 +223,9 @@ def test_compute_interaction_tensor_element():
     assert math.isclose(-4.831797020366597e-5, tensor_tools.compute_interaction_tensor_element(multi_indices_4, r_ji,
                                                                                                tensor_coefficient))
     assert math.isclose(-3.977407904023146e-5, tensor_tools.compute_interaction_tensor_element(multi_indices_3, r_ij,
-                                                                                              tensor_coefficient))
-    assert math.isclose(3.977407904023146e-5, tensor_tools.compute_interaction_tensor_element(multi_indices_3, r_ji,
                                                                                                tensor_coefficient))
+    assert math.isclose(3.977407904023146e-5, tensor_tools.compute_interaction_tensor_element(multi_indices_3, r_ji,
+                                                                                              tensor_coefficient))
     assert math.isclose(3.977407904023146e-5, tensor_tools.compute_interaction_tensor_element(multi_indices_5, r_ij,
                                                                                               tensor_coefficient))
     assert math.isclose(-3.977407904023146e-5, tensor_tools.compute_interaction_tensor_element(multi_indices_5, r_ji,
@@ -382,4 +384,3 @@ def test_uncompress_symmetric_matrix():
 
     with pytest.raises(ValueError, match="Invalid size for compressed symmetric matrix."):
         tensor_tools.uncompress_symmetric_matrix(invalid_input)
-

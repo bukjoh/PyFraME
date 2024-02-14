@@ -1,5 +1,7 @@
 """Tests PyFraME.embedding.subsystem.py"""
-import sys, io, pytest
+import sys
+import io
+import pytest
 import numpy as np
 
 from pyframe.embedding import subsystem
@@ -39,7 +41,7 @@ class TestQuantumSubsystem:
                                     [-0.26141526, 0.0838028, 0.09513431],
                                     [-0.27319751, 0.13408809, 0.1133901]])
         for i, coordinates in enumerate(self.env.coordinates):
-            assert ref_pot_array[i] == pytest.approx( self.core.static_potential(coordinate=coordinates,
+            assert ref_pot_array[i] == pytest.approx(self.core.static_potential(coordinate=coordinates,
                                                                                 pot_derivative_order=0,
                                                                                 origin_derivative_order=0,
                                                                                 coord_multipole_order=0)[0], abs=1e-12)
@@ -56,7 +58,7 @@ class TestQuantumSubsystem:
                               [-0.26141526, 0.0838028, 0.09513431],
                               [-0.27319751, 0.13408809, 0.1133901]])
         assert np.allclose(self.core.compute_nuclear_fields(self.env.coordinates), ref_array)
-        assert np.all(np.isnan(self.core.compute_nuclear_fields(self.core.coordinates)) == True)
+        assert np.all(np.isnan(self.core.compute_nuclear_fields(self.core.coordinates)))
 
     def test_compute_electric_fields(self,
                                      act_wat_electric_fields,
@@ -91,7 +93,7 @@ class TestClassicalSubsystem:
         assert c_subsystem.polarizabilities.shape == (c_subsystem.num_atoms, 3, 3)
         assert c_subsystem.indices.shape == (c_subsystem.num_atoms,)
         assert c_subsystem.exclusions == [(0, 1, 2), (0, 1, 2), (0, 1, 2), (3, 4, 5), (3, 4, 5), (3, 4, 5)]
-        assert c_subsystem.induced_dipoles.shape == (c_subsystem.num_atoms, 3)
+        assert c_subsystem.induced_dipoles.induced_dipoles.shape == (c_subsystem.num_atoms, 3)
         assert c_subsystem.multipole_fields.shape == (c_subsystem.num_atoms, 3)
 
     def test_init_with_empty_classical_fragments(self):

@@ -21,12 +21,12 @@ def test_induced_dipoles_jacobi(
                             [-0.44555632, 0.00482074, -0.09598545]])
     coordinates, polarizabilities, exclusions, indices, multipole_fields = example_data(act_wat[1])
     electric_field = act_wat_electric_fields
-    nuclear_field = np.array([[ 0.00392044, -0.05293017, -0.10427627],
-                              [ 0.00469095, -0.05492494, -0.11713605],
-                              [ 0.00066334, -0.04590806, -0.09858109],
-                              [-0.26160936,  0.11023125,  0.08629496],
-                              [-0.26141526,  0.0838028 ,  0.09513431],
-                              [-0.27319751,  0.13408809,  0.1133901 ]])
+    nuclear_field = np.array([[0.00392044, -0.05293017, -0.10427627],
+                              [0.00469095, -0.05492494, -0.11713605],
+                              [0.00066334, -0.04590806, -0.09858109],
+                              [-0.26160936, 0.11023125, 0.08629496],
+                              [-0.26141526, 0.0838028, 0.09513431],
+                              [-0.27319751, 0.13408809, 0.1133901]])
     fields = electric_field + nuclear_field + multipole_fields
     starting_guess = np.zeros([len(fields), 3])
     for i, field in enumerate(fields):
@@ -45,8 +45,9 @@ def test_induced_dipoles_jacobi(
     thresholds = [1e-10, 1e-12, 1e-15]
     for threshold in thresholds:
         _, _, iteration = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                                                fields, starting_guess, threshold)
+                                                 fields, starting_guess, threshold)
         assert iteration < 500  # arbitrary upper limit for iteration
+
 
 def test_induced_dipoles_jacobi_edge_cases():
     # Test with minimum input size
@@ -58,8 +59,9 @@ def test_induced_dipoles_jacobi_edge_cases():
     starting_guess = np.zeros([1, 3])
     threshold = 1e-10
     ind_dipoles, _, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                                                fields, starting_guess, threshold)
+                                               fields, starting_guess, threshold)
     assert np.allclose(ind_dipoles, np.zeros([1, 3]))
+
 
 def test_induced_dipoles_jacobi_invalid_inputs():
     # Test with invalid inputs
@@ -71,6 +73,7 @@ def test_induced_dipoles_jacobi_invalid_inputs():
                                None,
                                None,
                                None)
+
 
 def test_induced_dipoles_jacobi_stability():
     coordinates = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
@@ -85,8 +88,9 @@ def test_induced_dipoles_jacobi_stability():
     # Call the function multiple times with the same inputs
     for _ in range(5):
         ind_dipoles, _, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                                    fields, starting_guess, threshold)
+                                                   fields, starting_guess, threshold)
         assert np.allclose(ind_dipoles, np.zeros([3, 3]))  # Assert that the output is consistent
+
 
 def test_induced_dipoles_jacobi_large_inputs():
     import time
@@ -103,7 +107,7 @@ def test_induced_dipoles_jacobi_large_inputs():
         # Measure execution time
         start_time = time.time()
         induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                fields, starting_guess, threshold)
+                               fields, starting_guess, threshold)
         end_time = time.time()
         # Assert that the execution time is reasonable
         assert end_time - start_time < size  # Adjust the time limit based on your performance requirements

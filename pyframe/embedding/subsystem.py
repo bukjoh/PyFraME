@@ -26,6 +26,7 @@ class QuantumSubsystem(Subsystem):
         quantum_fragments: Fragments of the QuantumSubsystem.
         name: Name of the QuantumSubsystem.
     """
+
     def __init__(self,
                  nuclei: list,
                  dens_mat: density_matrix.DensityMatrix,
@@ -44,12 +45,12 @@ class QuantumSubsystem(Subsystem):
             self.coordinates[i, :] = nucleus.coordinate[:]
 
     def static_potential(self,
-                  coordinate: np.ndarray,
-                  pot_derivative_order: Optional[int] = 0,
-                  origin_derivative_order: Optional[int] = 0,
-                  coord_multipole_order: Optional[int] = 0,
-                  array_of_potentials: Optional[bool] = False
-                  ) -> float | np.ndarray:
+                         coordinate: np.ndarray,
+                         pot_derivative_order: Optional[int] = 0,
+                         origin_derivative_order: Optional[int] = 0,
+                         coord_multipole_order: Optional[int] = 0,
+                         array_of_potentials: Optional[bool] = False
+                         ) -> float | np.ndarray:
         """Calculates the sum of electrostatic potential and its derivatives of the atoms in a ClassicalFragment.
 
         Args:
@@ -74,7 +75,6 @@ class QuantumSubsystem(Subsystem):
         if array_of_potentials is True:
             return np.array(pot)
 
-
     def compute_nuclear_fields(self,
                                coordinates
                                ) -> np.ndarray:
@@ -95,7 +95,6 @@ class QuantumSubsystem(Subsystem):
             nuclear_fields[i, :] = field_component
         return nuclear_fields
 
-
     def compute_electric_fields(self,
                                 coordinates: np.ndarray,
                                 integral_drv: Any
@@ -110,7 +109,6 @@ class QuantumSubsystem(Subsystem):
             Array of electric fields on the different coordinates.
         """
         return integral_drv.electric_fields(coordinates=coordinates, density=self.density_matrix.density)
-
 
     def update_density(self,
                        new_density: np.ndarray
@@ -127,6 +125,7 @@ class ClassicalSubsystem(Subsystem):
         classical_fragments: Fragments of the ClassicalSubsystem.
         name: Name of the ClassicalSubsystem.
     """
+
     def __init__(self,
                  classical_fragments: list,
                  name: Optional[str] = None
@@ -152,7 +151,12 @@ class ClassicalSubsystem(Subsystem):
                 self.coordinates[k, :] = atom.coordinate[:]
                 self.exclusions.append(atom.exclusions)
                 k += 1
-        self.induced_dipoles = np.zeros([self.num_atoms, 3])
+        self.induced_dipoles = InducedDipoles(induced_dipoles=np.zeros([self.num_atoms, 3]),
+                                              external_fields=np.zeros([self.num_atoms, 3]),
+                                              induced_dipole_fields=np.zeros([self.num_atoms, 3]),
+                                              number_of_iterations=0,
+                                              solver="None")
+
         self.multipole_fields = np.zeros([self.num_atoms, 3])
         k = 0
         for fragment_i in self.classical_fragments:
@@ -166,6 +170,7 @@ class ClassicalSubsystem(Subsystem):
                                                             pot_derivative_order=1)
                 self.multipole_fields[k, :] = field_component
                 k += 1
+
     def static_potential(self,
                          coordinate: np.ndarray,
                          pot_derivative_order: Optional[int] = 0,
@@ -197,7 +202,6 @@ class ClassicalSubsystem(Subsystem):
         if array_of_potentials is True:
             return np.array(pot)
 
-
     def self_energy(self
                     ) -> float:
         """Calculates the electrostatic energy between all ClassicalFragments.
@@ -224,7 +228,7 @@ class ClassicalSubsystem(Subsystem):
         else:
             static_fields = self.multipole_fields
         # First guess for induced dipoles
-        if np.all(self.induced_dipoles == 0):
+        if np.all(self.induced_dipoles.induced_dipoles == 0):
             starting_guess = np.zeros([self.num_atoms, 3])
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)

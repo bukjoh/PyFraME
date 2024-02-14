@@ -4,19 +4,22 @@ import pytest
 
 from pyframe.embedding import fragment, particle
 
+
 def test_init_fragment():
     test_fragment = fragment.Fragment(index=1, name="H2O")
     assert test_fragment._index == 1
     assert test_fragment._name == "H2O"
+
 
 class TestClassicalFragment:
     @pytest.fixture(autouse=True)
     def setup(self):
         # Common setup for ClassicalFragment tests
         self.index = 0
-        self.atoms = [{'element': 'H', 'coordinate': [0, 0, 0], 'index': 0, 'multipoles': {"elements":[0]}},
-                 {'element': 'O', 'coordinate': [1, 1, 1], 'index': 1, 'multipoles': {"elements":[0]}}]
+        self.atoms = [{'element': 'H', 'coordinate': [0, 0, 0], 'index': 0, 'multipoles': {"elements": [0]}},
+                      {'element': 'O', 'coordinate': [1, 1, 1], 'index': 1, 'multipoles': {"elements": [0]}}]
         self.test_fragment = fragment.ClassicalFragment(self.index, self.atoms)
+
     def test_initialization(self,
                             oxygen_atom_in_atoms_list
                             ):
@@ -82,13 +85,14 @@ class TestClassicalFragment:
         assert np.allclose(water_fragment_2.potential(coordinate=water_fragment_1.atoms[0].coordinate,
                                                       pot_derivative_order=2, origin_derivative_order=0), ref_potential)
 
+
 class TestQuantumFragment:
     @pytest.fixture(autouse=True)
     def setup(self):
         # Common setup for QuantumFragment tests
         self.index = 1
         self.nuclei = [{'element': 'H', 'coordinate': [0, 0, 0], 'index': 0, 'charge': 1},
-                  {'element': 'O', 'coordinate': [1, 1, 1], 'index': 1, 'charge': 8}]
+                       {'element': 'O', 'coordinate': [1, 1, 1], 'index': 1, 'charge': 8}]
         self.e_density_matrix = np.zeros((3, 3))  # Dummy density matrix
         self.test_fragment = fragment.QuantumFragment(self.index, self.nuclei, self.e_density_matrix)
 
@@ -105,4 +109,3 @@ class TestQuantumFragment:
 
     def test_density_matrix(self):
         assert np.array_equal(self.test_fragment.e_density_matrix.density, self.e_density_matrix)
-

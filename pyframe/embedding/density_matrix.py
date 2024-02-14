@@ -17,4 +17,3 @@ class DensityMatrix:
         if isinstance(density, list):
             density = np.array(density)
         self.density = density
-

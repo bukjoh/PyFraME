@@ -31,6 +31,7 @@ def json_to_dict(filepath: Path | str
         print(f"Error: Invalid JSON format in file at path {filepath}")
         return {}
 
+
 def reader(input_data: dict | Path | str,
            read_quantum: bool = True,
            read_classical: bool = True

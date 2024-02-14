@@ -297,7 +297,7 @@ def detrace(tensor: np.ndarray, factorials: np.ndarray, double_factorials: np.ar
     return detraced_tensor
 
 
-def uncompress_symmetric_matrix(a : np.ndarray
+def uncompress_symmetric_matrix(a: np.ndarray
                                 ) -> np.ndarray:
     """Uncompresses a compressed symmetric matrix.
 

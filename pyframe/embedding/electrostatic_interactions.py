@@ -23,7 +23,8 @@ def compute_particle_interactions(particle_1: particle, particle_2: particle):
                                                 tensor_data=particle_1.
                                                 potential(coordinate=particle_2.coordinate,
                                                           coord_multipole_order=particle_2.multipole_order)). \
-            dot_first_degree(polytensor.FirstDegreePolytensor.multiply_elementwise(particle_2.multipoles_with_degeneracy,
+            dot_first_degree(polytensor.FirstDegreePolytensor.multiply_elementwise(particle_2.
+                                                                                   multipoles_with_degeneracy,
                                                                                    particle_2.taylor_coefficients))
     if isinstance(particle_1, particle.Nucleus) and isinstance(particle_2, particle.Nucleus):
         return (particle_1.potential(coordinate=particle_2.coordinate) * particle_2.charge)[0]

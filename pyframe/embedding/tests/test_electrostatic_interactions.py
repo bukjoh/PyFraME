@@ -1,7 +1,8 @@
 """Tests PyFraME.embedding.electrostatic_interactions.py"""
 import pytest
 import numpy as np
-from pyframe.embedding import (polytensor, electrostatic_interactions,fragment, subsystem)
+
+from pyframe.embedding import (polytensor, electrostatic_interactions, fragment, subsystem)
 
 
 def test_compute_particle_interactions(
@@ -82,10 +83,10 @@ def test_compute_particle_interactions(
 
 
 def test_compute_fragment_particle_interactions(
-    phys_constants,
-    water_fragment_dict,
-    oxygen_nucleus,
-    oxygen_atom1
+        phys_constants,
+        water_fragment_dict,
+        oxygen_nucleus,
+        oxygen_atom1
 ):
     water_fragment = fragment.ClassicalFragment(**water_fragment_dict)
     interaction_energy = electrostatic_interactions.compute_particle_interactions
@@ -104,9 +105,10 @@ def test_compute_fragment_particle_interactions(
                  + interaction_energy(water_fragment.atoms[2], oxygen_atom1)
     assert ref_energy == pytest.approx(es_energy, 1e-9)
 
+
 def test_fragments_interaction(
-    phys_constants,
-    water_fragments
+        phys_constants,
+        water_fragments
 ):
     water_fragment_1 = water_fragments[0]
     water_fragment_2 = water_fragments[1]
@@ -119,10 +121,12 @@ def test_fragments_interaction(
                       + interaction_energy(water_fragment_1.atoms[2], atoms)
     assert ref_energy == pytest.approx(es_energy, 1e-9)
 
+
 def test_compute_particle_interactions_invalid_input():
     # Test when compute_particle_interactions is called with invalid particle types
     with pytest.raises(TypeError):
-        electrostatic_interactions.compute_particle_interactions(fragment.ClassicalFragment(), fragment.ClassicalFragment())
+        electrostatic_interactions.compute_particle_interactions(fragment.ClassicalFragment(),
+                                                                 fragment.ClassicalFragment())
 
 
 def test_compute_fragment_interactions_invalid_input():
@@ -134,6 +138,7 @@ def test_compute_fragment_interactions_invalid_input():
         electrostatic_interactions.compute_fragment_interactions(fragment.ClassicalFragment(),
                                                                  subsystem.QuantumSubsystem())
 
+
 def test_compute_electrostatic_interaction_invalid_input():
     # Test when compute_electrostatic_interaction is called with invalid subsystem types
     with pytest.raises(TypeError):
@@ -141,9 +146,11 @@ def test_compute_electrostatic_interaction_invalid_input():
                                                                      fragment.ClassicalFragment(),
                                                                      None)
 
+
 def test_compute_classical_self_energy_empty_list():
     # Test when empty lists are passed to compute_classical_self_energy
     assert electrostatic_interactions.compute_classical_self_energy([]) == 0
+
 
 def test_compute_electrostatic_interaction_empty_list(
         act_wat
@@ -155,6 +162,7 @@ def test_compute_electrostatic_interaction_empty_list(
                                                                                      None)
     assert e_nuc_es == 0
     assert f_el_es is None
+
 
 def test_compute_electrostatic_interaction(
         act_wat_es_fock_contr,

@@ -4,6 +4,7 @@ import copy
 from pyframe.embedding import constants, interaction_tensor
 from typing import Tuple
 
+
 def induced_dipoles_jacobi(coordinates: np.ndarray,
                            polarizabilities: np.ndarray,
                            exclusions: list,
