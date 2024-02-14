@@ -1,5 +1,7 @@
+"""Tests PyFraME.embedding.constants.py"""
 import pytest
 import numpy as np
+
 from pyframe.embedding import constants
 
 

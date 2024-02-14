@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import numpy as np
+
 from pyframe.embedding import polytensor, particle, fragment, subsystem
 from typing import Union, Any, Tuple
-import numpy as np
 
 
 def compute_particle_interactions(particle_1: particle, particle_2: particle):
@@ -76,6 +77,13 @@ def compute_fragment_particle_interactions(c_particle: particle,
 
 
 def compute_classical_self_energy(classical_fragments: list):
+    """Calculates the electrostatic interactions between ClassicalFragments in a ClassicalSubsystem.
+
+    Args:
+        classical_fragments: List of ClassicalFragments in a
+    Returns:
+        Classical self energy.
+    """
     energy = 0
     for i, frag in enumerate(classical_fragments):
         for j in range(i, len(classical_fragments)):

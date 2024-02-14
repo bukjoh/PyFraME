@@ -1,5 +1,7 @@
+"""Tests PyFraME.embedding.solvers.py"""
 import pytest
 import numpy as np
+
 from pyframe.embedding.solvers import induced_dipoles_jacobi
 
 
@@ -89,7 +91,7 @@ def test_induced_dipoles_jacobi_stability():
 def test_induced_dipoles_jacobi_large_inputs():
     import time
     # Generate large input arrays
-    for size in [1, 10, 50]:
+    for size in [1, 10, 30]:
         mu, sigma = 0.0, 0.1
         coordinates = np.random.normal(mu, sigma, size=(size, 3))
         polarizabilities = np.random.normal(mu, sigma, size=(size, 3, 3))

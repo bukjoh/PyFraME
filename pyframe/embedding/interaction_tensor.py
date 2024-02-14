@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+
 from pyframe.embedding import polytensor, tensor_tools, constants
 from typing import Optional
 

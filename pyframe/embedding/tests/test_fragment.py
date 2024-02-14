@@ -1,7 +1,8 @@
 """Tests PyFraME.embedding.fragment.py"""
 import numpy as np
 import pytest
-from pyframe.embedding import fragment, density_matrix, particle
+
+from pyframe.embedding import fragment, particle
 
 def test_init_fragment():
     test_fragment = fragment.Fragment(index=1, name="H2O")

@@ -1,5 +1,6 @@
-"""Tests PyFraME.embedding.electrostatic_interactions.py"""
+"""Tests PyFraME.embedding.interaction_tensor.py"""
 import numpy as np
+
 from pyframe.embedding import interaction_tensor, constants, polytensor
 
 

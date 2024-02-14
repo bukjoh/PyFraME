@@ -1,3 +1,4 @@
+"""Tests PyFraME.embedding.read_input.py"""
 import pytest, json, os
 
 from pathlib import Path

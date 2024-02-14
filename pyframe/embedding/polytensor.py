@@ -30,7 +30,7 @@ class FirstDegreePolytensor:
         else:
             self.data = np.zeros(self.length, dtype=data_type)
 
-    def write_to_data_block_wise(self, compressed_tensor: np.array) -> None:
+    def write_to_data_block_wise(self, compressed_tensor: np.ndarray) -> None:
         """Writes compressed tensor to data based on its length."""
         start_idx = 0
         for n in range(self._rank + 1):
@@ -41,7 +41,7 @@ class FirstDegreePolytensor:
         start_idx = int(start_idx)
         self.data[start_idx: start_idx + len(compressed_tensor)] = compressed_tensor[:]
 
-    def write_to_data(self, i, new_data):
+    def write_to_data(self, i, new_data) -> None:
         """Writes new data to data
 
         Args:
@@ -66,7 +66,7 @@ class FirstDegreePolytensor:
         """
         return FirstDegreePolytensor(rank=self._rank, tensor_data=np.multiply(self.data, other.data))
 
-    def multiply_scalar_matrix(self, other) -> np.array:
+    def multiply_scalar_matrix(self, other) -> np.ndarray:
         """Contraction between a FirstDegreePolytensors of scalars (A) on the left and FirstDegreePolytensor of
         Matrices (B) on the right.
 
@@ -75,7 +75,7 @@ class FirstDegreePolytensor:
         """
         return np.einsum('i, ijk', self.data, other.data)
 
-    def multiply_matrix_scalar(self, other) -> np.array:
+    def multiply_matrix_scalar(self, other) -> np.ndarray:
         """Contraction between a FirstDegreePolytensors of scalars (A) on the right and FirstDegreePolytensor of
         Matrices (B) on the left.
 
@@ -105,7 +105,7 @@ class FirstDegreePolytensor:
         """
         return FirstDegreePolytensor(rank=self._rank, tensor_data=np.einsum('i, ij -> j', self.data, other.data))
 
-    def dot_first_degree(self, other) -> np.array:
+    def dot_first_degree(self, other) -> np.ndarray:
         """Contraction between two FirstDegreePolytensors of scalars (A).
 
         Returns:
@@ -157,7 +157,7 @@ class SecondDegreePolytensor:
         else:
             self.data = np.zeros([self.length_1, self.length_2], dtype=data_type)
 
-    def write_to_data(self, i, j, new_data):
+    def write_to_data(self, i, j, new_data) -> None:
         """Writes new data to data.
 
         Args:
@@ -167,7 +167,7 @@ class SecondDegreePolytensor:
         """
         self.data[i, j] = new_data
 
-    def write_interaction_tensor_multi_indices(self):
+    def write_interaction_tensor_multi_indices(self) -> None:
         """Writes the interaction tensor multi-indices to data that can be used to calculate the corresponding
         interaction tensor elements."""
         idx = 0
@@ -181,7 +181,7 @@ class SecondDegreePolytensor:
             for j in range(1, self.length_2):
                 self.data[i][j] = [self.data[i][0][0], self.data[0][j][1]]
 
-    def write_potential_tensor_multi_indices(self):
+    def write_potential_tensor_multi_indices(self) -> None:
         """Writes the interaction tensor multi-indices to data that can be used to calculate the corresponding
         interaction tensor elements."""
         idx = 0

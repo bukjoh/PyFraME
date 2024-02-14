@@ -136,11 +136,19 @@ class Atom(Particle):
             multiply_first_degree_second_degree(t_tensor).data
 
 
-def multipole_len_to_order(x) -> int:
-    if not isinstance(x, int) or x < 0:
+def multipole_len_to_order(multipoles) -> int:
+    """Calculates the maximum multipole order of an array of compressed multipoles ordered in ascending order.
+
+    Args:
+        multipoles: Array of compressed multipoles.
+
+    Returns:
+        Multipole order.
+    """
+    if not isinstance(multipoles, int) or multipoles < 0:
         raise ValueError("Input must be a non-negative integer.")
     def equation(t):
-        return ((t + 1) * (t + 2) * (t + 3)) / 6 - x
+        return ((t + 1) * (t + 2) * (t + 3)) / 6 - multipoles
     solution = root(equation, np.array([0]))
     return round(solution.x[0])
 
@@ -180,10 +188,20 @@ class Nucleus(Particle):
             self._lj_sigma = vdw.get('lj_sigma', None)
             self._lj_epsilon = vdw.get('lj_epsilon', None)
 
-    def charge_to_element(self):
+    def charge_to_element(self) -> str:
+        """Identifies the element string from its corresponding nuclear charge.
+
+        Returns:
+            Element string.
+        """
         return qcelemental.periodictable.to_element(self.charge)
 
-    def element_to_charge(self):
+    def element_to_charge(self) -> float:
+        """Identifies the nuclear charge from its corresponding element string.
+
+        Returns:
+            Nuclear charge.
+        """
         return qcelemental.periodictable.to_atomic_number(self._element)
 
     def potential(self,

@@ -1,6 +1,8 @@
 import numpy as np
 import copy
+
 from pyframe.embedding import constants, interaction_tensor
+from typing import Tuple
 
 def induced_dipoles_jacobi(coordinates: np.ndarray,
                            polarizabilities: np.ndarray,
@@ -8,7 +10,8 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                            indices: np.ndarray,
                            fields: np.ndarray,
                            starting_guess: np.ndarray,
-                           threshold: float):
+                           threshold: float
+                           ) -> Tuple[np.ndarray, np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
     Args:
@@ -44,7 +47,7 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
             for j, coordinate_j in enumerate(coordinates):
                 if indices[j] in exclusions[i]:
                     continue
-                # Changed template to potential rather than interaction! could be wrong though..
+                # Potential tensor template used
                 field_component += np.einsum('ij, j', interaction_tensor.
                                              compute_t_tensor(r_a=coordinate_j,
                                                               r_b=coordinate_i,

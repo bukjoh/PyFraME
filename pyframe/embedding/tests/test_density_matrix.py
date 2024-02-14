@@ -1,4 +1,4 @@
-"""Tests PyFraME.embedding.fragment.py"""
+"""Tests PyFraME.embedding.density_matrix.py"""
 from pyframe.embedding import density_matrix
 import numpy as np
 import pytest

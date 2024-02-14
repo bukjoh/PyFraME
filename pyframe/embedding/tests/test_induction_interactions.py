@@ -1,6 +1,7 @@
-"""Tests PyFraME.embedding.subsystem.py"""
+"""Tests PyFraME.embedding.induction_interactions.py"""
 import pytest
 import numpy as np
+
 from pyframe.embedding import induction_interactions
 
 

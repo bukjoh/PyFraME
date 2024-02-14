@@ -5,9 +5,21 @@ import numpy as np
 
 from pyframe.embedding import fragment, particle, density_matrix, subsystem
 from pathlib import Path
+from typing import List, Tuple
 
 
-def json_to_dict(filepath: Path | str) -> dict:
+def json_to_dict(filepath: Path | str
+                 ) -> dict:
+    """Converts a JSON file to a Python dictionary.
+    file.
+
+    Args:
+        filepath: Path object or the string of the path to the JSON file.
+
+    Returns:
+        Dictionary of data in JSON file.
+
+    """
     try:
         with open(filepath, 'r') as json_file:
             data_dictionary = json.load(json_file)
@@ -22,7 +34,23 @@ def json_to_dict(filepath: Path | str) -> dict:
 def reader(input_data: dict | Path | str,
            read_quantum: bool = True,
            read_classical: bool = True
-           ) -> (subsystem.QuantumSubsystem, subsystem.ClassicalSubsystem):
+           ) -> (Tuple[subsystem.QuantumSubsystem, subsystem.ClassicalSubsystem] |
+                 Tuple[subsystem.QuantumSubsystem, List[subsystem.ClassicalSubsystem]] |
+                 subsystem.QuantumSubsystem |
+                 subsystem.ClassicalSubsystem |
+                 List[subsystem.ClassicalSubsystem]):
+    """Reads in a JSON file or Python dictionary and creates instances of a QuantumSubsystem, ClassicalSubsystem(s) or
+     both.
+
+    Args:
+        input_data: JSON file or dictionary containing the data.
+        read_quantum: Flag to indicate if instance of QuantumSubsystem is to be read in and created.
+        read_classical: Flag to indicate if instance or list of instances of ClassicalSubsystem(s) is to be read in and
+        created.
+
+    Returns:
+        QuantumSubsystem, ClassicalSubsystem(s) or both.
+    """
     if isinstance(input_data, dict):
         print("Creating from dictionary.")
     elif isinstance(input_data, Path):

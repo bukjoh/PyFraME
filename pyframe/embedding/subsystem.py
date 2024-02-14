@@ -1,6 +1,8 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
 import numpy as np
+
+from dataclasses import dataclass
 from typing import Optional, Any
 from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions
 
@@ -40,6 +42,7 @@ class QuantumSubsystem(Subsystem):
         self.coordinates = np.zeros([self.num_nuclei, 3])
         for i, nucleus in enumerate(nuclei):
             self.coordinates[i, :] = nucleus.coordinate[:]
+
     def static_potential(self,
                   coordinate: np.ndarray,
                   pot_derivative_order: Optional[int] = 0,
@@ -73,7 +76,16 @@ class QuantumSubsystem(Subsystem):
 
 
     def compute_nuclear_fields(self,
-                               coordinates):
+                               coordinates
+                               ) -> np.ndarray:
+        """Calculates the electrostatic field from the nuclei.
+
+        Args:
+            coordinates: Array of coordinates on which the field is calculated for each set of coordinates.
+
+        Returns:
+            Array of nuclear fields on the different coordinates.
+        """
         nuclear_fields = np.zeros([len(coordinates), 3])
         for i, coordinate in enumerate(coordinates):
             field_component = np.zeros(3)
@@ -86,11 +98,23 @@ class QuantumSubsystem(Subsystem):
 
     def compute_electric_fields(self,
                                 coordinates: np.ndarray,
-                                integral_drv: Any):
+                                integral_drv: Any
+                                ) -> np.ndarray:
+        """Calculates the electrostatic field from the electron density.
+
+        Args:
+            coordinates: Array of coordinates on which the field is calculated for each set of coordinates.
+            integral_drv: Integral driver to calculate the electric_fields of the electron density.
+
+        Returns:
+            Array of electric fields on the different coordinates.
+        """
         return integral_drv.electric_fields(coordinates=coordinates, density=self.density_matrix.density)
 
 
-    def update_density(self, new_density: np.ndarray):
+    def update_density(self,
+                       new_density: np.ndarray
+                       ) -> None:
         """Updates the current density with a new density.
         """
         self.density_matrix.density = new_density
@@ -174,14 +198,27 @@ class ClassicalSubsystem(Subsystem):
             return np.array(pot)
 
 
-    def self_energy(self):
+    def self_energy(self
+                    ) -> float:
+        """Calculates the electrostatic energy between all ClassicalFragments.
+
+        Returns:
+            Self energy of the ClassicalSubsystem.
+        """
         return electrostatic_interactions.compute_classical_self_energy(self.classical_fragments)
 
     def solve_induced_dipoles(self,
                               threshold: float = 1e-10,
                               solver: Optional[str] = 'induced_dipoles_jacobi',
                               external_fields: Optional[np.ndarray] = None
-                              ):
+                              ) -> None:
+        """Solves for the induced dipoles on all atoms.
+
+        Args:
+            threshold: Convergence threshold.
+            solver: Type of solver used.
+            external_fields: External fields that contribute additionally to the internal fields to induce dipoles.
+        """
         if external_fields is not None:
             static_fields = self.multipole_fields + external_fields
         else:
@@ -208,6 +245,7 @@ class ClassicalSubsystem(Subsystem):
                 starting_guess = np.zeros([self.num_atoms, 3])
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
+        induced_dipoles, induced_dipoles_fields, num_iter = None, None, None
         if solver == 'induced_dipoles_jacobi':
             induced_dipoles, induced_dipoles_fields, num_iter = (solvers.
                                                                  induced_dipoles_jacobi(coordinates=self.coordinates,

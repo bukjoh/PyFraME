@@ -1,5 +1,4 @@
 """Tests PyFraME.embedding.polytensor.py"""
-
 import pytest
 import numpy as np
 
