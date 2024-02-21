@@ -109,7 +109,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
         for c_subsystem in classical_subsystem:
             # E_nuc_es
             for nucleus in quantum_subsystem.nuclei:
-                nuclear_energy += (c_subsystem.potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+                nuclear_energy += (c_subsystem.static_potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
             # F_el_es
             fock_matrix = es_fock_matrix_contributions(classical_subsystem=c_subsystem,
                                                        integral_drv=integral_drv)

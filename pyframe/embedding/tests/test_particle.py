@@ -260,11 +260,11 @@ class TestNucleus:
                                            pot_derivative_order=0,
                                            origin_derivative_order=0) \
                == pytest.approx(0.34335113566514336, 1e-9)
-        assert hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
-                                           pot_derivative_order=0,
-                                           origin_derivative_order=0) \
-               == float('inf')
-        # Test 1st order derivative
+        with pytest.raises(ZeroDivisionError):
+            hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
+                                        pot_derivative_order=0,
+                                        origin_derivative_order=0) \
+                # Test 1st order derivative
         ref = np.array([-6.3679443173877762e-2, -3.0699045537920477e-2, 4.1315647410858666e-6])
         assert np.allclose(oxygen_nucleus.potential(coordinate=oxygen_atom1.coordinate,
                                                     pot_derivative_order=1), ref)
@@ -285,10 +285,10 @@ class TestNucleus:
                                                        coordinate,
                                                        pot_derivative_order=1,
                                                        origin_derivative_order=0), ref * (-1))
-        for i in range(3):
-            assert np.isnan(hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
-                                                        pot_derivative_order=0,
-                                                        origin_derivative_order=1)[i])
+        with pytest.raises(ZeroDivisionError):
+            hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
+                                        pot_derivative_order=0,
+                                        origin_derivative_order=1)
 
 
 class TestVirtualParticle:
@@ -296,6 +296,6 @@ class TestVirtualParticle:
                                    phys_constants
                                    ):
         virtual_particle = particle.VirtualParticle(index=0, coordinate=np.array([1.2919875, 2.156584, -0.0007825])
-                                                    / phys_constants.bohr2angstroms)
+                                                                        / phys_constants.bohr2angstroms)
         assert virtual_particle.index == 0
         assert virtual_particle.coordinate.shape == (3,)

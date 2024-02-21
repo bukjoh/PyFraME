@@ -50,11 +50,13 @@ class InputWriters(object):
 
     @staticmethod
     def dalton_multipoles_polarizability_repulsion(fragment, region, core_region, filename=None):
-        _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=True, do_polarizability=True, do_repulsion=True)
+        _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=True, do_polarizability=True,
+                               do_repulsion=True)
 
     @staticmethod
     def dalton_polarizability_density_repulsion(fragment, region, core_region, filename=None):
-        _generate_dalton_input(fragment, region, core_region, filename, do_polarizability=True, do_density=True, do_repulsion=True)
+        _generate_dalton_input(fragment, region, core_region, filename, do_polarizability=True, do_density=True,
+                               do_repulsion=True)
 
     @staticmethod
     def dalton_density_repulsion(fragment, region, core_region, filename=None):
@@ -362,7 +364,7 @@ class InputWriters(object):
         for index in indices:
             pot += '{0:2} {1[0]:14.8f} {1[1]:14.8f} {1[2]:14.8f}'.format(elements[index],
                                                                          coordinates[index])
-            pot += ' {0:{1}d}\n'.format(index, length+4)
+            pot += ' {0:{1}d}\n'.format(index, length + 4)
         if multipoles:
             pot += '@MULTIPOLES\n'
             for i in range(7):
@@ -409,6 +411,114 @@ class InputWriters(object):
                     pot += '\n'
         with open('{0}.pot'.format(filename), 'w') as pot_file:
             pot_file.write(pot)
+
+    @staticmethod
+    def frame_json(system, filename=None):
+        """Write potential file for PyFraME"""
+        if filename is None:
+            filename = system.name
+        # system.regions
+        # for region in system.regions:
+
+        # nuclei: list,
+        # dens_mat: density_matrix.DensityMatrix, ignore for now
+        # quantum_fragments: Optional[list] = None, ignore for now
+        # name: Optional[str] = None, ignore for now
+
+        # classical_fragments: list,
+        # name: Optional[str] = None
+
+        # for fragments: name index
+
+        if len(system.regions) == 1:
+            sys_dict = {"quantum_subsystem": {"name": "core region",
+                                              "nuclei": []
+                                              },
+                        "classical_subsystem": {"classical_fragments": [{"name": "all atoms",
+                                                                         "index": 0,
+                                                                         "atoms": []}]
+                                                }
+                        }
+            # fill quantum_subsystem with nuclei
+            k = 0
+            for fragment in system.core_region.fragments.values():
+                for atom in fragment.atoms:
+                    nucleus = {'index': k,
+                               'element': atom.element,
+                               'charge': element2charge[atom.element],
+                               'coordinate': atom.coordinate.tolist()}
+                    sys_dict["quantum_subsystem"]["nuclei"].append(nucleus)
+                    k += 1
+
+            # fill classical_subsystem with atoms
+            multipoles = []
+            polarizabilities = []
+            for index, site in system.potential.items():
+                # multipoles and polarizabilities
+                for i in range(7):
+                    mx = 'M{0}'.format(i)
+                    if hasattr(site, mx) and getattr(site, mx):
+                        multipoles.append(mx)
+                    for j in range(i + 1):
+                        pxy = 'P{0}{1}'.format(j, i)
+                        if hasattr(site, pxy) and getattr(site, pxy):
+                            if pxy not in polarizabilities:
+                                polarizabilities.append(pxy)
+            max_pol_order = [0, 0]
+            for pol_order in polarizabilities:
+                if max_pol_order[0] < (int(pol_order[1]) + int(pol_order[2])):
+                    max_pol_order = [int(pol_order[1]) + int(pol_order[2]), max([int(pol_order[1]), int(pol_order[2])])]
+            max_mul_order = 0
+            for mul_order in multipoles:
+                if max_mul_order < int(mul_order[1]):
+                    max_mul_order = int(mul_order[1])
+
+            for index, site in system.potential.items():
+                atom = {}
+                # TODO site does not have mass, induced dipole, and name as an attribute
+                # TODO site does not have vdw and vdw method as attributes.
+                if isinstance(site.epsilon, float) and isinstance(site.sigma, float):
+                    atom['vdw'] = {"lj_sigma": site.sigma,
+                                   "lj_epsilon": site.epsilon,
+                                   "vdw_method": "6-12"}
+                atom['index'] = index
+                atom['element'] = site.element
+                atom['coordinate'] = site.coordinate.tolist()
+                atom['exclusions'] = site.exclusion_list
+                # append own index to exclusion list
+                atom['exclusions'].insert(0, index)
+                atom['polarizabilities'] = {"elements": [], "order": []}
+                atom['multipoles'] = {"elements": [], "order": 0}
+                for i in range(7):
+                    mx = 'M{0}'.format(i)
+                    if hasattr(site, mx) and getattr(site, mx):
+                        atom['multipoles']["elements"].extend(getattr(site, mx))
+                        atom['multipoles']["order"] = i
+                    else:
+                        if i <= max_mul_order:
+                            atom['multipoles']["elements"].extend(np.zeros((i + 1) * (i + 2) // 2))
+                            atom['multipoles']["order"] = i
+                    for j in range(i + 1):
+                        pxy = 'P{0}{1}'.format(j, i)
+                        if hasattr(site, pxy) and getattr(site, pxy):
+                            atom['polarizabilities']["elements"].extend(getattr(site, pxy))
+                            atom['polarizabilities']["order"].append([j, i])
+                        else:
+                            if j + i <= max_pol_order[0] and j <= max_pol_order[1] and i <= max_pol_order[1]:
+                                atom['polarizabilities']["elements"].extend(np.zeros((i + j + 1) * (i + j + 2)
+                                                                                     // 2))
+                                atom['polarizabilities']["order"].append([j, i])
+                sys_dict["classical_subsystem"]["classical_fragments"][0]['atoms'].append(atom)
+            with open('{0}.json'.format(filename), 'w') as json_file:
+                json.dump(sys_dict, json_file)
+        else:
+            # TODO allow several classical subsystems as a list
+            sys_dict = {"quantum_subsystem": {"name": "core region",
+                                              "nuclei": []
+                                              },
+                        "classical_subsystems": []
+                        }
+
 
     @staticmethod
     def frame_potential(system, filename=None):
@@ -507,7 +617,8 @@ class ScriptWriters(object):
 
     @staticmethod
     def dalton_multipoles_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=True, do_polarizability=True)
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=True,
+                                do_polarizability=True)
 
     @staticmethod
     def dalton_multipoles(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
@@ -527,15 +638,18 @@ class ScriptWriters(object):
 
     @staticmethod
     def dalton_multipoles_polarizability_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=True, do_polarizability=True, do_repulsion=True)
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=True,
+                                do_polarizability=True, do_repulsion=True)
 
     @staticmethod
     def dalton_polarizability_density_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_polarizability=True, do_density=True, do_repulsion=True)
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_polarizability=True,
+                                do_density=True, do_repulsion=True)
 
     @staticmethod
     def dalton_density_repulsion(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
-        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_density=True, do_repulsion=True)
+        _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_density=True,
+                                do_repulsion=True)
 
     @staticmethod
     def molcas_multipoles_polarizability(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory):
@@ -570,7 +684,9 @@ class ScriptWriters(object):
     def molcas_multipoles(*args):
         ScriptWriters.molcas_multipoles_polarizability(*args)
 
-def _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=False, do_polarizability=False, do_density=False, do_repulsion=False):
+
+def _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_threads, memory, do_multipoles=False,
+                            do_polarizability=False, do_density=False, do_repulsion=False):
     """Writes run script for Dalton calculations"""
     temp_dir = os.path.join(scratch_dir, filename)
     # general common options
@@ -591,9 +707,9 @@ def _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_thre
     if do_density or do_repulsion:
         put_args += f" {filename}.h5"
         get_args += f" {filename}.h5"
-    if do_polarizability: # pol, pol+mul
+    if do_polarizability:  # pol, pol+mul
         get_args += " AOONEINT DALTON.BAS SIRIFC AOPROPER RSPVEC"
-    elif do_multipoles: # only mul
+    elif do_multipoles:  # only mul
         get_args += " AOONEINT DALTON.BAS SIRIFC AOPROPER"
     script += 'dalton -d -noarch -nobackup -mb {0:d}'.format(int(memory / mpi_procs))
     if put_args:
@@ -635,7 +751,9 @@ def _generate_dalton_script(filename, work_dir, scratch_dir, mpi_procs, omp_thre
     with open('{0}.sh'.format(filename), 'w') as script_file:
         script_file.write(script)
 
-def _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=False, do_polarizability=False, do_density=False, do_repulsion=False):
+
+def _generate_dalton_input(fragment, region, core_region, filename, do_multipoles=False, do_polarizability=False,
+                           do_density=False, do_repulsion=False):
     """
     Generates input for dalton multipoles/polarizabilities/pde combinations
     """
@@ -689,9 +807,11 @@ def _generate_dalton_input(fragment, region, core_region, filename, do_multipole
         monomer_elements = [atom.element for atom in fragment.atoms]
         monomer_charges = [float(element2charge[element]) for element in monomer_elements]
         monomer_coordinates = [atom.coordinate for atom in fragment.atoms]
-        core_elements = [atom.element for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
+        core_elements = [atom.element for core_fragment in core_region.fragments.values() for atom in
+                         core_fragment.atoms]
         core_charges = [float(element2charge[element]) for element in core_elements]
-        core_coordinates = [atom.coordinate for core_fragment in core_region.fragments.values() for atom in core_fragment.atoms]
+        core_coordinates = [atom.coordinate for core_fragment in core_region.fragments.values() for atom in
+                            core_fragment.atoms]
         InputWriters.dalton_mol(monomer_elements, monomer_coordinates, fragment.charge, region.basis, f'{filename}')
         with h5py.File(f'{filename}.h5', 'w') as h5:
             h5.create_group('core_fragment')
@@ -712,7 +832,7 @@ def _generate_dalton_input(fragment, region, core_region, filename, do_multipole
         dimer_charge = fragment.charge + core_charge
         dimer_bases = core_region.basis
         if not isinstance(dimer_bases, list):
-            dimer_bases = [core_region.basis]*len(core_elements)
+            dimer_bases = [core_region.basis] * len(core_elements)
         dimer_bases += [region.basis] * len(monomer_elements)
         InputWriters.dalton_mol(dimer_elements, dimer_coordinates, dimer_charge, dimer_bases, f'{filename}_dimer')
         inp = '**DALTON INPUT\n'

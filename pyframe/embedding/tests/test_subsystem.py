@@ -58,7 +58,8 @@ class TestQuantumSubsystem:
                               [-0.26141526, 0.0838028, 0.09513431],
                               [-0.27319751, 0.13408809, 0.1133901]])
         assert np.allclose(self.core.compute_nuclear_fields(self.env.coordinates), ref_array)
-        assert np.all(np.isnan(self.core.compute_nuclear_fields(self.core.coordinates)))
+        with pytest.raises(ZeroDivisionError):
+            self.core.compute_nuclear_fields(self.core.coordinates)
 
     def test_compute_electric_fields(self,
                                      act_wat_electric_fields,
@@ -172,7 +173,7 @@ class TestClassicalSubsystem:
                                 [-0.14716566, -0.03273562, 0.12889495],
                                 [-0.44555632, 0.00482074, -0.09598545]])
         assert np.allclose(self.env.induced_dipoles.induced_dipoles, ref_dipoles)
-        assert self.env.induced_dipoles.number_of_iterations == 4
+        assert self.env.induced_dipoles.number_of_iterations == 2
         captured_output = io.StringIO()
         sys.stdout = captured_output
         self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)

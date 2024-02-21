@@ -13,10 +13,10 @@ def sample_json(tmp_path):
     data = {
         "quantum_subsystem": {
             "name": "quantum",
-            "nuclei": [{"coordinate": [0, 0, 0], "name": "nucleus1", "index": 1, "charge": 1.0}],
+            "nuclei": [{"coordinate": [3, 0, 0], "name": "nucleus1", "index": 1, "charge": 1.0}],
             "quantum_fragments": [{"name": "fragment1",
                                    "index": 1,
-                                   "nuclei": [{"coordinate": [0, 0, 0], "name": "nucleus1", "index": 1, "charge": 1.0}],
+                                   "nuclei": [{"coordinate": [0, 0, 2], "name": "nucleus1", "index": 1, "charge": 1.0}],
                                    "e_density_matrix": [0, 0, 0, 0]}],
             "density_matrix": [1, 0, 0, 1]
         },
@@ -24,14 +24,14 @@ def sample_json(tmp_path):
             "name": "classical",
             "classical_fragments": [{"name": "classical_fragment1",
                                      'index': 6,
-                                     'atoms': [{'element': 'H', 'coordinate': [0, 0, 0], 'index': 0,
+                                     'atoms': [{'element': 'H', 'coordinate': [0, 5, 0], 'index': 0,
                                                 'multipoles': {"elements": [0]},
                                                 'polarizabilities': {"elements": [0], "order": [0]},
-                                                'exclusions': []},
-                                               {'element': 'O', 'coordinate': [1, 1, 1], 'index': 1,
+                                                'exclusions': [0]},
+                                               {'element': 'O', 'coordinate': [1, 2, 1], 'index': 1,
                                                 'multipoles': {"elements": [0]},
                                                 'polarizabilities': {"elements": [0], "order": [0]},
-                                                'exclusions': []
+                                                'exclusions': [1]
                                                 }]
                                      }]
         }

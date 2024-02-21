@@ -1,4 +1,5 @@
 import numpy as np
+import numba as nb
 
 from typing import List, Tuple
 
@@ -161,6 +162,95 @@ def convert_tensor_index(tensor_index: int, tensor_rank: int) -> Tuple[int, int,
                 i += 1
 
 
+@nb.njit(fastmath=True)
+def vec_residue_norm(vec1: np.ndarray,
+                     vec2: np.ndarray
+                     ) -> float:
+    """Calculates the residue norm between two vectors.
+
+    This function computes the residue norm, which quantifies the difference
+    between two vectors. It is calculated as the square root of the sum of
+    squared differences between corresponding elements of vec1 and vec2,
+    normalized by the norm of vec2.
+
+    Args:
+        vec1: The first vector.
+        vec2: The second vector.
+
+    Returns:
+        The residue norm between vec1 and vec2.
+    """
+    vec1_len = 0.
+    vec2_len = 0.
+    for i in range(vec1.shape[0]):
+        for j in range(3):
+            vec1_len += (vec1[i, j] - vec2[i, j]) ** 2
+            vec2_len += vec2[i, j] ** 2
+    return (vec1_len / vec2_len) ** 0.5
+
+
+@nb.njit(fastmath=True)
+def vec_norm(vec: np.ndarray) -> float:
+    """Calculates the Euclidean norm of a vector.
+
+    This function computes the Euclidean norm, also known as the L2 norm,
+    of the input vector. The Euclidean norm is the square root of the sum
+    of squares of each element in the vector.
+
+    Args:
+        vec: The input vector for which the norm is computed.
+
+    Returns:
+        The Euclidean norm of the input vector.
+    """
+    s = 0.
+    for i in range(vec.shape[0]):
+        s += vec[i] ** 2
+    return s ** 0.5
+
+
+@nb.njit(fastmath=True)
+def calculate_tensor_element(i: int,
+                             j: int,
+                             k: int,
+                             distance_vector: np.ndarray,
+                             tensor_coefficients: np.ndarray,
+                             norm: float,
+                             index_sum: int
+                             ) -> float:
+    """Numba accelerates function for compute_interaction_tensor_element.
+
+    Args:
+        i: Sum of Multi-indices for order of derivative wrt x Cartesian components of the
+        distance vector.
+        j: Sum of Multi-indices for order of derivative wrt y Cartesian components of the
+        distance vector.
+        k: Sum of Multi-indices for order of derivative wrt z Cartesian components of the
+        distance vector.
+        distance_vector: Distance vector, i.e., r_ba = r_a - r_b.
+        tensor_coefficients: Array of shape (max_order + 1, max_order + 1, 2 * max_order + 2), containing
+        the tensor coefficients.
+        norm: Norm of the distance vector r_ba.
+        index_sum: Sum of Multi-indices for order of derivative wrt x, y, and z Cartesian components of the
+        vector r_b.
+
+    Returns:
+        Tensor element.
+    """
+    tensor_element = 0.0
+    for q in range(i + 1):
+        cl = tensor_coefficients[q, i, 1] * (distance_vector[0] / norm) ** q
+        o = q + i + 1
+        for m in range(j + 1):
+            cm = cl * tensor_coefficients[m, j, o] * (distance_vector[1] / norm) ** m
+            p = o + j + m
+            for n in range(k + 1):
+                cn = cm * tensor_coefficients[n, k, p] * (distance_vector[2] / norm) ** n
+                tensor_element += cn
+    tensor_element /= norm ** (i + j + k + 1) * (-1) ** index_sum
+    return tensor_element
+
+
 def compute_interaction_tensor_element(multi_index: List[np.ndarray],
                                        distance_vector: np.ndarray,
                                        tensor_coefficients: np.ndarray) -> float:
@@ -171,28 +261,19 @@ def compute_interaction_tensor_element(multi_index: List[np.ndarray],
 
     Args:
         multi_index: Multi-index containing the order of derivatives wrt to x, y, and z Cartesian components of the
-        distance vector.
+        distance vector. The first array in multi_index corresponds to the indices for r_a, and the second array to the
+        indices for r_b.
         distance_vector: Distance vector, i.e., r_ba = r_a - r_b
-        tensor_coefficients: Array of shape (max_order+1, max_order+1, 2*max_order+2), containing
+        tensor_coefficients: Array of shape (max_order + 1, max_order + 1, 2 * max_order + 2), containing
         the tensor coefficients.
 
     Returns:
         Element of the interaction tensor corresponding to a given multi-index and distance vector.
     """
-    tensor_element = 0.0
     i, j, k = multi_index[0] + multi_index[1]
-    norm = np.linalg.norm(distance_vector)
-    for q in range(i + 1):
-        cl = tensor_coefficients[q, i, 1] * (distance_vector[0] / norm) ** q
-        o = q + i + 1
-        for m in range(j + 1):
-            cm = cl * tensor_coefficients[m, j, o] * (distance_vector[1] / norm) ** m
-            p = o + j + m
-            for n in range(k + 1):
-                cn = cm * tensor_coefficients[n, k, p] * (distance_vector[2] / norm) ** n
-                tensor_element += cn
-    tensor_element /= norm ** (i + j + k + 1)
-    return tensor_element * (-1) ** (multi_index[1][0] + multi_index[1][1] + multi_index[1][2])
+    index_sum = (multi_index[1][0] + multi_index[1][1] + multi_index[1][2])
+    norm = vec_norm(distance_vector)
+    return calculate_tensor_element(i, j, k, distance_vector, tensor_coefficients, norm, index_sum)
 
 
 def compute_tensor_coefficients(max_order: int) -> np.ndarray:

@@ -1,8 +1,11 @@
 """Tests PyFraME.embedding.solvers.py"""
 import pytest
 import numpy as np
+import os
 
+from pyframe.embedding import read_input
 from pyframe.embedding.solvers import induced_dipoles_jacobi
+from mpi4py import MPI
 
 
 def example_data(data):
@@ -51,16 +54,16 @@ def test_induced_dipoles_jacobi(
 
 def test_induced_dipoles_jacobi_edge_cases():
     # Test with minimum input size
-    coordinates = np.zeros([1, 3])
+    coordinates = np.ones([1, 3])
     polarizabilities = np.ones([1, 3, 3])
-    exclusions = [[0]]
-    indices = np.zeros(1)
-    fields = np.zeros([1, 3])
-    starting_guess = np.zeros([1, 3])
+    exclusions = [[1]]
+    indices = np.ones(1)
+    fields = np.ones([1, 3])
+    starting_guess = np.ones([1, 3])
     threshold = 1e-10
     ind_dipoles, _, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
                                                fields, starting_guess, threshold)
-    assert np.allclose(ind_dipoles, np.zeros([1, 3]))
+    assert np.allclose(ind_dipoles, 3 * np.ones([1, 3]))
 
 
 def test_induced_dipoles_jacobi_invalid_inputs():
@@ -82,16 +85,20 @@ def test_induced_dipoles_jacobi_stability():
                                  [[1, 1, 1], [2, 2, 2], [3, 3, 3]]])
     exclusions = [[i] for i in range(3)]
     indices = np.array([0, 1, 2])
-    fields = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]])
-    starting_guess = np.zeros([3, 3])
+    fields = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    starting_guess = np.ones([3, 3])
     threshold = 1e-6
+    ref_dipoles = np.array([[9.30640954, 18.61281909, 27.91922863],
+                            [11.61880215, 23.23760431, 34.85640646],
+                            [9.30640954, 18.61281909, 27.91922863]])
     # Call the function multiple times with the same inputs
     for _ in range(5):
         ind_dipoles, _, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
                                                    fields, starting_guess, threshold)
-        assert np.allclose(ind_dipoles, np.zeros([3, 3]))  # Assert that the output is consistent
+        assert np.allclose(ind_dipoles, ref_dipoles)  # Assert that the output is consistent
 
 
+@pytest.mark.mpi()
 def test_induced_dipoles_jacobi_large_inputs():
     import time
     # Generate large input arrays
@@ -102,7 +109,7 @@ def test_induced_dipoles_jacobi_large_inputs():
         exclusions = [[i] for i in range(size)]
         indices = np.arange(size)
         fields = np.random.normal(mu, sigma, size=(size, 3))
-        starting_guess = np.zeros([size, 3])
+        starting_guess = np.ones([size, 3])
         threshold = 1e-6
         # Measure execution time
         start_time = time.time()
@@ -111,3 +118,21 @@ def test_induced_dipoles_jacobi_large_inputs():
         end_time = time.time()
         # Assert that the execution time is reasonable
         assert end_time - start_time < size  # Adjust the time limit based on your performance requirements
+
+    comm = MPI.COMM_WORLD
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json', comm=comm)
+    print("Calculate induced dipoles without external fields.")
+    start_time = time.time()
+    env.solve_induced_dipoles()
+    end_time = time.time()
+    print("Execution time:", end_time - start_time)
+    gathered_summed_arr = comm.gather(env.induced_dipoles.induced_dipoles, root=0)
+    gathered_summed_arr2 = comm.gather(env._multipole_fields, root=0)
+    # Check if the gathered arrays are equal on all processes
+    if comm.Get_rank() == 0:
+        for i in range(1, comm.Get_size()):
+            assert np.array_equal(gathered_summed_arr[0],
+                                  gathered_summed_arr[i]), "Arrays are not equal across processes"
+            assert np.array_equal(gathered_summed_arr2[0],
+                                  gathered_summed_arr2[i]), "Arrays are not equal across processes"
+    MPI.Finalize()

@@ -138,17 +138,17 @@ class SecondDegreePolytensor:
                  ):
         if isinstance(rank_1, list):
             self.length_1 = 0
-            for i in range(rank_1[0], rank_1[-1] + 1):
+            for i in range(rank_1[0], rank_1[1] + 1):
                 self.length_1 += (i + 1) * (i + 2) // 2
-            self._rank_1 = rank_1[-1]
+            self._rank_1 = rank_1[1]
         else:
             self._rank_1 = rank_1
             self.length_1 = (rank_1 + 1) * (rank_1 + 2) * (rank_1 + 3) // 6
         if isinstance(rank_2, list):
             self.length_2 = 0
-            for i in range(rank_2[0], rank_2[-1] + 1):
+            for i in range(rank_2[0], rank_2[1] + 1):
                 self.length_2 += (i + 1) * (i + 2) // 2
-            self._rank_2 = rank_2[-1]
+            self._rank_2 = rank_2[1]
         else:
             self._rank_2 = rank_2
             self.length_2 = (rank_2 + 1) * (rank_2 + 2) * (rank_2 + 3) // 6

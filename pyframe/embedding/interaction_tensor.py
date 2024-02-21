@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import numpy as np
+from numpy import ndarray
 
 from pyframe.embedding import polytensor, tensor_tools, constants
 from typing import Optional
+from mpi4py import MPI
 
 
 def compute_t_tensor(r_a: np.ndarray,
@@ -12,7 +14,7 @@ def compute_t_tensor(r_a: np.ndarray,
                      rank_b: int,
                      tensor_template: np.ndarray,
                      start_rank_b: Optional[int] = 0,
-                     start_rank_a: Optional[int] = 0,
+                     start_rank_a: Optional[int] = 0
                      ) -> polytensor.SecondDegreePolytensor:
     """Builds and calculates the T tensor, which is a Matrix used to calculate the potential and interaction energy of
     Particles.

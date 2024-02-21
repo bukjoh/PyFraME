@@ -5,7 +5,8 @@ import numpy as np
 
 from pyframe.embedding import fragment, particle, density_matrix, subsystem
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
+from mpi4py import MPI
 
 
 def json_to_dict(filepath: Path | str
@@ -33,8 +34,9 @@ def json_to_dict(filepath: Path | str
 
 
 def reader(input_data: dict | Path | str,
-           read_quantum: bool = True,
-           read_classical: bool = True
+           read_quantum: Optional[bool] = True,
+           read_classical: Optional[bool] = True,
+           comm: Optional[MPI.Comm] = None
            ) -> (Tuple[subsystem.QuantumSubsystem, subsystem.ClassicalSubsystem] |
                  Tuple[subsystem.QuantumSubsystem, List[subsystem.ClassicalSubsystem]] |
                  subsystem.QuantumSubsystem |
@@ -48,6 +50,7 @@ def reader(input_data: dict | Path | str,
         read_quantum: Flag to indicate if instance of QuantumSubsystem is to be read in and created.
         read_classical: Flag to indicate if instance or list of instances of ClassicalSubsystem(s) is to be read in and
         created.
+        comm: The MPI communicator.
 
     Returns:
         QuantumSubsystem, ClassicalSubsystem(s) or both.
@@ -94,7 +97,11 @@ def reader(input_data: dict | Path | str,
         quantum_subsystem = subsystem.QuantumSubsystem(nuclei=nuclei,
                                                        dens_mat=dens_mat,
                                                        quantum_fragments=quantum_fragments,
-                                                       name=q_name)
+                                                       name=q_name,
+                                                       comm=comm)
+    # TODO make the JSON input to 'classical_subsystems' and always give it as a list.
+    # TODO and instead make keyword 'classical_subsystem' always as a singular dictionary.
+
     # Classical Subsystem
     if read_classical:
         if input_data.get('classical_subsystem', None) is None:
@@ -112,7 +119,8 @@ def reader(input_data: dict | Path | str,
                 if c_subsystem.get('name', None) is not None:
                     c_name = c_subsystem['name']
                 classical_subsystems.append(subsystem.ClassicalSubsystem(classical_fragments=classical_fragments,
-                                                                         name=c_name))
+                                                                         name=c_name,
+                                                                         comm=comm))
         if isinstance(classical_subsystem_data, dict):
             if classical_subsystem_data.get('classical_fragments', None) is not None:
                 classical_fragments = []
@@ -122,7 +130,9 @@ def reader(input_data: dict | Path | str,
                 raise KeyError("Fragments are not present in the Classical Subsystem.")
             if classical_subsystem_data.get('name', None) is not None:
                 c_name = classical_subsystem_data['name']
-            classical_subsystem = subsystem.ClassicalSubsystem(classical_fragments=classical_fragments, name=c_name)
+            classical_subsystem = subsystem.ClassicalSubsystem(classical_fragments=classical_fragments,
+                                                               name=c_name,
+                                                               comm=comm)
 
     if quantum_subsystem is not None:
         if classical_subsystem is not None:

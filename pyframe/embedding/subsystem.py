@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from mpi4py import MPI
 from dataclasses import dataclass
 from typing import Optional, Any
 from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions
@@ -13,8 +14,11 @@ class Subsystem:
     """
 
     def __init__(self,
-                 name: Optional[str]):
+                 name: Optional[str],
+                 comm: Optional[MPI.Comm] = None
+                 ):
         self.name = name
+        self.comm = comm
 
 
 class QuantumSubsystem(Subsystem):
@@ -25,6 +29,7 @@ class QuantumSubsystem(Subsystem):
         dens_mat: Density Matrix.
         quantum_fragments: Fragments of the QuantumSubsystem.
         name: Name of the QuantumSubsystem.
+        comm: The MPI communicator.
     """
 
     def __init__(self,
@@ -32,10 +37,11 @@ class QuantumSubsystem(Subsystem):
                  dens_mat: density_matrix.DensityMatrix,
                  quantum_fragments: Optional[list] = None,
                  name: Optional[str] = None,
+                 comm: Optional[MPI.Comm] = None
                  ):
         if not nuclei:
             raise ValueError("QuantumSubsystem must have at least one Nucleus.")
-        Subsystem.__init__(self, name=name)
+        Subsystem.__init__(self, name=name, comm=comm)
         self.num_nuclei = len(nuclei)
         self.nuclei = nuclei
         self.density_matrix = dens_mat
@@ -43,6 +49,9 @@ class QuantumSubsystem(Subsystem):
         self.coordinates = np.zeros([self.num_nuclei, 3])
         for i, nucleus in enumerate(nuclei):
             self.coordinates[i, :] = nucleus.coordinate[:]
+        if self.comm is not None:
+            self.rank = self.comm.Get_rank()
+            self.size = self.comm.Get_size()
 
     def static_potential(self,
                          coordinate: np.ndarray,
@@ -86,14 +95,31 @@ class QuantumSubsystem(Subsystem):
         Returns:
             Array of nuclear fields on the different coordinates.
         """
-        nuclear_fields = np.zeros([len(coordinates), 3])
-        for i, coordinate in enumerate(coordinates):
-            field_component = np.zeros(3)
-            for nucleus in self.nuclei:
-                field_component += nucleus.potential(coordinate=coordinate,
-                                                     pot_derivative_order=1)
-            nuclear_fields[i, :] = field_component
-        return nuclear_fields
+        if self.comm is not None:
+            avg, res = divmod(len(coordinates), self.size)
+            counts = [avg + 1 if p < res else avg for p in range(self.size)]
+            start = sum(counts[:self.rank])
+            end = sum(counts[:self.rank + 1])
+            nuclear_fields_global = np.zeros([len(coordinates), 3])
+            nuclear_fields_local = np.zeros([len(coordinates), 3])
+            for i in range(start, end):
+                field_component = np.zeros(3)
+                for nucleus in self.nuclei:
+                    field_component += nucleus.potential(coordinate=coordinates[i],
+                                                         pot_derivative_order=1)
+                nuclear_fields_local[i, :] = field_component
+            self.comm.Allreduce(nuclear_fields_local, nuclear_fields_global, op=MPI.SUM)
+            return nuclear_fields_global
+
+        else:
+            nuclear_fields = np.zeros([len(coordinates), 3])
+            for i, coordinate in enumerate(coordinates):
+                field_component = np.zeros(3)
+                for nucleus in self.nuclei:
+                    field_component += nucleus.potential(coordinate=coordinate,
+                                                         pot_derivative_order=1)
+                nuclear_fields[i, :] = field_component
+            return nuclear_fields
 
     def compute_electric_fields(self,
                                 coordinates: np.ndarray,
@@ -124,15 +150,17 @@ class ClassicalSubsystem(Subsystem):
     Args:
         classical_fragments: Fragments of the ClassicalSubsystem.
         name: Name of the ClassicalSubsystem.
+        comm: The MPI communicator.
     """
 
     def __init__(self,
                  classical_fragments: list,
-                 name: Optional[str] = None
+                 name: Optional[str] = None,
+                 comm: Optional[MPI.Comm] = None
                  ):
         if not classical_fragments:
             raise ValueError("ClassicalSubsystem must have at least one ClassicalFragment.")
-        Subsystem.__init__(self, name=name)
+        Subsystem.__init__(self, name=name, comm=comm)
         self.classical_fragments = classical_fragments
         self.num_atoms = 0
         for fragments in self.classical_fragments:
@@ -156,20 +184,53 @@ class ClassicalSubsystem(Subsystem):
                                               induced_dipole_fields=np.zeros([self.num_atoms, 3]),
                                               number_of_iterations=0,
                                               solver="None")
+        self._multipole_fields = None
+        if self.comm is not None:
+            self.rank = self.comm.Get_rank()
+            self.size = self.comm.Get_size()
 
-        self.multipole_fields = np.zeros([self.num_atoms, 3])
-        k = 0
-        for fragment_i in self.classical_fragments:
-            for i, atom_i in enumerate(fragment_i.atoms):
+    @property
+    def multipole_fields(self):
+        if getattr(self, '_multipole_fields', None) is None:
+            self.compute_multipole_fields()
+        return self._multipole_fields
+
+    def compute_multipole_fields(self) -> None:
+        """Computes the multipole fields from fragments.
+        """
+        self._multipole_fields = np.zeros([self.num_atoms, 3])
+        if self.comm is not None:
+            multipole_fields_local = np.zeros_like(self._multipole_fields)
+            avg, res = divmod(len(self.coordinates), self.size)
+            counts = [avg + 1 if p < res else avg for p in range(self.size)]
+            start = sum(counts[:self.rank])
+            end = sum(counts[:self.rank + 1])
+            for i in range(start, end):
                 field_component = np.zeros(3)
                 for fragment_j in self.classical_fragments:
                     for j, atom_j in enumerate(fragment_j.atoms):
-                        if atom_j.index in atom_i.exclusions:
+                        if atom_j.index in self.exclusions[i]:
                             continue
-                        field_component += atom_j.potential(coordinate=atom_i.coordinate,
+                        field_component += atom_j.potential(coordinate=self.coordinates[i],
                                                             pot_derivative_order=1)
-                self.multipole_fields[k, :] = field_component
-                k += 1
+                multipole_fields_local[i, :] = field_component
+            # Perform reduction
+            self.comm.Allreduce([multipole_fields_local, MPI.DOUBLE],
+                                [self._multipole_fields, MPI.DOUBLE],
+                                op=MPI.SUM)
+        else:
+            k = 0
+            for fragment_i in self.classical_fragments:
+                for i, atom_i in enumerate(fragment_i.atoms):
+                    field_component = np.zeros(3)
+                    for fragment_j in self.classical_fragments:
+                        for j, atom_j in enumerate(fragment_j.atoms):
+                            if atom_j.index in atom_i.exclusions:
+                                continue
+                            field_component += atom_j.potential(coordinate=atom_i.coordinate,
+                                                                pot_derivative_order=1)
+                    self._multipole_fields[k, :] = field_component
+                    k += 1
 
     def static_potential(self,
                          coordinate: np.ndarray,
@@ -233,8 +294,7 @@ class ClassicalSubsystem(Subsystem):
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
         else:
-            residue_norm = np.abs(np.linalg.norm(external_fields - self.induced_dipoles.external_fields)
-                                  / np.linalg.norm(self.induced_dipoles.external_fields))
+            residue_norm = tensor_tools.vec_residue_norm(external_fields, self.induced_dipoles.external_fields)
             if residue_norm == 0:
                 print("Residue norm between new and old external fields is 0, induced dipoles will not be "
                       "recalculated.")
@@ -259,7 +319,8 @@ class ClassicalSubsystem(Subsystem):
                                                                                         indices=self.indices,
                                                                                         fields=static_fields,
                                                                                         starting_guess=starting_guess,
-                                                                                        threshold=threshold))
+                                                                                        threshold=threshold,
+                                                                                        comm=self.comm))
         k = 0
         for fragment in self.classical_fragments:
             for atom in fragment.atoms:

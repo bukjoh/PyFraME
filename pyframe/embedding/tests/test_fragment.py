@@ -32,7 +32,7 @@ class TestClassicalFragment:
     def test_potential_calculation(self,
                                    water_fragments
                                    ):
-        coordinate = np.array([0, 0, 0])
+        coordinate = np.array([1, 0, 0])
         potential = self.test_fragment.potential(coordinate)
         assert isinstance(potential, float) or isinstance(potential, np.ndarray)
         water_fragment_1 = water_fragments[0]

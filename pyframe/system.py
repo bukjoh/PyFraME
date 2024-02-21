@@ -20,7 +20,7 @@
 
 import os.path
 import re
-from typing import List, Union
+from typing import List, Union, Optional
 
 from .atoms import AtomList
 from .fragments import FragmentDict, find_bonded_fragments
@@ -344,6 +344,7 @@ class MolecularSystem(object):
         covalently bonded to the fragment that fulfills the distance criterion will be included.
 
         """
+        # FIXME -> should also accept integer no?
         assert isinstance(distance, float)
         assert isinstance(reference, FragmentDict)
         assert isinstance(use_center_of_mass, bool)
@@ -516,11 +517,13 @@ class MolecularSystem(object):
             # TODO replace with exception
             exit('ERROR: {0} does not exist'.format(writer))
 
-    def write_potential(self, filename=None):
+    def write_potential(self,
+                        filename=None,
+                        filetype: Optional[str] = "pot"):
         """Write the embedding potential for the molecular system to a file.
 
         The filename will be the variable 'filename' with the extension '.pot'.
-        The variable 'filename' defaults to the name of the the molecular system with the extension '.pot'.
+        The variable 'filename' defaults to the name of the molecular system with the extension '.pot'.
 
         """
         if self.potential is None:
@@ -528,7 +531,10 @@ class MolecularSystem(object):
             exit('ERROR: potential is not defined')
         if filename is None:
             filename = self.name
-        InputWriters.pelib_potential(self, filename)
+        if filetype == "pot":
+            InputWriters.pelib_potential(self, filename)
+        if filetype == "json":
+            InputWriters.frame_json(self, filename)
         # InputWriters.frame_potential(self, filename)
 
     def reset(self):

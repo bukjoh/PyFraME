@@ -31,6 +31,7 @@ from .potentials import Potential
 from .readers import OutputReaders, read_standard_potential
 from .writers import InputWriters, ScriptWriters
 from .process import run, process_jobs
+from typing import Optional
 
 __all__ = ['Project']
 
@@ -677,11 +678,13 @@ class Project(object):
                 combined_h5['electric fields'] = fd_static_field
             os.chdir(self.work_dir)
 
-    def write_potential(self, system):
+    def write_potential(self,
+                        system,
+                        filetype: Optional[str] = "pot"):
         """Write potential file."""
         system_dir = os.path.join(self.work_dir, system.name)
         os.chdir(system_dir)
-        system.write_potential()
+        system.write_potential(filetype=filetype)
         os.chdir(self.work_dir)
 
     def write_core(self, system):
