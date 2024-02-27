@@ -260,7 +260,7 @@ class TestNucleus:
                                            pot_derivative_order=0,
                                            origin_derivative_order=0) \
                == pytest.approx(0.34335113566514336, 1e-9)
-        with pytest.raises(ZeroDivisionError):
+        with pytest.raises(ValueError, match="r_a and r_b cannot be equal."):
             hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
                                         pot_derivative_order=0,
                                         origin_derivative_order=0) \
@@ -285,7 +285,7 @@ class TestNucleus:
                                                        coordinate,
                                                        pot_derivative_order=1,
                                                        origin_derivative_order=0), ref * (-1))
-        with pytest.raises(ZeroDivisionError):
+        with pytest.raises(ValueError, match="r_a and r_b cannot be equal."):
             hydrogen1_nucleus.potential(coordinate=hydrogen1_nucleus.coordinate,
                                         pot_derivative_order=0,
                                         origin_derivative_order=1)

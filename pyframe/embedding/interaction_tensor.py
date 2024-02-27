@@ -1,11 +1,17 @@
 from __future__ import annotations
 
 import numpy as np
-from numpy import ndarray
-
-from pyframe.embedding import polytensor, tensor_tools, constants
+try:
+    from pyframe.embedding import cpp_interaction_tensor_element
+    print('Using cpp_interaction_tensor_element.')
+    cpp_tool = True
+except ImportError:
+    print('Unable to import cpp_interaction_tensor_element. Please compile interaction_tensor_element.cpp. Using Python'
+          ' version instead.')
+    from pyframe.embedding import tensor_tools
+    cpp_tool = False
+from pyframe.embedding import polytensor, constants
 from typing import Optional
-from mpi4py import MPI
 
 
 def compute_t_tensor(r_a: np.ndarray,
@@ -34,17 +40,26 @@ def compute_t_tensor(r_a: np.ndarray,
         (See Jon Applequist J. Math. Phys. 24, 736 (1983) for details on Polytensors.)
     """
     r_ab = r_b - r_a
+    if r_a[0] == r_b[0] and r_a[1] == r_b[1] and r_a[2] == r_b[2]:
+        raise ValueError("r_a and r_b cannot be equal.")
     interaction_tensor = polytensor.SecondDegreePolytensor(rank_2=[start_rank_b, rank_b],
                                                            rank_1=[start_rank_a, rank_a])
     start_b = (start_rank_b - 1 + 1) * (start_rank_b - 1 + 2) * (start_rank_b - 1 + 3) // 6
     end_b = (rank_b + 1) * (rank_b + 2) * (rank_b + 3) // 6
     start_a = (start_rank_a - 1 + 1) * (start_rank_a - 1 + 2) * (start_rank_a - 1 + 3) // 6
     end_a = (rank_a + 1) * (rank_a + 2) * (rank_a + 3) // 6
-    for i in range(start_a, end_a):
-        for j in range(start_b, end_b):
-            interaction_element = tensor_tools.compute_interaction_tensor_element(distance_vector=r_ab,
-                                                                                  multi_index=tensor_template[i, j],
-                                                                                  tensor_coefficients=constants.
-                                                                                  values.tensor_coefficients)
-            interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)
+    if cpp_tool:
+        for i in range(start_a, end_a):
+            for j in range(start_b, end_b):
+                interaction_element = cpp_interaction_tensor_element.compute_interaction_tensor_element(
+                    tensor_template[i, j], r_ab, constants.values.tensor_coefficients)
+                interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)
+    else:
+        for i in range(start_a, end_a):
+            for j in range(start_b, end_b):
+                interaction_element = tensor_tools.compute_interaction_tensor_element(distance_vector=r_ab,
+                                                                                      multi_index=tensor_template[i, j],
+                                                                                      tensor_coefficients=constants.
+                                                                                      values.tensor_coefficients)
+                interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)
     return interaction_tensor

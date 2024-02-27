@@ -79,13 +79,13 @@ def test_induced_dipoles_jacobi_invalid_inputs():
 
 
 def test_induced_dipoles_jacobi_stability():
-    coordinates = np.array([[0, 0, 0], [1, 1, 1], [2, 2, 2]])
-    polarizabilities = np.array([[[1, 1, 1], [2, 2, 2], [3, 3, 3]],
-                                 [[1, 1, 1], [2, 2, 2], [3, 3, 3]],
-                                 [[1, 1, 1], [2, 2, 2], [3, 3, 3]]])
+    coordinates = np.array([[0., 0., 0.], [1., 1., 1.], [2., 2., 2.]])
+    polarizabilities = np.array([[[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]],
+                                 [[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]],
+                                 [[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]]])
     exclusions = [[i] for i in range(3)]
-    indices = np.array([0, 1, 2])
-    fields = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+    indices = np.array([0., 1., 2.])
+    fields = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
     starting_guess = np.ones([3, 3])
     threshold = 1e-6
     ref_dipoles = np.array([[9.30640954, 18.61281909, 27.91922863],
