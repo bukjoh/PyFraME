@@ -181,12 +181,10 @@ def vec_residue_norm(vec1: np.ndarray,
         The residue norm between vec1 and vec2.
     """
     vec1_len = 0.
-    vec2_len = 0.
     for i in range(vec1.shape[0]):
-        for j in range(3):
+        for j in range(vec1.shape[1]):
             vec1_len += (vec1[i, j] - vec2[i, j]) ** 2
-            vec2_len += vec2[i, j] ** 2
-    return (vec1_len / vec2_len) ** 0.5
+    return vec1_len ** 0.5
 
 
 @nb.njit(fastmath=True)

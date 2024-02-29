@@ -181,7 +181,6 @@ class ClassicalSubsystem(Subsystem):
                 k += 1
         self.induced_dipoles = InducedDipoles(induced_dipoles=np.zeros([self.num_atoms, 3]),
                                               external_fields=np.zeros([self.num_atoms, 3]),
-                                              induced_dipole_fields=np.zeros([self.num_atoms, 3]),
                                               number_of_iterations=0,
                                               solver="None")
         self._multipole_fields = None
@@ -309,18 +308,16 @@ class ClassicalSubsystem(Subsystem):
                 starting_guess = np.zeros([self.num_atoms, 3])
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
-        induced_dipoles, induced_dipoles_fields, num_iter = None, None, None
+        induced_dipoles, num_iter = None, None
         if solver == 'induced_dipoles_jacobi':
-            induced_dipoles, induced_dipoles_fields, num_iter = (solvers.
-                                                                 induced_dipoles_jacobi(coordinates=self.coordinates,
-                                                                                        polarizabilities=self.
-                                                                                        polarizabilities,
-                                                                                        exclusions=self.exclusions,
-                                                                                        indices=self.indices,
-                                                                                        fields=static_fields,
-                                                                                        starting_guess=starting_guess,
-                                                                                        threshold=threshold,
-                                                                                        comm=self.comm))
+            induced_dipoles, num_iter = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
+                                                                       polarizabilities=self.polarizabilities,
+                                                                       exclusions=self.exclusions,
+                                                                       indices=self.indices,
+                                                                       fields=static_fields,
+                                                                       starting_guess=starting_guess,
+                                                                       threshold=threshold,
+                                                                       comm=self.comm)
         k = 0
         for fragment in self.classical_fragments:
             for atom in fragment.atoms:
@@ -328,7 +325,6 @@ class ClassicalSubsystem(Subsystem):
                 k += 1
         self.induced_dipoles = InducedDipoles(induced_dipoles=induced_dipoles,
                                               external_fields=external_fields,
-                                              induced_dipole_fields=induced_dipoles_fields,
                                               number_of_iterations=num_iter,
                                               solver=solver)
 
@@ -341,7 +337,6 @@ class InducedDipoles(ClassicalSubsystem):
     """
     induced_dipoles: np.ndarray
     external_fields: np.ndarray
-    induced_dipole_fields: np.ndarray
     number_of_iterations: int
     solver: str
 

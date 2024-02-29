@@ -173,7 +173,7 @@ class TestClassicalSubsystem:
                                 [-0.14716566, -0.03273562, 0.12889495],
                                 [-0.44555632, 0.00482074, -0.09598545]])
         assert np.allclose(self.env.induced_dipoles.induced_dipoles, ref_dipoles)
-        assert self.env.induced_dipoles.number_of_iterations == 2
+        assert self.env.induced_dipoles.number_of_iterations == 4
         captured_output = io.StringIO()
         sys.stdout = captured_output
         self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)
@@ -192,7 +192,8 @@ class TestClassicalSubsystem:
         captured_output = io.StringIO()
         sys.stdout = captured_output
         self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field + np.full(electric_field.shape,
-                                                                                                 0.1)), threshold=1e-10)
+                                                                                                 0.1)),
+                                       threshold=1e-10)
         sys.stdout = sys.__stdout__
         assert ("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
                 "not be used as a starting guess.\n" == captured_output.getvalue())
@@ -200,15 +201,12 @@ class TestClassicalSubsystem:
     def test_induced_dipoles_dataclass(self):
         induced_dipoles = np.full((3, 3), 1)
         external_fields = np.full((3, 3), 2)
-        induced_dipole_fields = np.full((3, 3), 3)
         num_iter = 1
         data = subsystem.InducedDipoles(induced_dipoles=induced_dipoles,
                                         external_fields=external_fields,
-                                        induced_dipole_fields=induced_dipole_fields,
                                         number_of_iterations=num_iter,
                                         solver='test_solver')
         assert np.allclose(data.induced_dipoles, induced_dipoles)
         assert np.allclose(data.external_fields, external_fields)
-        assert np.allclose(data.induced_dipole_fields, induced_dipole_fields)
         assert np.allclose(data.number_of_iterations, num_iter)
         assert data.solver == 'test_solver'

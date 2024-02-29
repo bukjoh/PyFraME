@@ -1,3 +1,5 @@
+import copy
+import sys
 import numpy as np
 
 from mpi4py import MPI
@@ -13,7 +15,7 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                            starting_guess: np.ndarray,
                            threshold: float,
                            comm: Optional[MPI.Comm] = None
-                           ) -> Tuple[np.ndarray, np.ndarray, int]:
+                           ) -> Tuple[np.ndarray, int]:
     if not isinstance(coordinates, np.ndarray) or not isinstance(polarizabilities, np.ndarray) or \
             not isinstance(exclusions, list) or not isinstance(indices, np.ndarray) or \
             not isinstance(fields, np.ndarray) or not isinstance(starting_guess, np.ndarray):
@@ -44,7 +46,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
                                   fields: np.ndarray,
                                   starting_guess: np.ndarray,
                                   threshold: float
-                                  ) -> Tuple[np.ndarray, np.ndarray, int]:
+                                  ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
     Args:
@@ -62,39 +64,41 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
         iteration: Number of iterations it took to converge the induced dipoles to the threshold.
     """
     # Calculate induced dipoles from other induced dipoles
+    norm_fields = np.linalg.norm(fields)
+    if norm_fields == 0:
+        norm_fields = 1.
+    old_new_fields = np.zeros([len(fields), 3])
     old_ind_dipoles = starting_guess
     ind_dipoles = np.zeros([len(fields), 3])
-    residue_norm = 1.
+    residue_norm = sys.float_info.max
     iteration = 0
-    new_fields = None
     while residue_norm > threshold:
         iteration += 1
         new_fields = np.zeros([len(old_ind_dipoles), 3])
         for i, coordinate_i in enumerate(coordinates):
-            field_component = np.zeros(3)
+            ind_dipoles_fields = np.zeros(3)
             for j, coordinate_j in enumerate(coordinates):
                 if indices[j] in exclusions[i]:
                     continue
                 # Potential tensor template used
-                field_component += np.einsum('ij, j', interaction_tensor.
-                                             compute_t_tensor(r_a=coordinate_j,
-                                                              r_b=coordinate_i,
-                                                              rank_a=1,
-                                                              rank_b=1,
-                                                              start_rank_a=1,
-                                                              start_rank_b=1,
-                                                              tensor_template=constants.values.
-                                                              potential_tensor_template).data,
-                                             old_ind_dipoles[j])
-            new_fields[i, :] = field_component
+                ind_dipoles_fields += np.einsum('ij, j', interaction_tensor.
+                                                compute_t_tensor(r_a=coordinate_j,
+                                                                 r_b=coordinate_i,
+                                                                 rank_a=1,
+                                                                 rank_b=1,
+                                                                 start_rank_a=1,
+                                                                 start_rank_b=1,
+                                                                 tensor_template=constants.values.
+                                                                 potential_tensor_template).data,
+                                                old_ind_dipoles[j])
+            new_fields[i, :] = ind_dipoles_fields
         # Calculate total induced dipoles
         for i, new_field in enumerate(new_fields):
-            ind_dipoles[i, :] = np.einsum('ij, j',
-                                          polarizabilities[i], np.add(new_field,
-                                                                      fields[i]))
-        residue_norm = tensor_tools.vec_residue_norm(ind_dipoles, old_ind_dipoles)
-        old_ind_dipoles = ind_dipoles
-    return ind_dipoles, new_fields, iteration
+            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
+        residue_norm = np.linalg.norm(new_fields - old_new_fields) / norm_fields
+        old_new_fields = copy.deepcopy(new_fields)
+        old_ind_dipoles = copy.deepcopy(ind_dipoles)
+    return ind_dipoles, iteration
 
 
 def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
@@ -105,7 +109,7 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
                                     starting_guess: np.ndarray,
                                     threshold: float,
                                     comm: Optional[MPI.Comm] = None
-                                    ) -> Tuple[np.ndarray, np.ndarray, int]:
+                                    ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
     Args:
@@ -130,38 +134,40 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
     start = sum(counts[:rank])
     end = sum(counts[:rank + 1])
     # Calculate induced dipoles from other induced dipoles
+    norm_fields = np.linalg.norm(fields)
+    if norm_fields == 0:
+        norm_fields = 1.
+    old_new_fields = np.zeros([len(fields), 3])
     old_ind_dipoles = starting_guess
     ind_dipoles = np.zeros([len(fields), 3])
-    residue_norm = 1.
+    residue_norm = sys.float_info.max
     iteration = 0
-    new_fields_global = None
+    new_fields_global = np.zeros([len(fields), 3])
     while residue_norm > threshold:
         iteration += 1
-        new_fields_global = np.zeros([len(old_ind_dipoles), 3])
-        new_fields_local = np.zeros([len(old_ind_dipoles), 3])
+        new_fields_local = np.zeros([len(fields), 3])
         for i in range(start, end):
-            field_component = np.zeros(3)
+            ind_dipoles_fields = np.zeros(3)
             for j, coordinate_j in enumerate(coordinates):
                 if indices[j] in exclusions[i]:
                     continue
-                field_component += np.einsum('ij, j', interaction_tensor.
-                                             compute_t_tensor(r_a=coordinate_j,
-                                                              r_b=coordinates[i],
-                                                              rank_a=1,
-                                                              rank_b=1,
-                                                              start_rank_a=1,
-                                                              start_rank_b=1,
-                                                              tensor_template=constants.values.
-                                                              potential_tensor_template).data,
-                                             old_ind_dipoles[j])
-            new_fields_local[i, :] = field_component
+                ind_dipoles_fields += np.einsum('ij, j', interaction_tensor.
+                                                compute_t_tensor(r_a=coordinate_j,
+                                                                 r_b=coordinates[i],
+                                                                 rank_a=1,
+                                                                 rank_b=1,
+                                                                 start_rank_a=1,
+                                                                 start_rank_b=1,
+                                                                 tensor_template=constants.values.
+                                                                 potential_tensor_template).data,
+                                                old_ind_dipoles[j])
+            new_fields_local[i, :] = ind_dipoles_fields
         comm.Allreduce(new_fields_local, new_fields_global, op=MPI.SUM)
         for i, new_field in enumerate(new_fields_global):
             ind_dipoles[i, :] = np.einsum('ij, j',
                                           polarizabilities[i], np.add(new_field,
                                                                       fields[i]))
-
-        residue_norm = tensor_tools.vec_residue_norm(ind_dipoles, old_ind_dipoles)
-        old_ind_dipoles = ind_dipoles
-
-    return ind_dipoles, new_fields_global, iteration
+        residue_norm = np.linalg.norm(new_fields_global - old_new_fields) / norm_fields
+        old_ind_dipoles = copy.deepcopy(ind_dipoles)
+        old_new_fields = copy.deepcopy(new_fields_global)
+    return ind_dipoles, iteration

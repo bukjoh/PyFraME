@@ -35,20 +35,19 @@ def test_induced_dipoles_jacobi(
     for i, field in enumerate(fields):
         starting_guess[i, :] = np.einsum('ij, j', polarizabilities[i], field)
     threshold = 1e-10
-    ind_dipoles, new_fields, iteration = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                                                fields, starting_guess, threshold)
+    ind_dipoles, iteration = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
+                                                    fields, starting_guess, threshold)
     # Test if output has the correct dipoles
     assert np.allclose(ind_dipoles, ref_dipoles)
     # Test if the output has the correct shape
     assert ind_dipoles.shape == (6, 3)
-    assert new_fields.shape == (6, 3)
     # Test if the iteration count is reasonable
     assert iteration < 500  # arbitrary upper limit for iteration
     # Test for different threshold values
     thresholds = [1e-10, 1e-12, 1e-15]
     for threshold in thresholds:
-        _, _, iteration = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                                 fields, starting_guess, threshold)
+        _, iteration = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
+                                              fields, starting_guess, threshold)
         assert iteration < 500  # arbitrary upper limit for iteration
 
 
@@ -61,8 +60,8 @@ def test_induced_dipoles_jacobi_edge_cases():
     fields = np.ones([1, 3])
     starting_guess = np.ones([1, 3])
     threshold = 1e-10
-    ind_dipoles, _, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                               fields, starting_guess, threshold)
+    ind_dipoles, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
+                                            fields, starting_guess, threshold)
     assert np.allclose(ind_dipoles, 3 * np.ones([1, 3]))
 
 
@@ -80,21 +79,21 @@ def test_induced_dipoles_jacobi_invalid_inputs():
 
 def test_induced_dipoles_jacobi_stability():
     coordinates = np.array([[0., 0., 0.], [1., 1., 1.], [2., 2., 2.]])
-    polarizabilities = np.array([[[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]],
-                                 [[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]],
-                                 [[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]]])
+    polarizabilities = np.array([[[.1, .1, .1], [.1, .1, .1], [.1, .1, .1]],
+                                 [[.1, .1, .1], [.1, .1, .1], [.1, .1, .1]],
+                                 [[.1, .1, .1], [.1, .1, .1], [.1, .1, .1]]])
     exclusions = [[i] for i in range(3)]
     indices = np.array([0., 1., 2.])
     fields = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
     starting_guess = np.ones([3, 3])
     threshold = 1e-6
-    ref_dipoles = np.array([[9.30640954, 18.61281909, 27.91922863],
-                            [11.61880215, 23.23760431, 34.85640646],
-                            [9.30640954, 18.61281909, 27.91922863]])
+    ref_dipoles = np.array([[0.11632816, 0.11632816, 0.11632816],
+                            [0.12686485, 0.12686485, 0.12686485],
+                            [0.11632816, 0.11632816, 0.11632816]])
     # Call the function multiple times with the same inputs
-    for _ in range(5):
-        ind_dipoles, _, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
-                                                   fields, starting_guess, threshold)
+    for i in range(5):
+        ind_dipoles, num_iter = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
+                                                       fields, starting_guess, threshold)
         assert np.allclose(ind_dipoles, ref_dipoles)  # Assert that the output is consistent
 
 
