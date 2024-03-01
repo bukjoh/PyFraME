@@ -272,7 +272,7 @@ class ClassicalSubsystem(Subsystem):
         return electrostatic_interactions.compute_classical_self_energy(self.classical_fragments)
 
     def solve_induced_dipoles(self,
-                              threshold: float = 1e-10,
+                              threshold: float = 1e-8,
                               max_iterations: float = 100,
                               solver: Optional[str] = 'induced_dipoles_jacobi',
                               external_fields: Optional[np.ndarray] = None
@@ -289,18 +289,20 @@ class ClassicalSubsystem(Subsystem):
             static_fields = self.multipole_fields + external_fields
         else:
             static_fields = self.multipole_fields
+            external_fields = np.zeros([self.num_atoms, 3])
         # First guess for induced dipoles
         if np.all(self.induced_dipoles.induced_dipoles == 0):
             starting_guess = np.zeros([self.num_atoms, 3])
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
         else:
-            residue_norm = tensor_tools.vec_residue_norm(external_fields, self.induced_dipoles.external_fields)
-            if residue_norm == 0:
+            residue_norm = np.linalg.norm(external_fields - self.induced_dipoles.external_fields)
+            max_residue_norm = np.max(np.abs(external_fields - self.induced_dipoles.external_fields))
+            if residue_norm == 0 and max_residue_norm == 0:
                 print("Residue norm between new and old external fields is 0, induced dipoles will not be "
                       "recalculated.")
                 return
-            elif residue_norm < 1e-6:
+            elif residue_norm < 1e-6 and max_residue_norm < 1e-6:
                 print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
                       "be used as a starting guess.")
                 starting_guess = self.induced_dipoles.induced_dipoles
