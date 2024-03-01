@@ -205,8 +205,10 @@ class TestClassicalSubsystem:
         data = subsystem.InducedDipoles(induced_dipoles=induced_dipoles,
                                         external_fields=external_fields,
                                         number_of_iterations=num_iter,
-                                        solver='test_solver')
+                                        solver='test_solver',
+                                        threshold=1e-8)
         assert np.allclose(data.induced_dipoles, induced_dipoles)
         assert np.allclose(data.external_fields, external_fields)
         assert np.allclose(data.number_of_iterations, num_iter)
         assert data.solver == 'test_solver'
+        assert data.threshold == 1e-8

@@ -163,31 +163,6 @@ def convert_tensor_index(tensor_index: int, tensor_rank: int) -> Tuple[int, int,
 
 
 @nb.njit(fastmath=True)
-def vec_residue_norm(vec1: np.ndarray,
-                     vec2: np.ndarray
-                     ) -> float:
-    """Calculates the residue norm between two vectors.
-
-    This function computes the residue norm, which quantifies the difference
-    between two vectors. It is calculated as the square root of the sum of
-    squared differences between corresponding elements of vec1 and vec2,
-    normalized by the norm of vec2.
-
-    Args:
-        vec1: The first vector.
-        vec2: The second vector.
-
-    Returns:
-        The residue norm between vec1 and vec2.
-    """
-    vec1_len = 0.
-    for i in range(vec1.shape[0]):
-        for j in range(vec1.shape[1]):
-            vec1_len += (vec1[i, j] - vec2[i, j]) ** 2
-    return vec1_len ** 0.5
-
-
-@nb.njit(fastmath=True)
 def vec_norm(vec: np.ndarray) -> float:
     """Calculates the Euclidean norm of a vector.
 

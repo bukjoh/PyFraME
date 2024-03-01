@@ -182,6 +182,7 @@ class ClassicalSubsystem(Subsystem):
         self.induced_dipoles = InducedDipoles(induced_dipoles=np.zeros([self.num_atoms, 3]),
                                               external_fields=np.zeros([self.num_atoms, 3]),
                                               number_of_iterations=0,
+                                              threshold=1e-8,
                                               solver="None")
         self._multipole_fields = None
         if self.comm is not None:
@@ -274,7 +275,7 @@ class ClassicalSubsystem(Subsystem):
     def solve_induced_dipoles(self,
                               threshold: float = 1e-8,
                               max_iterations: float = 100,
-                              solver: Optional[str] = 'induced_dipoles_jacobi',
+                              solver: Optional[str] = 'jacobi',
                               external_fields: Optional[np.ndarray] = None
                               ) -> None:
         """Solves for the induced dipoles on all atoms.
@@ -313,7 +314,7 @@ class ClassicalSubsystem(Subsystem):
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
         induced_dipoles, num_iter = None, None
-        if solver == 'induced_dipoles_jacobi':
+        if solver == 'jacobi':
             induced_dipoles, num_iter = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
                                                                        polarizabilities=self.polarizabilities,
                                                                        exclusions=self.exclusions,
@@ -331,7 +332,8 @@ class ClassicalSubsystem(Subsystem):
         self.induced_dipoles = InducedDipoles(induced_dipoles=induced_dipoles,
                                               external_fields=external_fields,
                                               number_of_iterations=num_iter,
-                                              solver=solver)
+                                              solver=solver,
+                                              threshold=threshold)
 
 
 @dataclass
@@ -344,6 +346,7 @@ class InducedDipoles(ClassicalSubsystem):
     external_fields: np.ndarray
     number_of_iterations: int
     solver: str
+    threshold: float
 
 
 class ContinuumSubsystem(Subsystem):
