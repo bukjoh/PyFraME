@@ -60,9 +60,13 @@ def reader(input_data: dict | Path | str,
     elif isinstance(input_data, Path):
         print("Creating from Path object.")
         input_data = json_to_dict(input_data)
+        if not bool(input_data):
+            raise RuntimeError("Input data not created successfully, please check filepath.")
     elif isinstance(input_data, str):
         print("Creating from string path.")
         input_data = json_to_dict(input_data)
+        if not bool(input_data):
+            raise RuntimeError("Input data not created successfully, please check filepath.")
     else:
         raise TypeError("Input data has an unrecognized type.")
     if not read_quantum and not read_classical:
