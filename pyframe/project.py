@@ -680,11 +680,12 @@ class Project(object):
 
     def write_potential(self,
                         system,
-                        filetype: Optional[str] = "pot"):
+                        filetype: Optional[str] = "pot",
+                        incoming_unit: Optional[str] = "Angstrom"):
         """Write potential file."""
         system_dir = os.path.join(self.work_dir, system.name)
         os.chdir(system_dir)
-        system.write_potential(filetype=filetype)
+        system.write_potential(filetype=filetype, incoming_unit=incoming_unit)
         os.chdir(self.work_dir)
 
     def write_core(self, system):

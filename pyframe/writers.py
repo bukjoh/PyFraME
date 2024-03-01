@@ -413,12 +413,12 @@ class InputWriters(object):
             pot_file.write(pot)
 
     @staticmethod
-    def frame_json(system, filename=None):
+    def frame_json(system, incoming_unit, filename=None):
         """Write potential file for PyFraME"""
         if filename is None:
             filename = system.name
 
-        # FIXME only reads in coordinates, does not convert from AA to bohr and vice versa.
+        # TODO give appropriate docstring for incoming unit
         if len(system.regions) == 1:
             sys_dict = {"quantum_subsystem": {"name": "core region",
                                               "nuclei": []
@@ -429,15 +429,28 @@ class InputWriters(object):
                                                 }
                         }
             # fill quantum_subsystem with nuclei
-            k = 0
-            for fragment in system.core_region.fragments.values():
-                for atom in fragment.atoms:
-                    nucleus = {'index': k,
-                               'element': atom.element,
-                               'charge': element2charge[atom.element],
-                               'coordinate': atom.coordinate.tolist()}
-                    sys_dict["quantum_subsystem"]["nuclei"].append(nucleus)
-                    k += 1
+            if incoming_unit == "Angstrom":
+                from qcelemental import PhysicalConstantsContext
+                constants = PhysicalConstantsContext('CODATA2018')
+                k = 0
+                for fragment in system.core_region.fragments.values():
+                    for atom in fragment.atoms:
+                        nucleus = {'index': k,
+                                   'element': atom.element,
+                                   'charge': element2charge[atom.element],
+                                   'coordinate': [x / constants.bohr2angstroms for x in atom.coordinate.tolist()]}
+                        sys_dict["quantum_subsystem"]["nuclei"].append(nucleus)
+                        k += 1
+            elif incoming_unit == "Bohr":
+                k = 0
+                for fragment in system.core_region.fragments.values():
+                    for atom in fragment.atoms:
+                        nucleus = {'index': k,
+                                   'element': atom.element,
+                                   'charge': element2charge[atom.element],
+                                   'coordinate': atom.coordinate.tolist()}
+                        sys_dict["quantum_subsystem"]["nuclei"].append(nucleus)
+                        k += 1
 
             # fill classical_subsystem with atoms
             multipoles = []
@@ -462,42 +475,83 @@ class InputWriters(object):
                 if max_mul_order < int(mul_order[1]):
                     max_mul_order = int(mul_order[1])
 
-            for index, site in system.potential.items():
-                atom = {}
-                # TODO site does not have mass, induced dipole, and name as an attribute
-                # TODO site does not have vdw and vdw method as attributes.
-                if isinstance(site.epsilon, float) and isinstance(site.sigma, float):
-                    atom['vdw'] = {"lj_sigma": site.sigma,
-                                   "lj_epsilon": site.epsilon,
-                                   "vdw_method": "6-12"}
-                atom['index'] = index
-                atom['element'] = site.element
-                atom['coordinate'] = site.coordinate.tolist()
-                atom['exclusions'] = site.exclusion_list
-                # append own index to exclusion list
-                atom['exclusions'].insert(0, index)
-                atom['polarizabilities'] = {"elements": [], "order": []}
-                atom['multipoles'] = {"elements": [], "order": 0}
-                for i in range(7):
-                    mx = 'M{0}'.format(i)
-                    if hasattr(site, mx) and getattr(site, mx):
-                        atom['multipoles']["elements"].extend(getattr(site, mx))
-                        atom['multipoles']["order"] = i
-                    else:
-                        if i <= max_mul_order:
-                            atom['multipoles']["elements"].extend(np.zeros((i + 1) * (i + 2) // 2))
+            if incoming_unit == "Angstrom":
+                from qcelemental import PhysicalConstantsContext
+                constants = PhysicalConstantsContext('CODATA2018')
+                for index, site in system.potential.items():
+                    atom = {}
+                    # TODO site does not have mass, induced dipole, and name as an attribute
+                    # TODO site does not have vdw and vdw method as attributes.
+                    if isinstance(site.epsilon, float) and isinstance(site.sigma, float):
+                        atom['vdw'] = {"lj_sigma": site.sigma,
+                                       "lj_epsilon": site.epsilon,
+                                       "vdw_method": "6-12"}
+                    atom['index'] = index
+                    atom['element'] = site.element
+                    atom['coordinate'] = [x / constants.bohr2angstroms for x in site.coordinate.tolist()]
+                    atom['exclusions'] = site.exclusion_list
+                    # append own index to exclusion list
+                    atom['exclusions'].insert(0, index)
+                    atom['polarizabilities'] = {"elements": [], "order": []}
+                    atom['multipoles'] = {"elements": [], "order": 0}
+                    for i in range(7):
+                        mx = 'M{0}'.format(i)
+                        if hasattr(site, mx) and getattr(site, mx):
+                            atom['multipoles']["elements"].extend(getattr(site, mx))
                             atom['multipoles']["order"] = i
-                    for j in range(i + 1):
-                        pxy = 'P{0}{1}'.format(j, i)
-                        if hasattr(site, pxy) and getattr(site, pxy):
-                            atom['polarizabilities']["elements"].extend(getattr(site, pxy))
-                            atom['polarizabilities']["order"].append([j, i])
                         else:
-                            if j + i <= max_pol_order[0] and j <= max_pol_order[1] and i <= max_pol_order[1]:
-                                atom['polarizabilities']["elements"].extend(np.zeros((i + j + 1) * (i + j + 2)
-                                                                                     // 2))
+                            if i <= max_mul_order:
+                                atom['multipoles']["elements"].extend(np.zeros((i + 1) * (i + 2) // 2))
+                                atom['multipoles']["order"] = i
+                        for j in range(i + 1):
+                            pxy = 'P{0}{1}'.format(j, i)
+                            if hasattr(site, pxy) and getattr(site, pxy):
+                                atom['polarizabilities']["elements"].extend(getattr(site, pxy))
                                 atom['polarizabilities']["order"].append([j, i])
-                sys_dict["classical_subsystem"]["classical_fragments"][0]['atoms'].append(atom)
+                            else:
+                                if j + i <= max_pol_order[0] and j <= max_pol_order[1] and i <= max_pol_order[1]:
+                                    atom['polarizabilities']["elements"].extend(np.zeros((i + j + 1) * (i + j + 2)
+                                                                                         // 2))
+                                    atom['polarizabilities']["order"].append([j, i])
+                    sys_dict["classical_subsystem"]["classical_fragments"][0]['atoms'].append(atom)
+            elif incoming_unit == "Bohr":
+                for index, site in system.potential.items():
+                    atom = {}
+                    # TODO site does not have mass, induced dipole, and name as an attribute
+                    # TODO site does not have vdw and vdw method as attributes.
+                    if isinstance(site.epsilon, float) and isinstance(site.sigma, float):
+                        atom['vdw'] = {"lj_sigma": site.sigma,
+                                       "lj_epsilon": site.epsilon,
+                                       "vdw_method": "6-12"}
+                    atom['index'] = index
+                    atom['element'] = site.element
+                    atom['coordinate'] = site.coordinate.tolist()
+                    atom['exclusions'] = site.exclusion_list
+                    # append own index to exclusion list
+                    atom['exclusions'].insert(0, index)
+                    atom['polarizabilities'] = {"elements": [], "order": []}
+                    atom['multipoles'] = {"elements": [], "order": 0}
+                    for i in range(7):
+                        mx = 'M{0}'.format(i)
+                        if hasattr(site, mx) and getattr(site, mx):
+                            atom['multipoles']["elements"].extend(getattr(site, mx))
+                            atom['multipoles']["order"] = i
+                        else:
+                            if i <= max_mul_order:
+                                atom['multipoles']["elements"].extend(np.zeros((i + 1) * (i + 2) // 2))
+                                atom['multipoles']["order"] = i
+                        for j in range(i + 1):
+                            pxy = 'P{0}{1}'.format(j, i)
+                            if hasattr(site, pxy) and getattr(site, pxy):
+                                atom['polarizabilities']["elements"].extend(getattr(site, pxy))
+                                atom['polarizabilities']["order"].append([j, i])
+                            else:
+                                if j + i <= max_pol_order[0] and j <= max_pol_order[1] and i <= max_pol_order[1]:
+                                    atom['polarizabilities']["elements"].extend(np.zeros((i + j + 1) * (i + j + 2)
+                                                                                         // 2))
+                                    atom['polarizabilities']["order"].append([j, i])
+                    sys_dict["classical_subsystem"]["classical_fragments"][0]['atoms'].append(atom)
+
             with open('{0}.json'.format(filename), 'w') as json_file:
                 json.dump(sys_dict, json_file)
         else:

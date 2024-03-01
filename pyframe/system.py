@@ -519,7 +519,8 @@ class MolecularSystem(object):
 
     def write_potential(self,
                         filename=None,
-                        filetype: Optional[str] = "pot"):
+                        filetype: Optional[str] = "pot",
+                        incoming_unit: Optional[str] = "Angstrom"):
         """Write the embedding potential for the molecular system to a file.
 
         The filename will be the variable 'filename' with the extension '.pot'.
@@ -534,7 +535,7 @@ class MolecularSystem(object):
         if filetype == "pot":
             InputWriters.pelib_potential(self, filename)
         if filetype == "json":
-            InputWriters.frame_json(self, filename)
+            InputWriters.frame_json(self,filename=filename,incoming_unit=incoming_unit)
         # InputWriters.frame_potential(self, filename)
 
     def reset(self):
