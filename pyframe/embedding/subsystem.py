@@ -273,6 +273,7 @@ class ClassicalSubsystem(Subsystem):
 
     def solve_induced_dipoles(self,
                               threshold: float = 1e-10,
+                              max_iterations: float = 100,
                               solver: Optional[str] = 'induced_dipoles_jacobi',
                               external_fields: Optional[np.ndarray] = None
                               ) -> None:
@@ -280,6 +281,7 @@ class ClassicalSubsystem(Subsystem):
 
         Args:
             threshold: Convergence threshold.
+            max_iterations: Maximum number of iterations.
             solver: Type of solver used.
             external_fields: External fields that contribute additionally to the internal fields to induce dipoles.
         """
@@ -317,6 +319,7 @@ class ClassicalSubsystem(Subsystem):
                                                                        fields=static_fields,
                                                                        starting_guess=starting_guess,
                                                                        threshold=threshold,
+                                                                       max_iterations=max_iterations,
                                                                        comm=self.comm)
         k = 0
         for fragment in self.classical_fragments:

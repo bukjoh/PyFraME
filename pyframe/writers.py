@@ -417,19 +417,8 @@ class InputWriters(object):
         """Write potential file for PyFraME"""
         if filename is None:
             filename = system.name
-        # system.regions
-        # for region in system.regions:
 
-        # nuclei: list,
-        # dens_mat: density_matrix.DensityMatrix, ignore for now
-        # quantum_fragments: Optional[list] = None, ignore for now
-        # name: Optional[str] = None, ignore for now
-
-        # classical_fragments: list,
-        # name: Optional[str] = None
-
-        # for fragments: name index
-
+        # FIXME only reads in coordinates, does not convert from AA to bohr and vice versa.
         if len(system.regions) == 1:
             sys_dict = {"quantum_subsystem": {"name": "core region",
                                               "nuclei": []

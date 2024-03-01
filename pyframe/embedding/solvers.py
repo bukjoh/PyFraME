@@ -14,6 +14,7 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                            fields: np.ndarray,
                            starting_guess: np.ndarray,
                            threshold: float,
+                           max_iterations: float,
                            comm: Optional[MPI.Comm] = None
                            ) -> Tuple[np.ndarray, int]:
     if not isinstance(coordinates, np.ndarray) or not isinstance(polarizabilities, np.ndarray) or \
@@ -27,7 +28,8 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                                              indices=indices,
                                              fields=fields,
                                              starting_guess=starting_guess,
-                                             threshold=threshold)
+                                             threshold=threshold,
+                                             max_iterations=max_iterations)
     else:
         return induced_dipoles_jacobi_parallel(coordinates=coordinates,
                                                polarizabilities=polarizabilities,
@@ -36,6 +38,7 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                                                fields=fields,
                                                starting_guess=starting_guess,
                                                threshold=threshold,
+                                               max_iterations=max_iterations,
                                                comm=comm)
 
 
@@ -45,7 +48,8 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
                                   indices: np.ndarray,
                                   fields: np.ndarray,
                                   starting_guess: np.ndarray,
-                                  threshold: float
+                                  threshold: float,
+                                  max_iterations: float
                                   ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
@@ -57,6 +61,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
         fields: Array of static fields on all Atoms.
         starting_guess: Array of induced dipoles used as the starting guess.
         threshold: Convergence threshold for the residue norm between the (k+1)th and (k)th set of induced dipoles.
+        max_iterations: Maximum number of iterations.
 
     Returns:
         ind_dipoles: Array of induced dipoles.
@@ -71,6 +76,8 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
     ind_dipoles = np.zeros([len(fields), 3])
     while residue_norm > threshold:
         iteration += 1
+        if iteration > max_iterations:
+            raise RuntimeError("Did not converge after the maximum number of iterations.")
         for i, coordinate_i in enumerate(coordinates):
             ind_dipoles_fields = np.zeros(3)
             for j, coordinate_j in enumerate(coordinates):
@@ -103,7 +110,8 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
                                     fields: np.ndarray,
                                     starting_guess: np.ndarray,
                                     threshold: float,
-                                    comm: Optional[MPI.Comm] = None
+                                    max_iterations: float,
+                                    comm: MPI.Comm = None
                                     ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
@@ -115,6 +123,7 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
         fields: Array of static fields on all Atoms.
         starting_guess: Array of induced dipoles used as the starting guess.
         threshold: Convergence threshold for the residue norm between the (k+1)th and (k)th set of induced dipoles.
+        max_iterations: Maximum number of iterations.
         comm: The MPI communicator.
 
     Returns:
@@ -137,6 +146,8 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
     ind_dipoles = np.zeros([len(fields), 3])
     while residue_norm > threshold:
         iteration += 1
+        if iteration > max_iterations:
+            raise RuntimeError("Did not converge after the maximum number of iterations.")
         for i in range(start, end):
             ind_dipoles_fields = np.zeros(3)
             for j, coordinate_j in enumerate(coordinates):
