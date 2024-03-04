@@ -144,9 +144,8 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
     residue_norm = sys.float_info.max
     max_residue_norm = sys.float_info.max
     iteration = 0
-    new_fields_global = np.zeros([len(fields), 3])
-    new_fields_local = np.zeros([len(fields), 3])
-    ind_dipoles = np.zeros([len(fields), 3])
+    ind_dipoles_local = np.zeros([len(fields), 3])
+    ind_dipoles_global = np.zeros([len(fields), 3])
     while not (residue_norm < threshold and max_residue_norm < threshold):
         iteration += 1
         if iteration > max_iterations:
@@ -166,11 +165,10 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
                                                                  tensor_template=constants.values.
                                                                  potential_tensor_template).data,
                                                 old_ind_dipoles[j])
-            new_fields_local[i, :] = ind_dipoles_fields
-        comm.Allreduce(new_fields_local, new_fields_global, op=MPI.SUM)
-        for i, new_field in enumerate(new_fields_global):
-            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
-        residue_norm = np.linalg.norm(ind_dipoles - old_ind_dipoles)
-        max_residue_norm = np.max(np.abs(ind_dipoles - old_ind_dipoles))
-        old_ind_dipoles = copy.deepcopy(ind_dipoles)
-    return ind_dipoles, iteration
+            ind_dipoles_local[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(ind_dipoles_fields,
+                                                                                     fields[i]))
+        comm.Allreduce(ind_dipoles_local, ind_dipoles_global, op=MPI.SUM)
+        residue_norm = np.linalg.norm(ind_dipoles_global - old_ind_dipoles)
+        max_residue_norm = np.max(np.abs(ind_dipoles_global - old_ind_dipoles))
+        old_ind_dipoles = copy.deepcopy(ind_dipoles_global)
+    return ind_dipoles_global, iteration
