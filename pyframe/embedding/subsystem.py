@@ -170,6 +170,8 @@ class ClassicalSubsystem(Subsystem):
         self.polarizabilities = np.zeros([self.num_atoms, 3, 3])
         self.indices = np.zeros(self.num_atoms, dtype=int)
         self.exclusions = []
+        self.atoms = []
+        self.charges = np.zeros([self.num_atoms])
         k = 0
         for fragments in self.classical_fragments:
             for atom in fragments.atoms:
@@ -178,6 +180,8 @@ class ClassicalSubsystem(Subsystem):
                     self.polarizabilities[k, :, :] = tensor_tools.uncompress_symmetric_matrix(atom.polarizability[4:10])
                 self.coordinates[k, :] = atom.coordinate[:]
                 self.exclusions.append(atom.exclusions)
+                self.charges[k] = atom.multipoles.data[0]
+                self.atoms.append(atom)
                 k += 1
         self.induced_dipoles = InducedDipoles(induced_dipoles=np.zeros([self.num_atoms, 3]),
                                               external_fields=np.zeros([self.num_atoms, 3]),
@@ -185,6 +189,7 @@ class ClassicalSubsystem(Subsystem):
                                               threshold=1e-8,
                                               solver="None")
         self._multipole_fields = None
+        self._self_energy = None
         if self.comm is not None:
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
@@ -263,6 +268,7 @@ class ClassicalSubsystem(Subsystem):
         if array_of_potentials is True:
             return np.array(pot)
 
+    @property
     def self_energy(self
                     ) -> float:
         """Calculates the electrostatic energy between all ClassicalFragments.
@@ -270,7 +276,9 @@ class ClassicalSubsystem(Subsystem):
         Returns:
             Self energy of the ClassicalSubsystem.
         """
-        return electrostatic_interactions.compute_classical_self_energy(self.classical_fragments)
+        if getattr(self, '_self_energy', None) is None:
+            self._self_energy = electrostatic_interactions.compute_classical_self_energy(self.atoms)
+        return self._self_energy
 
     def solve_induced_dipoles(self,
                               threshold: float = 1e-8,

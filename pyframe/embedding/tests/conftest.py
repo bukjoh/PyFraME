@@ -1598,3 +1598,9 @@ def acrolein_wat():
 @pytest.fixture(scope='session')
 def two_atom():
     return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/two_atom_test.json')
+
+
+@pytest.fixture(scope='session')
+def act_wat_big():
+    return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big/act_wat_big.json',
+                             comm=None)

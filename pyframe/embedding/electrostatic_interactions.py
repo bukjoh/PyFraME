@@ -48,7 +48,7 @@ def compute_fragment_interactions(c_fragment_1: fragment.ClassicalFragment,
     if not isinstance(c_fragment_1, fragment.ClassicalFragment) or \
             not isinstance(c_fragment_2, fragment.ClassicalFragment):
         raise TypeError("Arguments must be instances of ClassicalFragment")
-    electrostatic_energy = 0
+    electrostatic_energy = 0.0
     for atom_1 in c_fragment_1.atoms:
         for atom_2 in c_fragment_2.atoms:
             if atom_2.index in atom_1.exclusions:
@@ -77,18 +77,26 @@ def compute_fragment_particle_interactions(c_particle: particle,
         return (c_fragment.potential(coordinate=c_particle.coordinate) * c_particle.charge)[0]
 
 
-def compute_classical_self_energy(classical_fragments: list):
+def compute_classical_self_energy(atoms: list):
     """Calculates the electrostatic interactions between ClassicalFragments in a ClassicalSubsystem.
 
     Args:
-        classical_fragments: List of ClassicalFragments in a
+        atoms: List of Atoms in the ClassicalSubsystem
     Returns:
         Classical self energy.
     """
-    energy = 0
-    for i, frag in enumerate(classical_fragments):
-        for j in range(i, len(classical_fragments)):
-            energy += compute_fragment_interactions(frag, classical_fragments[j])
+    energy = 0.0
+    for i in range(len(atoms)):
+        for j in range(i + 1, len(atoms)):
+            if atoms[j].index in atoms[i].exclusions:
+                continue
+            energy += polytensor.FirstDegreePolytensor(rank=atoms[i].multipole_order,
+                                                       tensor_data=atoms[i].
+                                                       potential(coordinate=atoms[j].coordinate,
+                                                                 coord_multipole_order=atoms[j].multipole_order)). \
+                dot_first_degree(polytensor.FirstDegreePolytensor.multiply_elementwise(atoms[j].
+                                                                                       multipoles_with_degeneracy,
+                                                                                       atoms[j].taylor_coefficients))
     return energy
 
 
@@ -133,16 +141,7 @@ def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsyst
     Returns:
         Electrostatic Fock matrix contribution.
     """
-    coordinates = []
-    charges = []
-    if hasattr(classical_subsystem, 'classical_fragments'):
-        for frags in classical_subsystem.classical_fragments:
-            for atom in frags.atoms:
-                coordinates.append(atom.coordinate)
-                charges.append(atom.multipoles_with_degeneracy.data[0] * atom.taylor_coefficients.data[0])
-    if hasattr(classical_subsystem, 'atoms'):
-        for atom in classical_subsystem.atoms:
-            coordinates.append(atom.coordinate)
-            charges.append(atom.multipoles_with_degeneracy.data[0] * atom.taylor_coefficients.data[0])
-    fock_matrix_contribution = integral_drv.multipole_potential_integrals(charges=charges, coordinates=coordinates)
+    # TODO check if integral driver also accepts np array and not list of np arrays.
+    fock_matrix_contribution = integral_drv.multipole_potential_integrals(charges=classical_subsystem.charges,
+                                                                          coordinates=classical_subsystem.coordinates)
     return fock_matrix_contribution

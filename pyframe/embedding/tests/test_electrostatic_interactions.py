@@ -152,6 +152,17 @@ def test_compute_classical_self_energy_empty_list():
     assert electrostatic_interactions.compute_classical_self_energy([]) == 0
 
 
+def test_compute_classical_self_energy(
+        acrolein_wat
+):
+    list_of_atoms = acrolein_wat[1].atoms
+    self_energy = electrostatic_interactions.compute_classical_self_energy(list_of_atoms)
+    # Test returned type
+    assert isinstance(self_energy, float)
+    # Test value
+    assert pytest.approx(0.001012591928, abs=1e-9) == self_energy
+
+
 def test_compute_electrostatic_interaction_empty_list(
         act_wat
 ):
