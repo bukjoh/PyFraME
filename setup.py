@@ -1,3 +1,1 @@
-from setuptools import setup
-
-setup()
+# This project is configured via setup.cfg
