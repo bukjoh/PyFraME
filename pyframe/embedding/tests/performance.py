@@ -4,21 +4,17 @@ import sys
 import numpy as np
 from mpi4py import MPI
 from pyframe.embedding import read_input
-
-# comm = MPI.COMM_WORLD
-comm = None
+import cProfile
+comm = MPI.COMM_WORLD
+# comm = None
 core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big/act_wat_big.json',
                               comm=comm)
-
-size_in_bytes = sys.getsizeof(env.classical_fragments[0].atoms[0])
-# Convert bytes to megabytes
-size_in_mb = size_in_bytes / (1024 * 1024)
-
-print(f"The size of the object is approximately {size_in_mb:.10f} megabytes.")
+# cProfile.run('env.self_energy')
 
 print("Calculate induced dipoles without external fields.")
 start_time = time.time()
-print(env.self_energy)
+# print(env.self_energy)
+env.solve_induced_dipoles()
 end_time = time.time()
 print("Execution time:", end_time - start_time)
 

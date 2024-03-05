@@ -277,7 +277,7 @@ class ClassicalSubsystem(Subsystem):
             Self energy of the ClassicalSubsystem.
         """
         if getattr(self, '_self_energy', None) is None:
-            self._self_energy = electrostatic_interactions.compute_classical_self_energy(self.atoms)
+            self._self_energy = electrostatic_interactions.compute_classical_self_energy(self.atoms, self.comm)
         return self._self_energy
 
     def solve_induced_dipoles(self,

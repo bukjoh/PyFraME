@@ -4,6 +4,7 @@ import numpy as np
 
 from pyframe.embedding import polytensor, particle, fragment, subsystem
 from typing import Union, Any, Tuple
+from mpi4py import MPI
 
 
 def compute_particle_interactions(particle_1: particle, particle_2: particle):
@@ -77,27 +78,61 @@ def compute_fragment_particle_interactions(c_particle: particle,
         return (c_fragment.potential(coordinate=c_particle.coordinate) * c_particle.charge)[0]
 
 
-def compute_classical_self_energy(atoms: list):
+def compute_classical_self_energy(atoms: list,
+                                  comm: MPI.Comm = None):
     """Calculates the electrostatic interactions between ClassicalFragments in a ClassicalSubsystem.
 
     Args:
         atoms: List of Atoms in the ClassicalSubsystem
+        comm: MPI communicator.
     Returns:
         Classical self energy.
     """
-    energy = 0.0
-    for i in range(len(atoms)):
-        for j in range(i + 1, len(atoms)):
-            if atoms[j].index in atoms[i].exclusions:
-                continue
-            energy += polytensor.FirstDegreePolytensor(rank=atoms[i].multipole_order,
-                                                       tensor_data=atoms[i].
-                                                       potential(coordinate=atoms[j].coordinate,
-                                                                 coord_multipole_order=atoms[j].multipole_order)). \
-                dot_first_degree(polytensor.FirstDegreePolytensor.multiply_elementwise(atoms[j].
-                                                                                       multipoles_with_degeneracy,
-                                                                                       atoms[j].taylor_coefficients))
-    return energy
+    if comm is None:
+        energy = 0.0
+        for i in range(len(atoms)):
+            for j in range(i + 1, len(atoms)):
+                if atoms[j].index in atoms[i].exclusions:
+                    continue
+                energy += polytensor.FirstDegreePolytensor(rank=atoms[i].multipole_order,
+                                                           tensor_data=atoms[i].
+                                                           potential(coordinate=atoms[j].coordinate,
+                                                                     coord_multipole_order=atoms[j].multipole_order)). \
+                    dot_first_degree(polytensor.FirstDegreePolytensor.multiply_elementwise(atoms[j].
+                                                                                           multipoles_with_degeneracy,
+                                                                                           atoms[
+                                                                                               j].taylor_coefficients))
+        return energy
+    else:
+        rank = comm.Get_rank()
+        size = comm.Get_size()
+        local_energy = 0.0
+        local_count = 0
+        total_iterations = (len(atoms) - 1) * len(atoms) // 2
+        # Calculate the number of iterations per process
+        iterations_per_process = total_iterations // size
+        remainder = total_iterations % size
+        # Calculate the start and end indices for this process
+        start_index = rank * iterations_per_process + min(rank, remainder)
+        end_index = start_index + iterations_per_process + (1 if rank < remainder else 0)
+        for i in range(len(atoms)):
+            for j in range(i + 1, len(atoms)):
+                if atoms[j].index in atoms[i].exclusions:
+                    continue
+                if start_index <= local_count < end_index:
+                    local_energy += polytensor.FirstDegreePolytensor(rank=atoms[i].multipole_order,
+                                                                     tensor_data=atoms[i].
+                                                                     potential(coordinate=atoms[j].coordinate,
+                                                                               coord_multipole_order=atoms[
+                                                                                   j].multipole_order)). \
+                        dot_first_degree(polytensor.FirstDegreePolytensor.
+                                         multiply_elementwise(atoms[j].multipoles_with_degeneracy,
+                                                              atoms[j].
+                                                              taylor_coefficients))
+                local_count += 1
+        global_energy = comm.reduce(local_energy, op=MPI.SUM, root=0)
+        global_energy = comm.bcast(global_energy, root=0)
+        return global_energy
 
 
 def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
