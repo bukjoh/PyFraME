@@ -31,26 +31,76 @@ extern "C" {
             return NULL;
         }
 
-        // Extract data from the first NumPy array in multiindex
+		//Extract multiindex data
+        int ax, ay, az, bx, by, bz;
+
+        // Extract data from the first NumPy array in multiindex, holding values ax, ay, az
         PyObject* array1 = PyList_GetItem(multiindex_obj, 0);
         if (!PyArray_Check(array1) || PyArray_SIZE((PyArrayObject*)array1) != 3) {
             PyErr_SetString(PyExc_ValueError, "Each array in multiindex must be a NumPy array of length 3");
             return NULL;
         }
         
-        int* multiindex_data1 = static_cast<int*>(PyArray_DATA((PyArrayObject*)array1));
-        int ax = multiindex_data1[0], ay = multiindex_data1[1], az = multiindex_data1[2];
+        PyArray_Descr *descr1 = PyArray_DESCR((PyArrayObject *)array1);
+        if (descr1 == NULL)
+        {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to get array descriptor");
+            return NULL;
+        }        
+        int type_num1 = descr1->type_num;
 
-        // Extract data from the second NumPy array in multiindex
+        if (type_num1 == NPY_INT32) {
+
+            int32_t *multiindex_data1 = static_cast<int32_t *>(PyArray_DATA((PyArrayObject *)array1));
+            ax = multiindex_data1[0];
+            ay = multiindex_data1[1];
+            az = multiindex_data1[2];
+        }
+        else if (type_num1 == NPY_INT64) {
+            int64_t *multiindex_data1 = static_cast<int64_t *>(PyArray_DATA((PyArrayObject *)array1));
+            ax = multiindex_data1[0];
+            ay = multiindex_data1[1];
+            az = multiindex_data1[2];
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Unsupported data type");
+            return NULL;
+        }
+
+
+        // Extract data from the second NumPy array in multiindex, hloding values bx, by, bz
         PyObject* array2 = PyList_GetItem(multiindex_obj, 1);
         if (!PyArray_Check(array2) || PyArray_SIZE((PyArrayObject*)array2) != 3) {
             PyErr_SetString(PyExc_ValueError, "Each array in multiindex must be a NumPy array of length 3");
             return NULL;
         }
-
-        int* multiindex_data2 = static_cast<int*>(PyArray_DATA((PyArrayObject*)array2));
-        int bx = multiindex_data2[0], by = multiindex_data2[1], bz = multiindex_data2[2];
         
+        PyArray_Descr *descr2 = PyArray_DESCR((PyArrayObject *)array2);
+        if (descr2 == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to get array descriptor");
+            return NULL;
+        }
+        
+        int type_num2 = descr2->type_num;
+
+        // Process the array based on the data type
+        if (type_num2 == NPY_INT32) {
+
+            int32_t *multiindex_data2 = static_cast<int32_t *>(PyArray_DATA((PyArrayObject *)array2));
+            bx = multiindex_data2[0];
+            by = multiindex_data2[1];
+            bz = multiindex_data2[2];
+        }
+        else if (type_num2 == NPY_INT64) {
+            int64_t *multiindex_data2 = static_cast<int64_t *>(PyArray_DATA((PyArrayObject *)array2));
+            bx = multiindex_data2[0];
+            by = multiindex_data2[1];
+            bz = multiindex_data2[2];
+        }
+        else {
+            PyErr_SetString(PyExc_TypeError, "Unsupported data type");
+            return NULL;
+        }
 
         double* dist_data = static_cast<double*>(PyArray_DATA((PyArrayObject*)dist_obj));
         if (!PyArray_Check(array2) || PyArray_SIZE((PyArrayObject*)array2) != 3) {

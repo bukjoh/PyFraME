@@ -5,12 +5,14 @@ import numpy as np
 from mpi4py import MPI
 from pyframe.embedding import read_input
 import cProfile
-comm = MPI.COMM_WORLD
-# comm = None
-core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big/act_wat_big.json',
+
+# comm = MPI.COMM_WORLD
+comm = None
+core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_small/act_wat_small.json',
                               comm=comm)
 # cProfile.run('env.self_energy')
 
+# print(env.multipole_fields)
 print("Calculate induced dipoles without external fields.")
 start_time = time.time()
 # print(env.self_energy)
@@ -25,9 +27,9 @@ print("Execution time:", end_time - start_time)
 # print("Execution time:", end_time - start_time)
 
 # # Print number of iterations
-# print(env.induced_dipoles.number_of_iterations)
+print(env.induced_dipoles.number_of_iterations)
 # # Print induced dipoles
-# print(env.induced_dipoles.induced_dipoles)
+print(env.induced_dipoles.induced_dipoles)
 
 ref_dipoles_act_wat_mid = np.array(
     [[-5.33083758e-03, 1.80899242e-02, -4.67124873e-02],

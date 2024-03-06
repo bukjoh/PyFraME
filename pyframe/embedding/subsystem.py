@@ -224,18 +224,15 @@ class ClassicalSubsystem(Subsystem):
                                 [self._multipole_fields, MPI.DOUBLE],
                                 op=MPI.SUM)
         else:
-            k = 0
-            for fragment_i in self.classical_fragments:
-                for i, atom_i in enumerate(fragment_i.atoms):
-                    field_component = np.zeros(3)
-                    for fragment_j in self.classical_fragments:
-                        for j, atom_j in enumerate(fragment_j.atoms):
-                            if atom_j.index in atom_i.exclusions:
-                                continue
-                            field_component += atom_j.potential(coordinate=atom_i.coordinate,
-                                                                pot_derivative_order=1)
-                    self._multipole_fields[k, :] = field_component
-                    k += 1
+            for i in range(len(self.coordinates)):
+                field_component = np.zeros(3)
+                for fragment_j in self.classical_fragments:
+                    for j, atom_j in enumerate(fragment_j.atoms):
+                        if atom_j.index in self.exclusions[i]:
+                            continue
+                        field_component += atom_j.potential(coordinate=self.coordinates[i],
+                                                            pot_derivative_order=1)
+                self._multipole_fields[i, :] = field_component
 
     def static_potential(self,
                          coordinate: np.ndarray,
