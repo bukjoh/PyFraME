@@ -8,7 +8,7 @@ import cProfile
 
 # comm = MPI.COMM_WORLD
 comm = None
-core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_small/act_wat_small.json',
+core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_small.json',
                               comm=comm)
 # cProfile.run('env.self_energy')
 

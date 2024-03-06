@@ -1602,5 +1602,5 @@ def two_atom():
 
 @pytest.fixture(scope='session')
 def act_wat_big():
-    return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big/act_wat_big.json',
+    return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
                              comm=None)

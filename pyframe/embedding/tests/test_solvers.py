@@ -99,21 +99,21 @@ def test_induced_dipoles_jacobi_stability():
 
 def test_induced_dipoles_jacobi_large_inputs():
     # Test number of iterations against tighter thresholds
-    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid/act_wat_mid.json')
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     env.solve_induced_dipoles(threshold=1e-8)
     assert env.induced_dipoles.number_of_iterations == 16
-    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid/act_wat_mid.json')
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     env.solve_induced_dipoles(threshold=1e-10)
     assert env.induced_dipoles.number_of_iterations == 20
-    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid/act_wat_mid.json')
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     env.solve_induced_dipoles(threshold=1e-15)
     assert env.induced_dipoles.number_of_iterations == 30
     # Test error is raised when past the max number of iterations
-    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid/act_wat_mid.json')
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     with pytest.raises(RuntimeError, match="Did not converge after the maximum number of iterations."):
         env.solve_induced_dipoles(threshold=1e-1000)
     # Test induced dipoles
-    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid/act_wat_mid.json')
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     env.solve_induced_dipoles(threshold=1e-8)
     ref_ind_dip = np.array([[-5.33083758e-03, 1.80899242e-02, -4.67124873e-02],
                             [-6.25853096e-03, 7.25840460e-03, -1.03916985e-02],
@@ -163,7 +163,7 @@ def test_induced_dipoles_jacobi_large_inputs():
 @pytest.mark.mpi()
 def test_induced_dipoles_jacobi_mpi_consistency():
     comm = MPI.COMM_WORLD
-    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid/act_wat_mid.json',
+    core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json',
                                   comm=comm)
     env.solve_induced_dipoles(threshold=1e-10)
     gathered_summed_arr = comm.gather(env.induced_dipoles.induced_dipoles, root=0)
