@@ -173,9 +173,10 @@ class SecondDegreePolytensor:
         idx = 0
         for i in range(self._rank_1 + 1):
             for j in range((i + 1) * (i + 2) // 2):
-                tensor_idx = np.asarray(tensor_tools.convert_tensor_index(tensor_index=j + 1, tensor_rank=i))
-                self.data[0][idx] = [np.array([0, 0, 0]), tensor_idx]
-                self.data[idx][0] = [tensor_idx, np.array([0, 0, 0])]
+                tensor_idx = np.asarray(tensor_tools.convert_tensor_index(tensor_index=j + 1, tensor_rank=i),
+                                        dtype=np.int64)
+                self.data[0][idx] = [np.array([0, 0, 0], dtype=np.int64), tensor_idx]
+                self.data[idx][0] = [tensor_idx, np.array([0, 0, 0], dtype=np.int64)]
                 idx += 1
         for i in range(1, self.length_1):
             for j in range(1, self.length_2):
@@ -187,13 +188,14 @@ class SecondDegreePolytensor:
         idx = 0
         for i in range(self._rank_1 + 1):
             for j in range((i + 1) * (i + 2) // 2):
-                tensor_idx = np.asarray(tensor_tools.convert_tensor_index(tensor_index=j + 1, tensor_rank=i))
-                self.data[0][idx] = [tensor_idx, np.array([0, 0, 0])]
-                self.data[idx][0] = [tensor_idx, np.array([0, 0, 0])]
+                tensor_idx = np.asarray(tensor_tools.convert_tensor_index(tensor_index=j + 1, tensor_rank=i),
+                                        dtype=np.int64)
+                self.data[0][idx] = [tensor_idx, np.array([0, 0, 0], dtype=np.int64)]
+                self.data[idx][0] = [tensor_idx, np.array([0, 0, 0], dtype=np.int64)]
                 idx += 1
         for i in range(1, self.length_1):
             for j in range(1, self.length_2):
-                self.data[i][j] = [self.data[i][0][0] + self.data[0][j][0], np.array([0, 0, 0])]
+                self.data[i][j] = [self.data[i][0][0] + self.data[0][j][0], np.array([0, 0, 0], dtype=np.int64)]
 
     def multiply_second_degree_first_degree(self, other) -> FirstDegreePolytensor:
         """Contraction between a SecondDegreePolytensor (A) and a FirstDegreePolytensor (B).

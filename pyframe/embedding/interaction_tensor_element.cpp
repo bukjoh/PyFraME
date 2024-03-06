@@ -49,14 +49,7 @@ extern "C" {
         }        
         int type_num1 = descr1->type_num;
 
-        if (type_num1 == NPY_INT32) {
-
-            int32_t *multiindex_data1 = static_cast<int32_t *>(PyArray_DATA((PyArrayObject *)array1));
-            ax = multiindex_data1[0];
-            ay = multiindex_data1[1];
-            az = multiindex_data1[2];
-        }
-        else if (type_num1 == NPY_INT64) {
+        if (type_num1 == NPY_INT64) {
             int64_t *multiindex_data1 = static_cast<int64_t *>(PyArray_DATA((PyArrayObject *)array1));
             ax = multiindex_data1[0];
             ay = multiindex_data1[1];
@@ -83,15 +76,7 @@ extern "C" {
         
         int type_num2 = descr2->type_num;
 
-        // Process the array based on the data type
-        if (type_num2 == NPY_INT32) {
-
-            int32_t *multiindex_data2 = static_cast<int32_t *>(PyArray_DATA((PyArrayObject *)array2));
-            bx = multiindex_data2[0];
-            by = multiindex_data2[1];
-            bz = multiindex_data2[2];
-        }
-        else if (type_num2 == NPY_INT64) {
+         if (type_num2 == NPY_INT64) {
             int64_t *multiindex_data2 = static_cast<int64_t *>(PyArray_DATA((PyArrayObject *)array2));
             bx = multiindex_data2[0];
             by = multiindex_data2[1];
