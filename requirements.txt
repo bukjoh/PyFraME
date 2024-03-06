@@ -5,4 +5,5 @@ numpy
 pytest
 pytest-cov
 scipy
+mpi4py
 qcelemental
