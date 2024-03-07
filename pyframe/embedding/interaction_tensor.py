@@ -51,6 +51,8 @@ def compute_t_tensor(r_a: np.ndarray,
     if cpp_tool:
         for i in range(start_a, end_a):
             for j in range(start_b, end_b):
+                # TODO calculate a block with a c++ function and insert it here with the "blockwise" function
+                # TODO benefit is also it t_tensor is actually larger for Multipole-Multipole tensor.
                 interaction_element = cpp_interaction_tensor_element.compute_interaction_tensor_element(
                     tensor_template[i, j], r_ab, constants.values.tensor_coefficients)
                 interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)

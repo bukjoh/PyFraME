@@ -43,5 +43,5 @@ class Constants:
                 self.degeneracies.write_to_data_block_wise(tensor_tools.compute_degeneracy_tensor(i, self.trinomials))
             self.initialized = True
 
-
+# TODO possible input of max order und t rank
 values = Constants()

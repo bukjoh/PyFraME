@@ -80,6 +80,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
         if iteration > max_iterations:
             raise RuntimeError("Did not converge after the maximum number of iterations.")
         for i, coordinate_i in enumerate(coordinates):
+            # TODO omp parallelize the outer loop with and without mpi
             ind_dipoles_fields = np.zeros(3)
             for j, coordinate_j in enumerate(coordinates):
                 if indices[j] in exclusions[i]:
@@ -155,6 +156,7 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
             for j, coordinate_j in enumerate(coordinates):
                 if indices[j] in exclusions[i]:
                     continue
+                # TODO cache compute t tensor if cutoff distance for interacting multipoles (Domänen)
                 ind_dipoles_fields += np.einsum('ij, j', interaction_tensor.
                                                 compute_t_tensor(r_a=coordinate_j,
                                                                  r_b=coordinates[i],
