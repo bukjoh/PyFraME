@@ -53,16 +53,16 @@ def test_induced_dipoles_jacobi(
 
 def test_induced_dipoles_jacobi_edge_cases():
     # Test with minimum input size
-    coordinates = np.ones([1, 3])
-    polarizabilities = np.ones([1, 3, 3])
-    exclusions = [[1]]
-    indices = np.ones(1)
-    fields = np.ones([1, 3])
-    starting_guess = np.ones([1, 3])
+    coordinates = np.ones([1, 3], dtype=np.float64)
+    polarizabilities = np.ones([1, 3, 3], dtype=np.float64)
+    exclusions = [(1,)]
+    indices = np.ones(1, dtype=np.int64)
+    fields = np.ones([1, 3], dtype=np.float64)
+    starting_guess = np.ones([1, 3], dtype=np.float64)
     threshold = 1e-10
     ind_dipoles, _ = induced_dipoles_jacobi(coordinates, polarizabilities, exclusions, indices,
                                             fields, starting_guess, threshold)
-    assert np.allclose(ind_dipoles, 3 * np.ones([1, 3]))
+    assert np.allclose(ind_dipoles, 3 * np.ones([1, 3], dtype=np.float64))
 
 
 def test_induced_dipoles_jacobi_invalid_inputs():
@@ -82,10 +82,10 @@ def test_induced_dipoles_jacobi_stability():
     polarizabilities = np.array([[[.1, .1, .1], [.1, .1, .1], [.1, .1, .1]],
                                  [[.1, .1, .1], [.1, .1, .1], [.1, .1, .1]],
                                  [[.1, .1, .1], [.1, .1, .1], [.1, .1, .1]]])
-    exclusions = [[i] for i in range(3)]
-    indices = np.array([0., 1., 2.])
-    fields = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
-    starting_guess = np.ones([3, 3])
+    exclusions = [(i,) for i in range(3)]
+    indices = np.array([0., 1., 2.], dtype=np.int64)
+    fields = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]], dtype=np.float64)
+    starting_guess = np.ones([3, 3], dtype=np.float64)
     threshold = 1e-6
     ref_dipoles = np.array([[0.11632816, 0.11632816, 0.11632816],
                             [0.12686485, 0.12686485, 0.12686485],

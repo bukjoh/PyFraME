@@ -6,6 +6,8 @@
 #include <cmath>
 #include <Eigen/Dense>
 #include <vector>
+#include <unordered_set>
+#include <omp.h>
 
 // C++ Version of compute_interaction_tensor_element and compute_t_tensor from tensor_tools.py
 // Caution is advised regarding the validity of inputs, as some common errors are checked, but not all.
@@ -168,7 +170,7 @@ static Eigen::MatrixXd read_matrix(PyObject* matrix_obj)
 {
     if (!PyArray_Check(matrix_obj) || PyArray_NDIM(matrix_obj) != 2)
     {
-        PyErr_SetString(PyExc_TypeError, "matrix must be a three-dimensional NumPy array");
+        PyErr_SetString(PyExc_TypeError, "matrix must be a two-dimensional NumPy array");
         return Eigen::MatrixXd();
     }
     npy_intp u = PyArray_DIM(matrix_obj, 0), v = PyArray_DIM(matrix_obj, 1);
@@ -181,6 +183,24 @@ static Eigen::MatrixXd read_matrix(PyObject* matrix_obj)
         }
     }
     return matrix;
+}
+
+//Reads a 1D np.ndarray into an Eigen::VectorXd.
+//matrix_obj: Points to a 3-dimensional np.ndarray contining tensor coefficients
+static Eigen::VectorXi read_vector(PyObject* vector_obj)
+{
+    if (!PyArray_Check(vector_obj) || PyArray_NDIM(vector_obj) != 1)
+    {
+        PyErr_SetString(PyExc_TypeError, "vector must be a one-dimensional NumPy array");
+        return Eigen::VectorXi();
+    }
+    npy_intp u = PyArray_DIM(vector_obj, 0);
+    Eigen::VectorXi vector(u);
+    for (int j = 0; j < u; ++j)
+    {
+        vector(j) = (int) *(long *)PyArray_GETPTR1((PyArrayObject *)vector_obj, j);
+    }
+    return vector;
 }
 
 //Creates, from an Eigen::MatrixXd, a 2-dimensional np.ndarray of the same shape.
@@ -377,6 +397,89 @@ static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args)
     Py_RETURN_NONE;
 }
 
+std::vector<Eigen::Vector3d> coordinates_global;
+Eigen::VectorXi indices_global;
+std::vector<std::unordered_set<int>> exclusions_global;
+
+static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args)
+{
+    PyObject *coords_obj, *indices_obj, *exclusions_obj;
+
+    if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &indices_obj, &exclusions_obj)) {
+        return NULL;
+    }
+    Eigen::MatrixXd coords = read_matrix(coords_obj);
+    coordinates_global = std::vector<Eigen::Vector3d>();
+    for(int i = 0; i < coords.rows(); i++) {
+        Eigen::Vector3d coord;
+        coord << coords(i, 0), coords(i, 1), coords(i, 2);
+        coordinates_global.push_back(coord);
+    }
+    indices_global = read_vector(indices_obj);
+
+    if (!PyList_Check(exclusions_obj)) {
+        PyErr_SetString(PyExc_TypeError, "Input must be a Python list");
+        return NULL;
+    }
+    Py_ssize_t outerSize = PyList_Size(exclusions_obj);
+    std::vector<std::unordered_set<int>> exclusions;
+    for (Py_ssize_t i = 0; i < outerSize; ++i) {
+        PyObject* inner_tuple = PyList_GetItem(exclusions_obj, i);
+        if (!PyTuple_Check(inner_tuple)) {
+            PyErr_SetString(PyExc_TypeError, "Inner items must be Python tuples");
+            return NULL;
+        }
+        std::unordered_set<int> inner_set;
+        Py_ssize_t inner_size = PyTuple_Size(inner_tuple);
+        for (Py_ssize_t j = 0; j < inner_size; ++j) {
+            PyObject* item = PyTuple_GetItem(inner_tuple, j);
+            if (!PyLong_Check(item)) {
+                PyErr_SetString(PyExc_TypeError, "Inner items must be Python integers");
+                return NULL;
+            }
+            int intValue = PyLong_AsLong(item);
+            inner_set.insert(intValue);
+        }
+        exclusions.push_back(inner_set);
+    }
+    exclusions_global = exclusions;
+    Py_RETURN_NONE;
+}
+
+static PyObject* ind_dipoles_fields_py(PyObject* self, PyObject* args)
+{
+    PyObject *old_ind_dipoles_obj;
+    int i;
+
+    if (!PyArg_ParseTuple(args, "Oi", &old_ind_dipoles_obj, &i)) {
+        return NULL;
+    }
+    Eigen::MatrixXd old_ind_dipoles = read_matrix(old_ind_dipoles_obj);
+    Eigen::MatrixXd ind_dipoles_fields = Eigen::MatrixXd::Zero(3, 1);
+    #pragma omp parallel
+    {
+        Eigen::MatrixXd my_part = Eigen::MatrixXd::Zero(3, 1);
+        #pragma omp for
+        for(int j = 0; j < coordinates_global.size(); j++) {
+            if(exclusions_global[i].find(indices_global[j]) != exclusions_global[i].end()) {
+                continue;
+            }
+            Eigen::Vector3d r_ab = coordinates_global[i] - coordinates_global[j];
+            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                        tensor_template_potential_global,
+                                                        tensor_coefficients_global,
+                                                        1, 1, 1, 1);
+            my_part += t_tensor * old_ind_dipoles.row(j).transpose();
+        }
+        #pragma omp critical
+        {
+            ind_dipoles_fields += my_part;
+        }
+    }
+
+    return eigen_matrix_to_numpy(ind_dipoles_fields);
+}
+
 // Method table for the module
 static PyMethodDef module_methods[] = {
     {"compute_interaction_tensor_element", compute_interaction_tensor_element_py, METH_VARARGS,
@@ -385,6 +488,10 @@ static PyMethodDef module_methods[] = {
      "Computes t_tensor."},
     {"set_tensor_coefficients", set_tensor_coefficients, METH_VARARGS,
      "Sets tensor coefficients and templates for interaction and potential tensors."},
+    {"set_coords_idxs_exlcs", set_coords_idxs_exlcs, METH_VARARGS,
+     "Sets coordinates, indices and exclusions for the inner loop of the solver."},
+    {"ind_dipoles_fields", ind_dipoles_fields_py, METH_VARARGS,
+     "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions"},
     {NULL, NULL, 0, NULL}
 };
 

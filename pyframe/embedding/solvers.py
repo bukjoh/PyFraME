@@ -4,6 +4,7 @@ import numpy as np
 
 from mpi4py import MPI
 from pyframe.embedding import constants, interaction_tensor
+from pyframe.embedding import cpp_interaction_tensor_element
 from typing import Tuple, Optional
 
 
@@ -75,27 +76,17 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
     iteration = 0
     new_fields = np.zeros([len(old_ind_dipoles), 3])
     ind_dipoles = np.zeros([len(fields), 3])
+
+    cpp_interaction_tensor_element.set_coords_idxs_exlcs(coordinates, indices, exclusions)
+
     while not (residue_norm < threshold and max_residue_norm < threshold):
         iteration += 1
         if iteration > max_iterations:
             raise RuntimeError("Did not converge after the maximum number of iterations.")
         for i, coordinate_i in enumerate(coordinates):
             # TODO omp parallelize the outer loop with and without mpi
-            ind_dipoles_fields = np.zeros(3)
-            for j, coordinate_j in enumerate(coordinates):
-                if indices[j] in exclusions[i]:
-                    continue
-                # Potential tensor template used
-                ind_dipoles_fields += np.einsum('ij, j', interaction_tensor.
-                                                compute_t_tensor(r_a=coordinate_j,
-                                                                 r_b=coordinate_i,
-                                                                 rank_a=1,
-                                                                 rank_b=1,
-                                                                 start_rank_a=1,
-                                                                 start_rank_b=1,
-                                                                 is_potential=True).data,
-                                                old_ind_dipoles[j])
-            new_fields[i, :] = ind_dipoles_fields
+            new_fields[i, :] = cpp_interaction_tensor_element.ind_dipoles_fields(old_ind_dipoles, i).T
+
         # Calculate total induced dipoles
         for i, new_field in enumerate(new_fields):
             ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))

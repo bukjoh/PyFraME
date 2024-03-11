@@ -5,10 +5,10 @@ import numpy as np
 from mpi4py import MPI
 from pyframe.embedding import read_input
 import cProfile
-
+os.environ["OMP_NUM_THREADS"] = "4"
 # comm = MPI.COMM_WORLD
 comm = None
-core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json',
+core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
                               comm=comm)
 # cProfile.run('env.self_energy')
 

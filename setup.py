@@ -7,7 +7,10 @@ import numpy as np
 # Define the extension module
 ext_modules = [Extension(name="pyframe.embedding.cpp_interaction_tensor_element",
                          sources=["pyframe/embedding/interaction_tensor_element.cpp"],
-                         include_dirs=[np.get_include(), "eigen3"])]
+                         include_dirs=[np.get_include(), "eigen3"],
+                         extra_compile_args=["/openmp"],
+                         extra_link_args=["/openmp"],
+                         language="c++")]
 
 # Eigen version to download
 EIGEN_VERSION = "3.3.9"
