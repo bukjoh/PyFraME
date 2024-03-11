@@ -21,7 +21,7 @@ def compute_t_tensor_py(r_a: np.ndarray,
                             r_b: np.ndarray,
                             rank_a: int,
                             rank_b: int,
-                            tensor_template: np.ndarray,
+                            is_potential: bool,
                             start_rank_b: Optional[int] = 0,
                             start_rank_a: Optional[int] = 0
                             ) -> polytensor.SecondDegreePolytensor:
@@ -33,7 +33,7 @@ def compute_t_tensor_py(r_a: np.ndarray,
         r_b: Cartesian coordinates of the second Particle.
         rank_a: Maximum column rank of the SecondDegreePolytensor.
         rank_b: Maximum row rank of the SecondDegreePolytensor.
-        tensor_template: Template that contains the multi-indices to be calculated. Note that for calculating
+        is_potential: Template that contains the multi-indices to be calculated. Note that for calculating
         derivatives of the potential, and interaction energies the template should be different.
         start_rank_a: Minimum column rank of the SecondDegreePolytensor.
         start_rank_b: Minimum row rank of the SecondDegreePolytensor.
@@ -42,6 +42,11 @@ def compute_t_tensor_py(r_a: np.ndarray,
         T tensor as a SecondDegreePolytensor.
         (See Jon Applequist J. Math. Phys. 24, 736 (1983) for details on Polytensors.)
     """
+    if is_potential:
+        tensor_template = constants.values.potential_tensor_template
+    else:
+        tensor_template = constants.values.interaction_tensor_template
+
     r_ab = r_b - r_a
     if r_a[0] == r_b[0] and r_a[1] == r_b[1] and r_a[2] == r_b[2]:
         raise ValueError("r_a and r_b cannot be equal.")
@@ -57,7 +62,7 @@ def compute_t_tensor_py(r_a: np.ndarray,
                 # TODO calculate a block with a c++ function and insert it here with the "blockwise" function
                 # TODO benefit is also it t_tensor is actually larger for Multipole-Multipole tensor.
                 interaction_element = cpp_interaction_tensor_element.compute_interaction_tensor_element(
-                    tensor_template[i, j], r_ab, constants.values.tensor_coefficients)
+                    tensor_template[i, j], r_ab)
                 interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)
     else:
         for i in range(start_a, end_a):
@@ -74,7 +79,7 @@ def compute_t_tensor(r_a: np.ndarray,
                      r_b: np.ndarray,
                      rank_a: int,
                      rank_b: int,
-                     tensor_template: np.ndarray,
+                     is_potential: bool,
                      start_rank_b: Optional[int] = 0,
                      start_rank_a: Optional[int] = 0
                      ) -> polytensor.SecondDegreePolytensor:
@@ -86,7 +91,7 @@ def compute_t_tensor(r_a: np.ndarray,
         r_b: Cartesian coordinates of the second Particle.
         rank_a: Maximum column rank of the SecondDegreePolytensor.
         rank_b: Maximum row rank of the SecondDegreePolytensor.
-        tensor_template: Template that contains the multi-indices to be calculated. Note that for calculating
+        is_potential: Determines which tensor template is used. True: Potential, False: Interaction.
         derivatives of the potential, and interaction energies the template should be different.
         start_rank_a: Minimum column rank of the SecondDegreePolytensor.
         start_rank_b: Minimum row rank of the SecondDegreePolytensor.
@@ -100,6 +105,4 @@ def compute_t_tensor(r_a: np.ndarray,
                                              tensor_data=cpp_interaction_tensor_element.compute_t_tensor(
         r_a,
         r_b,
-        tensor_template,
-        constants.values.tensor_coefficients,
-        rank_a, rank_b, start_rank_a, start_rank_b))
+        rank_a, rank_b, start_rank_a, start_rank_b, is_potential))

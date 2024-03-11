@@ -93,8 +93,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
                                                                  rank_b=1,
                                                                  start_rank_a=1,
                                                                  start_rank_b=1,
-                                                                 tensor_template=constants.values.
-                                                                 potential_tensor_template).data,
+                                                                 is_potential=True).data,
                                                 old_ind_dipoles[j])
             new_fields[i, :] = ind_dipoles_fields
         # Calculate total induced dipoles
@@ -164,8 +163,7 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
                                                                  rank_b=1,
                                                                  start_rank_a=1,
                                                                  start_rank_b=1,
-                                                                 tensor_template=constants.values.
-                                                                 potential_tensor_template).data,
+                                                                 is_potential=True).data,
                                                 old_ind_dipoles[j])
             ind_dipoles_local[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(ind_dipoles_fields,
                                                                                      fields[i]))

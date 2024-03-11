@@ -117,16 +117,16 @@ class Atom(Particle):
             the derivatives with respect to the charge or multipole at coordinate are included.
         """
         if coord_multipole_order == 0:
-            tensor_template = constants.values.potential_tensor_template
+            is_potential = True
         else:
-            tensor_template = constants.values.interaction_tensor_template
+            is_potential = False
         t_tensor = interaction_tensor.compute_t_tensor(r_a=self.coordinate,
                                                        r_b=coordinate,
                                                        rank_a=self.multipole_order,
                                                        rank_b=pot_derivative_order
                                                        + origin_derivative_order
                                                        + coord_multipole_order,
-                                                       tensor_template=tensor_template,
+                                                       is_potential=is_potential,
                                                        start_rank_a=0,
                                                        start_rank_b=pot_derivative_order
                                                        + origin_derivative_order)
@@ -226,16 +226,16 @@ class Nucleus(Particle):
             the derivatives with respect to the charge or multipole at coordinate are included.
         """
         if coord_multipole_order == 0:
-            tensor_template = constants.values.potential_tensor_template
+            is_potential = True
         else:
-            tensor_template = constants.values.interaction_tensor_template
+            is_potential = False
         t_tensor = interaction_tensor.compute_t_tensor(r_a=self.coordinate,
                                                        r_b=coordinate,
                                                        rank_a=0,
                                                        rank_b=pot_derivative_order
                                                        + origin_derivative_order
                                                        + coord_multipole_order,
-                                                       tensor_template=tensor_template,
+                                                       is_potential=is_potential,
                                                        start_rank_a=0,
                                                        start_rank_b=pot_derivative_order
                                                        + origin_derivative_order)

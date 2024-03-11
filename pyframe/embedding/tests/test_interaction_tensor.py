@@ -10,6 +10,7 @@ def test_compute_t_tensor(
         oxygen_atom2
 ):
     # Test with interaction_tensor_template
+
     ref_potential = np.array(
         [0.75202669489040475, 6.3679443173877762e-2, 3.0699045537920477e-2, -4.1315647410858666e-6,
          9.5311929756771267e-3, 7.7985188788112876e-3, -1.0495468203592808e-6,
@@ -22,8 +23,7 @@ def test_compute_t_tensor(
                                                    r_b=oxygen_atom1.coordinate,
                                                    rank_a=0,
                                                    rank_b=oxygen_atom1.multipole_order,
-                                                   tensor_template=constants.values.
-                                                   interaction_tensor_template)
+                                                   is_potential=False)
     assert t_tensor.data.shape == (1, 20)
     assert np.allclose(t_tensor.data, ref_potential)
     assert isinstance(t_tensor, polytensor.SecondDegreePolytensor)
@@ -181,16 +181,14 @@ def test_compute_t_tensor(
                                                    r_b=oxygen_atom1.coordinate,
                                                    rank_a=oxygen_atom2.multipole_order,
                                                    rank_b=oxygen_atom1.multipole_order,
-                                                   tensor_template=constants.values.
-                                                   interaction_tensor_template)
+                                                   is_potential=False)
     assert t_tensor.data.shape == (10, 20)
     assert np.allclose(t_tensor.data, ref_potential1)
     t_tensor = interaction_tensor.compute_t_tensor(r_a=oxygen_atom1.coordinate,
                                                    r_b=oxygen_atom2.coordinate,
                                                    rank_a=oxygen_atom1.multipole_order,
                                                    rank_b=oxygen_atom2.multipole_order,
-                                                   tensor_template=constants.values.
-                                                   interaction_tensor_template)
+                                                   is_potential=False)
     assert t_tensor.data.shape == (20, 10)
     assert np.allclose(t_tensor.data, ref_potential2)
     # Test with potential_tensor_template
@@ -206,8 +204,7 @@ def test_compute_t_tensor(
                                                    r_b=oxygen_atom1.coordinate,
                                                    rank_a=0,
                                                    rank_b=oxygen_atom1.multipole_order,
-                                                   tensor_template=constants.values.
-                                                   potential_tensor_template)
+                                                   is_potential=True)
     assert t_tensor.data.shape == (1, 20)
     assert np.allclose(t_tensor.data, ref_potential)
     assert isinstance(t_tensor, polytensor.SecondDegreePolytensor)
@@ -365,15 +362,13 @@ def test_compute_t_tensor(
                                                    r_b=oxygen_atom1.coordinate,
                                                    rank_a=oxygen_atom2.multipole_order,
                                                    rank_b=oxygen_atom1.multipole_order,
-                                                   tensor_template=constants.values.
-                                                   potential_tensor_template)
+                                                   is_potential=True)
     assert t_tensor.data.shape == (10, 20)
     assert np.allclose(t_tensor.data, ref_potential3)
     t_tensor = interaction_tensor.compute_t_tensor(r_a=oxygen_atom1.coordinate,
                                                    r_b=oxygen_atom2.coordinate,
                                                    rank_a=oxygen_atom1.multipole_order,
                                                    rank_b=oxygen_atom2.multipole_order,
-                                                   tensor_template=constants.values.
-                                                   potential_tensor_template)
+                                                   is_potential=True)
     assert t_tensor.data.shape == (20, 10)
     assert np.allclose(t_tensor.data, ref_potential4)

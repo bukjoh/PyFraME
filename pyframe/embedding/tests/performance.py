@@ -8,7 +8,7 @@ import cProfile
 
 # comm = MPI.COMM_WORLD
 comm = None
-core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_small.json',
+core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json',
                               comm=comm)
 # cProfile.run('env.self_energy')
 
@@ -29,7 +29,7 @@ print("Execution time:", end_time - start_time)
 # # Print number of iterations
 print(env.induced_dipoles.number_of_iterations)
 # # Print induced dipoles
-print(env.induced_dipoles.induced_dipoles)
+# print(env.induced_dipoles.induced_dipoles)
 
 ref_dipoles_act_wat_mid = np.array(
     [[-5.33083758e-03, 1.80899242e-02, -4.67124873e-02],

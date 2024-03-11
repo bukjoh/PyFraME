@@ -14,6 +14,11 @@
 // TODO: ensure error handling tests are passed when r_a == r_b
 // TODO: Improve performance by parsing tensor_template and tensor_coefficients only once. See lines 344 and following.
 
+int rank_global = -1;
+int max_order_global = -1;
+std::vector<Eigen::MatrixXd> tensor_coefficients_global;
+Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> tensor_template_interaction_global;
+Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> tensor_template_potential_global;
 
 //Reads a multiindex into an Eigen::Matrix.
 //multiindex_obj: Points to a List of two np.ndarrays of length 3
@@ -245,6 +250,8 @@ static double compute_interaction_tensor_element(
 {
     int i = multiindex.col(0).sum(), j = multiindex.col(1).sum(), k = multiindex.col(2).sum();
     double element = 0;
+
+    // TODO: divide r_ab by norm before the loops to optimize performance
     double norm = r_ab.norm();
 
     for (int q = 0; q <= i; q++)
@@ -308,52 +315,66 @@ static Eigen::MatrixXd compute_t_tensor(
 //args: [multiindex, r_ab, tensor_coefficients]
 static PyObject* compute_interaction_tensor_element_py(PyObject* self, PyObject* args)
 {
-    PyObject *multiindex_obj, *r_ab_array, *tensor_array;
+    PyObject *multiindex_obj, *r_ab_array;
 
-    if (!PyArg_ParseTuple(args, "OOO", &multiindex_obj, &r_ab_array, &tensor_array))
+    if (!PyArg_ParseTuple(args, "OO", &multiindex_obj, &r_ab_array))
     {
         return NULL;
     }
 
     Eigen::Matrix<int, 2, 3> multiindex = read_multiindex(multiindex_obj);
     Eigen::Vector3d r_ab = read_vector3d(r_ab_array);
-    std::vector<Eigen::MatrixXd> tensor = read_tensor(tensor_array);
 
-    double result = compute_interaction_tensor_element(multiindex, r_ab, tensor);
+    double result = compute_interaction_tensor_element(multiindex, r_ab, tensor_coefficients_global);
 
     return Py_BuildValue("d", result);
 }
 
 
 //Computes the t_tensor for the interaction of two atoms in a specified range of indices.
-//args: [r_a, r_b, tensor_template, tensor_coefficients, rank_a, rank_b, start_rank_a, start_rank_b]
+//args: [r_a, r_b, rank_a, rank_b, start_rank_a, start_rank_b, is_potential (true: potential, false: interaction)]
 static PyObject* compute_t_tensor_py(PyObject* self, PyObject* args)
 {
-    PyObject *r_a_obj, *r_b_obj, *tensor_template_obj, *tensor_coefficients_obj;
+    PyObject *r_a_obj, *r_b_obj;
     int rank_a, rank_b, start_rank_a, start_rank_b;
+    bool is_potential;
 
-    //Order of args: r_a, r_b, tensor_template, tensor_coefficients,
-    //rank_a, rank_b, start_rank_a, start_rank_b
-    if (!PyArg_ParseTuple(args, "OOOOiiii", &r_a_obj, &r_b_obj, &tensor_template_obj, &tensor_coefficients_obj,
-                            &rank_a, &rank_b, &start_rank_a, &start_rank_b)) {
+    if (!PyArg_ParseTuple(args, "OOiiiip", &r_a_obj, &r_b_obj,
+                            &rank_a, &rank_b, &start_rank_a, &start_rank_b, &is_potential)) {
         return NULL;
     }
 
     Eigen::Vector3d r_a = read_vector3d(r_a_obj);
     Eigen::Vector3d r_b = read_vector3d(r_b_obj);
 
-    // TODO: tensor_template and tensor_coefficients need to be calculated only once. Currently, their poerformance
-    // is far worse than the python function. However, As tensor_template is different for potentials and interactions,
-    // this method can not know which to use unless passed as a parameter
     // TODO: Implement a mechanism ensuring sufficient array size
     // or make sure the first call to this function has the maximum required size (which seems to be the case?)
-    Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> tensor_template = read_tensor_template(tensor_template_obj);
-    std::vector<Eigen::MatrixXd> tensor_coefficients = read_tensor(tensor_coefficients_obj);
 
-    Eigen::MatrixXd t_tensor = compute_t_tensor(r_b - r_a, tensor_template, tensor_coefficients,
-                                                rank_a, rank_b, start_rank_a, start_rank_b);
+    Eigen::MatrixXd t_tensor = compute_t_tensor(r_b - r_a,
+                                is_potential ? tensor_template_potential_global : tensor_template_interaction_global,
+                                tensor_coefficients_global, rank_a, rank_b, start_rank_a, start_rank_b);
 
     return eigen_matrix_to_numpy(t_tensor);
+}
+
+static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args)
+{
+    PyObject *tensor_coefficients_obj, *tensor_template_interaction_obj, *tensor_template_potential_obj;
+    int rank, max_order;
+    if (!PyArg_ParseTuple(args, "OOOii", &tensor_coefficients_obj, &tensor_template_interaction_obj,
+                            &tensor_template_potential_obj, &rank, &max_order)) {
+        return NULL;
+    }
+    if(rank > rank_global) {
+        tensor_template_interaction_global = read_tensor_template(tensor_template_interaction_obj);
+        tensor_template_potential_global = read_tensor_template(tensor_template_potential_obj);
+        rank_global = rank;
+    }
+    if(max_order > max_order_global) {
+        tensor_coefficients_global = read_tensor(tensor_coefficients_obj);
+        max_order_global = max_order;
+    }
+    Py_RETURN_NONE;
 }
 
 // Method table for the module
@@ -362,6 +383,8 @@ static PyMethodDef module_methods[] = {
      "Computes Interaction Tensor Element."},
     {"compute_t_tensor", compute_t_tensor_py, METH_VARARGS,
      "Computes t_tensor."},
+    {"set_tensor_coefficients", set_tensor_coefficients, METH_VARARGS,
+     "Sets tensor coefficients and templates for interaction and potential tensors."},
     {NULL, NULL, 0, NULL}
 };
 
