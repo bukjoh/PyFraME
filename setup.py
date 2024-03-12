@@ -18,9 +18,8 @@ eigen_include_dir = os.environ.get('EIGEN_INCLUDE_DIR', 'eigen3')
 ext_modules = [Extension(name="pyframe.embedding.cpp_interaction_tensor_element",
                          sources=["pyframe/embedding/interaction_tensor_element.cpp"],
                          include_dirs=[np.get_include(), eigen_include_dir],  # Add eigen3 directory here
-                         )]
-                         #extra_compile_args=extra_compile_args,
-                         #language="c++")]
+                         extra_compile_args=extra_compile_args,
+                         language="c++")]
 
 # Eigen version to download
 EIGEN_VERSION = "3.3.9"
