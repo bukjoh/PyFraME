@@ -3,13 +3,20 @@ from setuptools.command.build_ext import build_ext
 import os
 import subprocess
 import numpy as np
+import platform
+
+
+# Define the extension module
+if platform.system() == 'Windows':
+    extra_compile_args = ["/openmp"]
+else:
+    extra_compile_args = ["-openmp"]
 
 # Define the extension module
 ext_modules = [Extension(name="pyframe.embedding.cpp_interaction_tensor_element",
                          sources=["pyframe/embedding/interaction_tensor_element.cpp"],
                          include_dirs=[np.get_include(), "eigen3"],
                          extra_compile_args=["/openmp"],
-                         extra_link_args=["/openmp"],
                          language="c++")]
 
 # Eigen version to download
