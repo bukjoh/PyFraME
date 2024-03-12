@@ -1,7 +1,7 @@
 from typing import Optional
 from pyframe.embedding import polytensor, tensor_tools
 
-from pyframe.embedding import cpp_interaction_tensor_element
+from pyframe.embedding import engine
 
 
 class Constants:
@@ -44,11 +44,11 @@ class Constants:
             for i in range(0, self.max_order + 1):
                 self.degeneracies.write_to_data_block_wise(tensor_tools.compute_degeneracy_tensor(i, self.trinomials))
 
-            cpp_interaction_tensor_element.set_tensor_coefficients(self.tensor_coefficients,
-                                                                   self.interaction_tensor_template,
-                                                                   self.potential_tensor_template,
-                                                                   t_rank,
-                                                                   max_order)
+            engine.set_tensor_coefficients(self.tensor_coefficients,
+                                           self.interaction_tensor_template,
+                                           self.potential_tensor_template,
+                                           t_rank,
+                                           max_order)
 
             self.initialized = True
 

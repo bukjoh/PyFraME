@@ -189,15 +189,15 @@ static PyMethodDef module_methods[] = {
 };
 
 // Module definition
-static struct PyModuleDef cpp_interaction_tensor_element = {
+static struct PyModuleDef engine = {
     PyModuleDef_HEAD_INIT,
-    "cpp_interaction_tensor_element", // Module name
+    "engine", // Module name
     NULL,                     // Module documentation
     -1,                       // Size of per-interpreter state
     module_methods};
 
 // Module initialization
-PyMODINIT_FUNC PyInit_cpp_interaction_tensor_element(void)
+PyMODINIT_FUNC PyInit_engine(void)
 {
     assert(!PyErr_Occurred());
     import_array();
@@ -206,5 +206,5 @@ PyMODINIT_FUNC PyInit_cpp_interaction_tensor_element(void)
         std::cerr << "Failed to import numpy Python module(s)." << std::endl;
         return NULL;
     }
-    return PyModule_Create(&cpp_interaction_tensor_element);
+    return PyModule_Create(&engine);
 }

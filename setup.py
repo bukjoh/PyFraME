@@ -15,7 +15,7 @@ else:
 eigen_include_dir = os.environ.get('EIGEN_INCLUDE_DIR', 'eigen3')
 
 # Define the extension module
-ext_modules = [Extension(name="pyframe.embedding.cpp_interaction_tensor_element",
+ext_modules = [Extension(name="pyframe.embedding.engine",
                          sources=["pyframe/embedding/engine/engine.cpp",
                                   "pyframe/embedding/engine/computation.cpp",
                                   "pyframe/embedding/engine/python_eigen_conversions.cpp"],

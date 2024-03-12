@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 try:
-    from pyframe.embedding import cpp_interaction_tensor_element
+    from pyframe.embedding import engine
 
     print('Using cpp_interaction_tensor_element.')
     cpp_tool = True
@@ -61,7 +61,7 @@ def compute_t_tensor_py(r_a: np.ndarray,
             for j in range(start_b, end_b):
                 # TODO calculate a block with a c++ function and insert it here with the "blockwise" function
                 # TODO benefit is also it t_tensor is actually larger for Multipole-Multipole tensor.
-                interaction_element = cpp_interaction_tensor_element.compute_interaction_tensor_element(
+                interaction_element = engine.compute_interaction_tensor_element(
                     tensor_template[i, j], r_ab)
                 interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)
     else:
@@ -102,7 +102,7 @@ def compute_t_tensor(r_a: np.ndarray,
     """
     return polytensor.SecondDegreePolytensor(rank_2=[start_rank_b, rank_b],
                                              rank_1=[start_rank_a, rank_a],
-                                             tensor_data=cpp_interaction_tensor_element.compute_t_tensor(
+                                             tensor_data=engine.compute_t_tensor(
         r_a,
         r_b,
         rank_a, rank_b, start_rank_a, start_rank_b, is_potential))

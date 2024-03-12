@@ -4,7 +4,7 @@ import numpy as np
 
 from mpi4py import MPI
 from pyframe.embedding import constants, interaction_tensor
-from pyframe.embedding import cpp_interaction_tensor_element
+from pyframe.embedding import engine
 from typing import Tuple, Optional
 
 
@@ -77,7 +77,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
     new_fields = np.zeros([len(old_ind_dipoles), 3])
     ind_dipoles = np.zeros([len(fields), 3])
 
-    cpp_interaction_tensor_element.set_coords_idxs_exlcs(coordinates, indices, exclusions)
+    engine.set_coords_idxs_exlcs(coordinates, indices, exclusions)
 
     while not (residue_norm < threshold and max_residue_norm < threshold):
         iteration += 1
@@ -85,7 +85,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
             raise RuntimeError("Did not converge after the maximum number of iterations.")
         for i, coordinate_i in enumerate(coordinates):
             # TODO omp parallelize the outer loop with and without mpi
-            new_fields[i, :] = cpp_interaction_tensor_element.ind_dipoles_fields(old_ind_dipoles, i).T
+            new_fields[i, :] = engine.ind_dipoles_fields(old_ind_dipoles, i).T
 
         # Calculate total induced dipoles
         for i, new_field in enumerate(new_fields):
