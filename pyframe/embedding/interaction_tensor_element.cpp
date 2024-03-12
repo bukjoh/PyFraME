@@ -457,9 +457,6 @@ static PyObject* ind_dipoles_fields_py(PyObject* self, PyObject* args)
     Eigen::MatrixXd old_ind_dipoles = read_matrix(old_ind_dipoles_obj);
     Eigen::MatrixXd ind_dipoles_fields = Eigen::MatrixXd::Zero(3, 1);
 
-    omp_set_dynamic(0);
-    omp_set_num_threads(4);
-
     #pragma omp parallel
     {
         Eigen::MatrixXd my_part = Eigen::MatrixXd::Zero(3, 1);
