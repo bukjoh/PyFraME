@@ -49,7 +49,8 @@ class CustomBuildExtCommand(build_ext):
             os.rename(extracted_eigen_dir, eigen_dir)
 
         # Add the Eigen directory to include_dirs
-        self.include_dirs.append(eigen_dir)
+        # self.include_dirs.append(eigen_dir)
+        self.include_dirs.append(eigen_include_dir)
 
         # Continue with the build
         super().run()
