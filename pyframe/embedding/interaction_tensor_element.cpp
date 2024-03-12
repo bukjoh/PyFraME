@@ -1,4 +1,5 @@
 #define PY_SSIZE_T_CLEAN
+#define EIGEN_DONT_PARALLELIZE
 #include <Python.h>
 #include "numpy/arrayobject.h" // Include any other Numpy headers, UFuncs for example.
 #include <stdlib.h>

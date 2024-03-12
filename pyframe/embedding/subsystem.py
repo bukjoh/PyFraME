@@ -95,6 +95,7 @@ class QuantumSubsystem(Subsystem):
         Returns:
             Array of nuclear fields on the different coordinates.
         """
+        #TODO has to be parallelized for multithreading
         if self.comm is not None:
             avg, res = divmod(len(coordinates), self.size)
             counts = [avg + 1 if p < res else avg for p in range(self.size)]
@@ -203,6 +204,7 @@ class ClassicalSubsystem(Subsystem):
     def compute_multipole_fields(self) -> None:
         """Computes the multipole fields from fragments.
         """
+        #TODO has to be parallelized for multithreading
         self._multipole_fields = np.zeros([self.num_atoms, 3])
         if self.comm is not None:
             multipole_fields_local = np.zeros_like(self._multipole_fields)
@@ -254,6 +256,7 @@ class ClassicalSubsystem(Subsystem):
             Electrostatic potential or its derivative of the fragment at coordinates. If coord_multipole_order is given,
             the derivatives with respect to the charge or multipole at coordinate are included.
         """
+        #TODO has to be parallelized for multithreading
         pot = []
         for fragments in self.classical_fragments:
             pot.append(fragments.potential(coordinate=coordinate,
@@ -273,6 +276,7 @@ class ClassicalSubsystem(Subsystem):
         Returns:
             Self energy of the ClassicalSubsystem.
         """
+        #TODO has to be parallelized for multithreading
         if getattr(self, '_self_energy', None) is None:
             self._self_energy = electrostatic_interactions.compute_classical_self_energy(self.atoms, self.comm)
         return self._self_energy
