@@ -1,6 +1,7 @@
 #ifndef _computation_h_
 #define _computation_h_
 
+#include "global.h"
 #include <Eigen/Dense>
 #include <omp.h>
 #include <unordered_set>
@@ -22,11 +23,15 @@ double compute_interaction_tensor_element(
 Eigen::MatrixXd compute_t_tensor(
     const Eigen::Vector3d &r_ab,
     const Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> &tensor_template,
-    const std::vector<Eigen::MatrixXd> &tensor_coefficients,
     int rank_a,
     int rank_b,
     int start_rank_a,
     int start_rank_b);
+
+// Computes the field caused by induced dipoles at site i.
+// Parallelized with OpenMP.
+Eigen::MatrixXd ind_dipoles_field(const Eigen::MatrixXd &old_ind_dipoles, int i);
+
 }
 
 #endif

@@ -43,7 +43,6 @@ double compute_interaction_tensor_element(
 Eigen::MatrixXd compute_t_tensor(
     const Eigen::Vector3d &r_ab,
     const Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> &tensor_template,
-    const std::vector<Eigen::MatrixXd> &tensor_coefficients,
     int rank_a,
     int rank_b,
     int start_rank_a,
@@ -58,10 +57,37 @@ Eigen::MatrixXd compute_t_tensor(
     for(int i = start_a; i < end_a; i++) {
         for(int j = start_b; j < end_b; j++) {
             double interaction_element = compute_interaction_tensor_element(
-                tensor_template(i, j), r_ab, tensor_coefficients);
+                tensor_template(i, j), r_ab, global::tensor_coefficients);
             interaction_tensor(i - start_a, j - start_b) = interaction_element;
         }
     }
     return interaction_tensor;
+}
+
+// Computes the field caused by induced dipoles at site i.
+// Parallelized with OpenMP.
+Eigen::MatrixXd ind_dipoles_field(const Eigen::MatrixXd &old_ind_dipoles, int i) {
+    Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(3, 1);
+    #pragma omp parallel
+    {
+        Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(3, 1);
+        #pragma omp for
+        for(int j = 0; j < global::coordinates.size(); j++) {
+            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                continue;
+            }
+            Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
+            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                        global::tensor_template_potential,
+                                                        1, 1, 1, 1);
+            field_part += t_tensor * old_ind_dipoles.row(j).transpose();
+        }
+        #pragma omp critical
+        {
+            ind_dipoles_field += field_part;
+        }
+    }
+
+    return ind_dipoles_field;
 }
 }

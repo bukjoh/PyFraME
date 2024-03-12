@@ -18,7 +18,8 @@ eigen_include_dir = os.environ.get('EIGEN_INCLUDE_DIR', 'eigen3')
 ext_modules = [Extension(name="pyframe.embedding.engine",
                          sources=["pyframe/embedding/engine/engine.cpp",
                                   "pyframe/embedding/engine/computation.cpp",
-                                  "pyframe/embedding/engine/python_eigen_conversions.cpp"],
+                                  "pyframe/embedding/engine/python_eigen_conversion.cpp",
+                                  "pyframe/embedding/engine/global.cpp"],
                          include_dirs=[np.get_include(), eigen_include_dir],  # Add eigen3 directory here
                          extra_compile_args=extra_compile_args,
                          extra_link_args=extra_compile_args,

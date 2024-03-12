@@ -1,9 +1,4 @@
-#ifndef _globals_h_
-#define _globals_h_
-
-#include <Eigen/Dense>
-#include <vector>
-#include <unordered_set>
+#include "global.h"
 
 namespace global {
 //global variables required for general functionality
@@ -19,5 +14,3 @@ std::vector<Eigen::Vector3d> coordinates;
 Eigen::VectorXi indices;
 std::vector<std::unordered_set<int>> exclusions;
 }
-
-#endif

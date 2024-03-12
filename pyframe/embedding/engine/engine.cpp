@@ -1,26 +1,25 @@
+// Some core functionality implemented in C++
+// Multiprocessing using OpenMP is partially implemented.
+// Caution is advised regarding the validity of inputs, as some common errors are checked, but not all.
+// Undefined states may result from invalid inputs.
+
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
-#include "numpy/arrayobject.h" // Include any other Numpy headers, UFuncs for example.
-//#include <stdlib.h>
+#include "numpy/arrayobject.h"
+
 #include <iostream>
 #include <cmath>
 #include <Eigen/Dense>
 #include <vector>
 #include <unordered_set>
-#include <omp.h>
 
-#include "python_eigen_conversions.h"
+#include "python_eigen_conversion.h"
 #include "computation.h"
-#include "globals.h"
+#include "global.h"
 
-// C++ Version of compute_interaction_tensor_element and compute_t_tensor from tensor_tools.py
-// Caution is advised regarding the validity of inputs, as some common errors are checked, but not all.
-// Undefined states may result from invalid inputs.
-
-//Computes an interaction tensor element from a given multiindex, r_ab == r_b - r_a, and tensor_coefficients
-//args: [multiindex, r_ab, tensor_coefficients]
-static PyObject* compute_interaction_tensor_element_py(PyObject* self, PyObject* args)
-{
+// Computes an interaction tensor element from a given multiindex, r_ab == r_b - r_a, and tensor_coefficients
+// args: [multiindex, r_ab, tensor_coefficients]
+static PyObject* compute_interaction_tensor_element(PyObject* self, PyObject* args) {
     PyObject *multiindex_obj, *r_ab_array;
 
     if (!PyArg_ParseTuple(args, "OO", &multiindex_obj, &r_ab_array))
@@ -37,10 +36,9 @@ static PyObject* compute_interaction_tensor_element_py(PyObject* self, PyObject*
 }
 
 
-//Computes the t_tensor for the interaction of two atoms in a specified range of indices.
-//args: [r_a, r_b, rank_a, rank_b, start_rank_a, start_rank_b, is_potential (true: potential, false: interaction)]
-static PyObject* compute_t_tensor_py(PyObject* self, PyObject* args)
-{
+// Computes the t_tensor for the interaction of two atoms in a specified range of indices.
+// args: [r_a, r_b, rank_a, rank_b, start_rank_a, start_rank_b, is_potential (true: potential, false: interaction)]
+static PyObject* compute_t_tensor(PyObject* self, PyObject* args) {
     PyObject *r_a_obj, *r_b_obj;
     int rank_a, rank_b, start_rank_a, start_rank_b;
     bool is_potential;
@@ -62,13 +60,14 @@ static PyObject* compute_t_tensor_py(PyObject* self, PyObject* args)
 
     Eigen::MatrixXd t_tensor = computation::compute_t_tensor(r_b - r_a,
                                 is_potential ? global::tensor_template_potential : global::tensor_template_interaction,
-                                global::tensor_coefficients, rank_a, rank_b, start_rank_a, start_rank_b);
+                                rank_a, rank_b, start_rank_a, start_rank_b);
 
     return conversion::eigen_matrix_to_numpy(t_tensor);
 }
 
-static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args)
-{
+// Sets the global tensor coefficients and templates
+// args: [tensor_coefficients, tensor_template_interaction, tensor_template_potential, rank, max_order]
+static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args) {
     PyObject *tensor_coefficients_obj, *tensor_template_interaction_obj, *tensor_template_potential_obj;
     int rank, max_order;
     if (!PyArg_ParseTuple(args, "OOOii", &tensor_coefficients_obj, &tensor_template_interaction_obj,
@@ -92,9 +91,9 @@ static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args)
     Py_RETURN_NONE;
 }
 
-
-static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args)
-{
+// Sets the global coordinates, indices and exclusions.
+// args: [coords, indices, exclusions];
+static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
     PyObject *coords_obj, *indices_obj, *exclusions_obj;
 
     if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &indices_obj, &exclusions_obj)) {
@@ -138,52 +137,28 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args)
     Py_RETURN_NONE;
 }
 
-static PyObject* ind_dipoles_fields_py(PyObject* self, PyObject* args)
-{
+//
+static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     PyObject *old_ind_dipoles_obj;
     int i;
-
     if (!PyArg_ParseTuple(args, "Oi", &old_ind_dipoles_obj, &i)) {
         return NULL;
     }
     Eigen::MatrixXd old_ind_dipoles = conversion::read_matrix(old_ind_dipoles_obj);
-    Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(3, 1);
-
-    #pragma omp parallel
-    {
-        Eigen::MatrixXd my_part = Eigen::MatrixXd::Zero(3, 1);
-        #pragma omp for
-        for(int j = 0; j < global::coordinates.size(); j++) {
-            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
-                continue;
-            }
-            Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
-            Eigen::MatrixXd t_tensor = computation::compute_t_tensor(r_ab,
-                                                        global::tensor_template_potential,
-                                                        global::tensor_coefficients,
-                                                        1, 1, 1, 1);
-            my_part += t_tensor * old_ind_dipoles.row(j).transpose();
-        }
-        #pragma omp critical
-        {
-            ind_dipoles_field += my_part;
-        }
-    }
-
-    return conversion::eigen_matrix_to_numpy(ind_dipoles_field);
+    return conversion::eigen_matrix_to_numpy(computation::ind_dipoles_field(old_ind_dipoles, i));
 }
 
 // Method table for the module
 static PyMethodDef module_methods[] = {
-    {"compute_interaction_tensor_element", compute_interaction_tensor_element_py, METH_VARARGS,
+    {"compute_interaction_tensor_element", compute_interaction_tensor_element, METH_VARARGS,
      "Computes Interaction Tensor Element."},
-    {"compute_t_tensor", compute_t_tensor_py, METH_VARARGS,
+    {"compute_t_tensor", compute_t_tensor, METH_VARARGS,
      "Computes t_tensor."},
     {"set_tensor_coefficients", set_tensor_coefficients, METH_VARARGS,
      "Sets tensor coefficients and templates for interaction and potential tensors."},
     {"set_coords_idxs_exlcs", set_coords_idxs_exlcs, METH_VARARGS,
      "Sets coordinates, indices and exclusions for the inner loop of the solver."},
-    {"ind_dipoles_fields", ind_dipoles_fields_py, METH_VARARGS,
+    {"ind_dipoles_fields", ind_dipoles_fields, METH_VARARGS,
      "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions"},
     {NULL, NULL, 0, NULL}
 };
@@ -197,8 +172,7 @@ static struct PyModuleDef engine = {
     module_methods};
 
 // Module initialization
-PyMODINIT_FUNC PyInit_engine(void)
-{
+PyMODINIT_FUNC PyInit_engine(void) {
     assert(!PyErr_Occurred());
     import_array();
     conversion::init();
