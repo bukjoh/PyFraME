@@ -9,7 +9,7 @@ import platform
 if platform.system() == 'Windows':
     extra_compile_args = ["/openmp"]
 else:
-    extra_compile_args = ["-fopenmp"]
+    extra_compile_args = ["-openmp"]
 
 # Determine Eigen include directory
 eigen_include_dir = os.environ.get('EIGEN_INCLUDE_DIR', 'eigen3')
@@ -33,8 +33,8 @@ class CustomBuildExtCommand(build_ext):
         eigen_url = f"https://gitlab.com/libeigen/eigen/-/archive/{EIGEN_VERSION}/eigen-{EIGEN_VERSION}.tar.gz"
         eigen_tar_path = os.path.join(
             self.build_temp, f"eigen-{EIGEN_VERSION}.tar.gz")
-        # if not os.path.exists(eigen_dir):
-        if eigen_include_dir == 'eigen3':
+
+        if not os.path.exists(eigen_dir):
             print(f"Downloading Eigen {EIGEN_VERSION}...")
             subprocess.run(["curl", "-L", eigen_url, "-o",
                             eigen_tar_path], check=True)
@@ -47,8 +47,8 @@ class CustomBuildExtCommand(build_ext):
             extracted_eigen_dir = os.path.join(self.build_temp, f"eigen-{EIGEN_VERSION}")
             os.rename(extracted_eigen_dir, eigen_dir)
 
-            # Add the Eigen directory to include_dirs
-            self.include_dirs.append(eigen_dir)
+        # Add the Eigen directory to include_dirs
+        self.include_dirs.append(eigen_dir)
 
         # Continue with the build
         super().run()
