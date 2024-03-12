@@ -61,5 +61,5 @@ setup(
     #name="pyframe.embedding.cpp_interaction_tensor_element",
     #cmdclass={"build_ext": CustomBuildExtCommand},
     ext_modules=ext_modules,
-    install_requires=["numpy"],
+    #install_requires=["numpy"],
 )
