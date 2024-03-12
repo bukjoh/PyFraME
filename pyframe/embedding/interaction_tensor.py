@@ -8,7 +8,7 @@ try:
     print('Using cpp_interaction_tensor_element.')
     cpp_tool = True
 except ImportError:
-    print('Unable to import cpp_interaction_tensor_element. Please compile interaction_tensor_element.cpp. Using Python'
+    print('Unable to import cpp_interaction_tensor_element. Please compile engine. Using Python'
           ' version instead.')
     from pyframe.embedding import tensor_tools
 
