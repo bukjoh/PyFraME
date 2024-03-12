@@ -11,7 +11,7 @@ if platform.system() == 'Windows':
 else:
     extra_compile_args = ["-fopenmp"]
 
-extra_compile_args = ["/openmp"]
+extra_compile_args = ["-fopenmp"]
 
 # Determine Eigen include directory
 eigen_include_dir = os.environ.get('EIGEN_INCLUDE_DIR', 'eigen3')
