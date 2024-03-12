@@ -1,5 +1,4 @@
 #define PY_SSIZE_T_CLEAN
-#define EIGEN_DONT_PARALLELIZE
 #include <Python.h>
 #include "numpy/arrayobject.h" // Include any other Numpy headers, UFuncs for example.
 #include <stdlib.h>
@@ -449,6 +448,7 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args)
 
 static PyObject* ind_dipoles_fields_py(PyObject* self, PyObject* args)
 {
+    Eigen::initParallel();
     PyObject *old_ind_dipoles_obj;
     int i;
 
