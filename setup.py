@@ -37,8 +37,7 @@ class CustomBuildExtCommand(build_ext):
 
             if not os.path.exists(eigen_dir):
                 print(f"Downloading Eigen {EIGEN_VERSION}...")
-                subprocess.run(["curl", "-v", "-L", eigen_url, "-o",
-                                eigen_tar_path], check=True)
+                subprocess.run(["wget", "-v", "-O", eigen_url, eigen_tar_path], check=True)
 
                 # Extract the downloaded tar.gz file
                 subprocess.run(["tar", "xz", "-C", self.build_temp,
