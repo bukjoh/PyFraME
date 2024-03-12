@@ -28,7 +28,6 @@ EIGEN_VERSION = "3.3.9"
 class CustomBuildExtCommand(build_ext):
     def run(self):
         # Download Eigen if not already present
-        print("Here", self.build_temp, type(self.build_temp))
         eigen_dir = os.path.join(self.build_lib, "eigen3")
         eigen_url = f"https://gitlab.com/libeigen/eigen/-/archive/{EIGEN_VERSION}/eigen-{EIGEN_VERSION}.tar.gz"
         eigen_tar_path = os.path.join(
@@ -56,7 +55,7 @@ class CustomBuildExtCommand(build_ext):
 # Setup configuration
 setup(
     name="pyframe.embedding.cpp_interaction_tensor_element",
-    ext_modules=ext_modules,
     cmdclass={"build_ext": CustomBuildExtCommand},
+    ext_modules=ext_modules,
     install_requires=["numpy"],
 )
