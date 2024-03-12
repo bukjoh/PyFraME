@@ -448,6 +448,7 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args)
 
 static PyObject* ind_dipoles_fields_py(PyObject* self, PyObject* args)
 {
+    // TODO maybe not necessary to init parallel? https://eigen.tuxfamily.org/dox/TopicMultiThreading.html
     Eigen::initParallel();
     PyObject *old_ind_dipoles_obj;
     int i;
