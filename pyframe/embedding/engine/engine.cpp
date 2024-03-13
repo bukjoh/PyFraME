@@ -41,10 +41,10 @@ static PyObject* compute_interaction_tensor_element(PyObject* self, PyObject* ar
 // args: [r_a, r_b, rank_a, rank_b, start_rank_a, start_rank_b, is_potential (true: potential, false: interaction)]
 static PyObject* compute_t_tensor(PyObject* self, PyObject* args) {
     PyObject *r_a_obj, *r_b_obj;
-    int rank_a, rank_b, start_rank_a, start_rank_b;
+    long long rank_a, rank_b, start_rank_a, start_rank_b;
     bool is_potential;
 
-    if (!PyArg_ParseTuple(args, "OOiiiip", &r_a_obj, &r_b_obj,
+    if (!PyArg_ParseTuple(args, "OOLLLLp", &r_a_obj, &r_b_obj,
                             &rank_a, &rank_b, &start_rank_a, &start_rank_b, &is_potential)) {
         return NULL;
     }
@@ -61,7 +61,7 @@ static PyObject* compute_t_tensor(PyObject* self, PyObject* args) {
 
     Eigen::MatrixXd t_tensor = computation::compute_t_tensor(r_b - r_a,
                                 is_potential ? global::tensor_template_potential : global::tensor_template_interaction,
-                                rank_a, rank_b, start_rank_a, start_rank_b);
+                                (int)rank_a, (int)rank_b, (int)start_rank_a, (int)start_rank_b);
 
     return conversion::eigen_matrix_to_numpy(t_tensor);
 }
@@ -70,8 +70,8 @@ static PyObject* compute_t_tensor(PyObject* self, PyObject* args) {
 // args: [tensor_coefficients, tensor_template_interaction, tensor_template_potential, rank, max_order]
 static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args) {
     PyObject *tensor_coefficients_obj, *tensor_template_interaction_obj, *tensor_template_potential_obj;
-    int rank, max_order;
-    if (!PyArg_ParseTuple(args, "OOOii", &tensor_coefficients_obj, &tensor_template_interaction_obj,
+    long long rank, max_order;
+    if (!PyArg_ParseTuple(args, "OOOLL", &tensor_coefficients_obj, &tensor_template_interaction_obj,
                           &tensor_template_potential_obj, &rank, &max_order)) {
         return NULL;
     }
@@ -83,11 +83,11 @@ static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args) {
         }
         global::tensor_template_interaction = conversion::read_tensor_template((PyArrayObject *)tensor_template_interaction_obj);
         global::tensor_template_potential = conversion::read_tensor_template((PyArrayObject *)tensor_template_potential_obj);
-        global::rank = rank;
+        global::rank = (long)rank;
     }
     if(max_order > global::max_order) {
         global::tensor_coefficients = conversion::read_tensor((PyArrayObject *)tensor_coefficients_obj);
-        global::max_order = max_order;
+        global::max_order = (long)max_order;
     }
     Py_RETURN_NONE;
 }
@@ -141,12 +141,12 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
 //
 static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     PyObject *old_ind_dipoles_obj;
-    int i;
+    long long i;
     if (!PyArg_ParseTuple(args, "Oi", &old_ind_dipoles_obj, &i)) {
         return NULL;
     }
     Eigen::MatrixXd old_ind_dipoles = conversion::read_matrix((PyArrayObject *)old_ind_dipoles_obj);
-    return (PyObject *)conversion::eigen_matrix_to_numpy(computation::ind_dipoles_field(old_ind_dipoles, i));
+    return (PyObject *)conversion::eigen_matrix_to_numpy(computation::ind_dipoles_field(old_ind_dipoles, (int)i));
 }
 
 // Method table for the module
