@@ -92,7 +92,7 @@ Eigen::Matrix<int, 2, 3> read_multiindex(PyObject* multiindex_obj) {
 
 //Reads a vector of length 3 into an Eigen::Vector3d.
 //array_obj: Points to an np.ndarray of length 3
-Eigen::Vector3d read_vector3d(PyObject* array_obj) {
+Eigen::Vector3d read_vector3d(PyArrayObject* array_obj) {
     if (!PyArray_Check(array_obj))
     {
         PyErr_SetString(PyExc_TypeError, "vector must be NumPy array");
@@ -112,7 +112,7 @@ Eigen::Vector3d read_vector3d(PyObject* array_obj) {
 
 //Reads a 3D tensor into a std..vector<Eigen::MatrixXd>. tensor[i, j, k] == return_value[i](j, k).
 //tensor_obj: Points to a 3-dimensional np.ndarray contining tensor coefficients
-std::vector<Eigen::MatrixXd> read_tensor(PyObject* tensor_obj) {
+std::vector<Eigen::MatrixXd> read_tensor(PyArrayObject* tensor_obj) {
     // Check if tensor is NumPy array
     if (!PyArray_Check(tensor_obj))
     {
@@ -141,8 +141,8 @@ std::vector<Eigen::MatrixXd> read_tensor(PyObject* tensor_obj) {
 }
 
 //Reads a 2D np.ndarray into an Eigen::MatrixXd.
-//matrix_obj: Points to a 3-dimensional np.ndarray contining tensor coefficients
-Eigen::MatrixXd read_matrix(PyObject* matrix_obj) {
+//matrix_obj: Points to a 2-dimensional np.ndarray contining tensor coefficients
+Eigen::MatrixXd read_matrix(PyArrayObject* matrix_obj) {
     if (!PyArray_Check(matrix_obj) || PyArray_NDIM(matrix_obj) != 2)
     {
         PyErr_SetString(PyExc_TypeError, "matrix must be a two-dimensional NumPy array");
@@ -161,8 +161,8 @@ Eigen::MatrixXd read_matrix(PyObject* matrix_obj) {
 }
 
 //Reads a 1D np.ndarray into an Eigen::VectorXd.
-//matrix_obj: Points to a 3-dimensional np.ndarray contining tensor coefficients
-Eigen::VectorXi read_vector(PyObject* vector_obj) {
+//matrix_obj: Points to a 1-dimensional np.ndarray contining tensor coefficients
+Eigen::VectorXi read_vector(PyArrayObject* vector_obj) {
     if (!PyArray_Check(vector_obj) || PyArray_NDIM(vector_obj) != 1)
     {
         PyErr_SetString(PyExc_TypeError, "vector must be a one-dimensional NumPy array");
@@ -190,7 +190,7 @@ PyObject* eigen_matrix_to_numpy(const Eigen::MatrixXd &matrix) {
     }
 
     // Copy data from Eigen matrix to NumPy array, but first converting to row-major order
-    double* numpyData = static_cast<double*>(PyArray_DATA(numpyArray));
+    double* numpyData = static_cast<double*>(PyArray_DATA((PyArrayObject *)numpyArray));
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> matrix_rm = matrix;
     const double* eigenData = matrix_rm.data();
     std::copy(eigenData, eigenData + rows * cols, numpyData);
@@ -200,7 +200,7 @@ PyObject* eigen_matrix_to_numpy(const Eigen::MatrixXd &matrix) {
 
 //Reads the tensor template. template[i, j][k][l] = return_value(i, j)(k, l).
 //template_obj: 2-dimensional np.ndarray of lists (length 2) of 1-dimensional np.ndarrays (length 3).
-Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> read_tensor_template(PyObject* template_obj) {
+Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> read_tensor_template(PyArrayObject* template_obj) {
     // Check if the input is a valid 2D NumPy array
     if (!PyArray_Check(template_obj) || PyArray_NDIM(template_obj) != 2) {
         PyErr_SetString(PyExc_TypeError, "tensor_template must be a 2D NumPy array");
@@ -214,7 +214,7 @@ Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> read_ten
 
     for (npy_intp i = 0; i < rows; ++i) {
         for (npy_intp j = 0; j < cols; ++j) {
-            PyObject* element = PyArray_GETITEM(template_obj, PyArray_GETPTR2(template_obj, i, j));
+            PyObject* element = PyArray_GETITEM(template_obj, (char *)PyArray_GETPTR2(template_obj, i, j));
             tensor_template(i,j) = conversion::read_multiindex(element);
         }
     }

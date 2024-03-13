@@ -4,6 +4,7 @@
 // Undefined states may result from invalid inputs.
 
 #define PY_SSIZE_T_CLEAN
+#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <Python.h>
 #include "numpy/arrayobject.h"
 
@@ -28,7 +29,7 @@ static PyObject* compute_interaction_tensor_element(PyObject* self, PyObject* ar
     }
 
     Eigen::Matrix<int, 2, 3> multiindex = conversion::read_multiindex(multiindex_obj);
-    Eigen::Vector3d r_ab = conversion::read_vector3d(r_ab_array);
+    Eigen::Vector3d r_ab = conversion::read_vector3d((PyArrayObject *)r_ab_array);
 
     double result = computation::compute_interaction_tensor_element(multiindex, r_ab, global::tensor_coefficients);
 
@@ -48,8 +49,8 @@ static PyObject* compute_t_tensor(PyObject* self, PyObject* args) {
         return NULL;
     }
 
-    Eigen::Vector3d r_a = conversion::read_vector3d(r_a_obj);
-    Eigen::Vector3d r_b = conversion::read_vector3d(r_b_obj);
+    Eigen::Vector3d r_a = conversion::read_vector3d((PyArrayObject *)r_a_obj);
+    Eigen::Vector3d r_b = conversion::read_vector3d((PyArrayObject *)r_b_obj);
     if(r_a[0] == r_b[0] && r_a[1] == r_b[1] && r_a[2] == r_b[2])
     {
         PyErr_SetString(PyExc_ValueError, "r_a and r_b cannot be equal.");
@@ -76,16 +77,16 @@ static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args) {
     }
     if(rank > global::rank) {
         // Check if the input is a valid 2D NumPy array
-        if (!PyArray_Check(tensor_template_interaction_obj) || PyArray_NDIM(tensor_template_interaction_obj) != 2) {
+        if (!PyArray_Check(tensor_template_interaction_obj) || PyArray_NDIM((PyArrayObject*)tensor_template_interaction_obj) != 2) {
             PyErr_SetString(PyExc_TypeError, "tensor_template must be a 2D NumPy array");
             Py_RETURN_NONE;
         }
-        global::tensor_template_interaction = conversion::read_tensor_template(tensor_template_interaction_obj);
-        global::tensor_template_potential = conversion::read_tensor_template(tensor_template_potential_obj);
+        global::tensor_template_interaction = conversion::read_tensor_template((PyArrayObject *)tensor_template_interaction_obj);
+        global::tensor_template_potential = conversion::read_tensor_template((PyArrayObject *)tensor_template_potential_obj);
         global::rank = rank;
     }
     if(max_order > global::max_order) {
-        global::tensor_coefficients = conversion::read_tensor(tensor_coefficients_obj);
+        global::tensor_coefficients = conversion::read_tensor((PyArrayObject *)tensor_coefficients_obj);
         global::max_order = max_order;
     }
     Py_RETURN_NONE;
@@ -99,14 +100,14 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &indices_obj, &exclusions_obj)) {
         return NULL;
     }
-    Eigen::MatrixXd coords = conversion::read_matrix(coords_obj);
+    Eigen::MatrixXd coords = conversion::read_matrix((PyArrayObject *)coords_obj);
     global::coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < coords.rows(); i++) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
         global::coordinates.push_back(coord);
     }
-    global::indices = conversion::read_vector(indices_obj);
+    global::indices = conversion::read_vector((PyArrayObject *)indices_obj);
 
     if (!PyList_Check(exclusions_obj)) {
         PyErr_SetString(PyExc_TypeError, "Input must be a Python list");
@@ -144,8 +145,8 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "Oi", &old_ind_dipoles_obj, &i)) {
         return NULL;
     }
-    Eigen::MatrixXd old_ind_dipoles = conversion::read_matrix(old_ind_dipoles_obj);
-    return conversion::eigen_matrix_to_numpy(computation::ind_dipoles_field(old_ind_dipoles, i));
+    Eigen::MatrixXd old_ind_dipoles = conversion::read_matrix((PyArrayObject *)old_ind_dipoles_obj);
+    return (PyObject *)conversion::eigen_matrix_to_numpy(computation::ind_dipoles_field(old_ind_dipoles, i));
 }
 
 // Method table for the module
