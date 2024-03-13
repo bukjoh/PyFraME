@@ -179,7 +179,7 @@ Eigen::VectorXi read_vector(PyObject* vector_obj) {
 
 //Creates, from an Eigen::MatrixXd, a 2-dimensional np.ndarray of the same shape.
 //matrix: the matrix to use
-PyObject* eigen_matrix_to_numpy(Eigen::MatrixXd &matrix) {
+PyObject* eigen_matrix_to_numpy(const Eigen::MatrixXd &matrix) {
     int rows = (int)matrix.rows();
     int cols = (int)matrix.cols();
 

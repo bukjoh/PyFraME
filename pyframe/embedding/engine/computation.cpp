@@ -72,7 +72,7 @@ Eigen::MatrixXd ind_dipoles_field(const Eigen::MatrixXd &old_ind_dipoles, int i)
     {
         Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(3, 1);
         #pragma omp for
-        for(int j = 0; j < global::coordinates.size(); j++) {
+        for(long j = 0; j < (long)global::coordinates.size(); j++) {
             if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
                 continue;
             }

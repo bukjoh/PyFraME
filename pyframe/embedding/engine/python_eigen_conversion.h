@@ -33,7 +33,7 @@ Eigen::VectorXi read_vector(PyObject* vector_obj);
 
 //Creates, from an Eigen::MatrixXd, a 2-dimensional np.ndarray of the same shape.
 //matrix: the matrix to use
-PyObject* eigen_matrix_to_numpy(Eigen::MatrixXd &matrix);
+PyObject* eigen_matrix_to_numpy(const Eigen::MatrixXd &matrix);
 
 //Reads the tensor template. template[i, j][k][l] = return_value(i, j)(k, l).
 //template_obj: 2-dimensional np.ndarray of lists (length 2) of 1-dimensional np.ndarrays (length 3).
