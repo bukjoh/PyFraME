@@ -20,6 +20,7 @@ extern Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> t
 extern std::vector<Eigen::Vector3d> coordinates;
 extern Eigen::VectorXi indices;
 extern std::vector<std::unordered_set<int>> exclusions;
+extern Eigen::MatrixXd old_ind_dipoles;
 }
 
 #endif

@@ -30,7 +30,7 @@ Eigen::MatrixXd compute_t_tensor(
 
 // Computes the field caused by induced dipoles at site i.
 // Parallelized with OpenMP.
-Eigen::MatrixXd ind_dipoles_field(const Eigen::MatrixXd &old_ind_dipoles, int i);
+Eigen::MatrixXd ind_dipoles_field(int i);
 
 }
 

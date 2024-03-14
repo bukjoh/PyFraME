@@ -100,9 +100,14 @@ def compute_t_tensor(r_a: np.ndarray,
         T tensor as a SecondDegreePolytensor.
         (See Jon Applequist J. Math. Phys. 24, 736 (1983) for details on Polytensors.)
     """
+    # print(rank_a, rank_b, start_rank_a, start_rank_b)
+    if is_potential:
+        p = 1
+    else:
+        p = 0
     return polytensor.SecondDegreePolytensor(rank_2=[start_rank_b, rank_b],
                                              rank_1=[start_rank_a, rank_a],
                                              tensor_data=engine.compute_t_tensor(
         r_a,
         r_b,
-        rank_a, rank_b, start_rank_a, start_rank_b, is_potential))
+        np.array([rank_a, rank_b, start_rank_a, start_rank_b, p], dtype=np.int64)))

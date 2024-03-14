@@ -13,4 +13,5 @@ Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> tensor_t
 std::vector<Eigen::Vector3d> coordinates;
 Eigen::VectorXi indices;
 std::vector<std::unordered_set<int>> exclusions;
+Eigen::MatrixXd old_ind_dipoles;
 }
