@@ -32,6 +32,10 @@ Eigen::MatrixXd compute_t_tensor(
 // Parallelized with OpenMP.
 Eigen::MatrixXd ind_dipoles_field(int i);
 
+// Computes the field of the nuclei on all atoms
+// Parallelized with OpenMP.
+Eigen::MatrixXd nuclei_fields(int start, int end);
+
 }
 
 #endif

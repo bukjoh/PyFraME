@@ -5,7 +5,7 @@ import numpy as np
 from mpi4py import MPI
 from dataclasses import dataclass
 from typing import Optional, Any
-from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions
+from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions, engine
 
 
 class Subsystem:
@@ -46,9 +46,11 @@ class QuantumSubsystem(Subsystem):
         self.nuclei = nuclei
         self.density_matrix = dens_mat
         self.quantum_fragments = quantum_fragments
-        self.coordinates = np.zeros([self.num_nuclei, 3])
+        self.coordinates = np.zeros([self.num_nuclei, 3], dtype=np.float64)
+        self.charges = np.zeros([self.num_nuclei], dtype=np.float64)
         for i, nucleus in enumerate(nuclei):
             self.coordinates[i, :] = nucleus.coordinate[:]
+            self.charges[i] = nucleus.charge[0]
         if self.comm is not None:
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
@@ -96,31 +98,19 @@ class QuantumSubsystem(Subsystem):
             Array of nuclear fields on the different coordinates.
         """
         #TODO has to be parallelized for multithreading
+        engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
         if self.comm is not None:
             avg, res = divmod(len(coordinates), self.size)
             counts = [avg + 1 if p < res else avg for p in range(self.size)]
             start = sum(counts[:self.rank])
             end = sum(counts[:self.rank + 1])
             nuclear_fields_global = np.zeros([len(coordinates), 3])
-            nuclear_fields_local = np.zeros([len(coordinates), 3])
-            for i in range(start, end):
-                field_component = np.zeros(3)
-                for nucleus in self.nuclei:
-                    field_component += nucleus.potential(coordinate=coordinates[i],
-                                                         pot_derivative_order=1)
-                nuclear_fields_local[i, :] = field_component
+            nuclear_fields_local = engine.nuclei_fields(np.array([start, end], dtype=np.int64))
             self.comm.Allreduce(nuclear_fields_local, nuclear_fields_global, op=MPI.SUM)
             return nuclear_fields_global
 
         else:
-            nuclear_fields = np.zeros([len(coordinates), 3])
-            for i, coordinate in enumerate(coordinates):
-                field_component = np.zeros(3)
-                for nucleus in self.nuclei:
-                    field_component += nucleus.potential(coordinate=coordinate,
-                                                         pot_derivative_order=1)
-                nuclear_fields[i, :] = field_component
-            return nuclear_fields
+            return engine.nuclei_fields(np.array([0, len(coordinates)], dtype=np.int64))
 
     def compute_electric_fields(self,
                                 coordinates: np.ndarray,

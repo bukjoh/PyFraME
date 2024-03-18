@@ -178,7 +178,7 @@ class Nucleus(Particle):
                  ):
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
         self.name = name
-        self.charge = np.array([charge])
+        self.charge = np.array([charge], dtype=np.float64)
         if element is not None:
             self._element = element
             if self.charge != self.element_to_charge():

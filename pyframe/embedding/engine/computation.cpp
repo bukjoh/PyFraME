@@ -64,7 +64,7 @@ Eigen::MatrixXd compute_t_tensor(
     return interaction_tensor;
 }
 
-// Computes the field caused by induced dipoles at site i.
+// Computes the field caused by induced dipoles at atom i.
 // Parallelized with OpenMP.
 Eigen::MatrixXd ind_dipoles_field(int i) {
     Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(3, 1);
@@ -89,5 +89,34 @@ Eigen::MatrixXd ind_dipoles_field(int i) {
     }
 
     return ind_dipoles_field;
+}
+
+// Computes the field of the nuclei on all atoms
+// Parallelized with OpenMP.
+Eigen::MatrixXd nuclei_fields(int start, int end) {
+    int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
+    int no_atoms = static_cast<int>(global::coordinates.size());
+
+    Eigen::MatrixXd nuclei_fields = Eigen::MatrixXd::Zero(no_atoms, 3);
+    #pragma omp parallel
+    {
+        Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(no_atoms, 3);
+        #pragma omp for
+        for(int i = start; i < end; i++) {
+        // TODO add nuclei coordinates to global
+            for(int j = 0; j < no_nuclei; j++) {
+                Eigen::Vector3d r_ab = global::coordinates[i] - global::nuclei_coordinates[j];
+                Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                            global::tensor_template_potential,
+                                                            0, 1, 0, 1);
+                field_part.row(i) += t_tensor * global::nuclei_charges(j);
+            }
+        }
+        #pragma omp critical
+        {
+            nuclei_fields += field_part;
+        }
+    }
+    return nuclei_fields;
 }
 }

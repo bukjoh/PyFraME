@@ -170,7 +170,7 @@ std::vector<Eigen::MatrixXd> read_tensor(PyArrayObject *tensor_obj)
 }
 
 // Reads a 2D np.ndarray into an Eigen::MatrixXd.
-// matrix_obj: Points to a 2-dimensional np.ndarray contining tensor coefficients
+// matrix_obj: Points to a 2-dimensional np.ndarray containing tensor coefficients
 Eigen::MatrixXd read_matrix(PyArrayObject *matrix_obj)
 {
     if (!PyArray_Check(matrix_obj) || PyArray_NDIM(matrix_obj) != 2)
@@ -191,7 +191,6 @@ Eigen::MatrixXd read_matrix(PyArrayObject *matrix_obj)
 }
 
 // Reads a 1D np.ndarray into an Eigen::VectorXi.
-// matrix_obj: Points to a 1-dimensional np.ndarray contining tensor coefficients
 Eigen::VectorXi read_vector(PyObject *vector_obj)
 {
     if (!PyArray_Check(vector_obj) || PyArray_NDIM((PyArrayObject *)vector_obj) != 1)
@@ -203,7 +202,26 @@ Eigen::VectorXi read_vector(PyObject *vector_obj)
     Eigen::VectorXi vector(u);
     for (int j = 0; j < u; ++j)
     {
+    // FIXME is this correct?
         vector(j) = (int)*(long *)PyArray_GETPTR1((PyArrayObject *)vector_obj, j);
+    }
+    return vector;
+}
+
+// Reads a 1D np.ndarray into an Eigen::VectorXl.
+Eigen::VectorXd read_vector_l(PyObject *vector_obj)
+{
+    if (!PyArray_Check(vector_obj) || PyArray_NDIM((PyArrayObject *)vector_obj) != 1)
+    {
+        PyErr_SetString(PyExc_TypeError, "vector must be a one-dimensional NumPy array");
+        return Eigen::VectorXd();
+    }
+    // FIXME is this right?
+    npy_intp u = PyArray_DIM((PyArrayObject *)vector_obj, 0);
+    Eigen::VectorXd vector(u);
+    for (int j = 0; j < u; ++j)
+    {
+        vector(j) = *(double *)PyArray_GETPTR1((PyArrayObject *)vector_obj, j);
     }
     return vector;
 }
@@ -346,12 +364,14 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &indices_obj, &exclusions_obj)) {
         return NULL;
     }
-    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
-    global::coordinates = std::vector<Eigen::Vector3d>();
-    for(int i = 0; i < coords.rows(); i++) {
-        Eigen::Vector3d coord;
-        coord << coords(i, 0), coords(i, 1), coords(i, 2);
-        global::coordinates.push_back(coord);
+    if (global::coordinates.empty()) {
+        Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
+        global::coordinates = std::vector<Eigen::Vector3d>();
+        for(int i = 0; i < coords.rows(); i++) {
+            Eigen::Vector3d coord;
+            coord << coords(i, 0), coords(i, 1), coords(i, 2);
+            global::coordinates.push_back(coord);
+        }
     }
     global::indices = read_vector(indices_obj);
 
@@ -384,6 +404,34 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+// Sets the global nuclei_coordinates and nuclei_charges.
+// args: [coords, charges];
+static PyObject* set_coords_nuc_coords_charges(PyObject* self, PyObject* args) {
+    PyObject *coords_obj, *charges_obj, *nuc_coords_obj;
+    if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &charges_obj, &nuc_coords_obj)) {
+        return NULL;
+    }
+    if (global::coordinates.empty()) {
+        Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
+        global::coordinates = std::vector<Eigen::Vector3d>();
+        for(int i = 0; i < coords.rows(); i++) {
+            Eigen::Vector3d coord;
+            coord << coords(i, 0), coords(i, 1), coords(i, 2);
+            global::coordinates.push_back(coord);
+        }
+    }
+
+    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)nuc_coords_obj);
+    global::nuclei_coordinates = std::vector<Eigen::Vector3d>();
+    for(int i = 0; i < coords.rows(); i++) {
+        Eigen::Vector3d coord;
+        coord << coords(i, 0), coords(i, 1), coords(i, 2);
+        global::nuclei_coordinates.push_back(coord);
+    }
+    global::nuclei_charges = read_vector_l(charges_obj);
+    Py_RETURN_NONE;
+}
+
 // Sets the old induced dipoles for the calculation of the induced dipole fields
 // args: [old_ind_dipoles]
 static PyObject *set_old_ind_dipoles(PyObject *self, PyObject *args)
@@ -408,6 +456,19 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(i));
 }
 
+//Calculates the induced dipoles for atom at index i
+//args: [start, end] (numpy.ndarray with i as only entry)
+static PyObject* nuclei_fields(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return (PyObject *)eigen_matrix_to_numpy(computation::nuclei_fields(start, end));
+}
+
+
 // Method table for the module
 static PyMethodDef module_methods[] = {
     {"compute_interaction_tensor_element", compute_interaction_tensor_element, METH_VARARGS,
@@ -422,6 +483,10 @@ static PyMethodDef module_methods[] = {
      "Sets the old induced dipole fields for the calculation of the induced dipoles."},
     {"ind_dipoles_fields", ind_dipoles_fields, METH_VARARGS,
      "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions"},
+     {"set_coords_nuc_coords_charges", set_coords_nuc_coords_charges, METH_VARARGS,
+     "Sets atom coordinates, nuclear coordinates, and nuclear charges for the calculation of nuclei fields."},
+     {"nuclei_fields", nuclei_fields, METH_VARARGS,
+     "Calculates the field of the nuclei on atoms defined with start and end. Previously set nuclei_coords and nuclei_charges"},
     {NULL, NULL, 0, NULL}};
 
 // Module definition

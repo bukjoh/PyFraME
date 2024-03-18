@@ -21,6 +21,11 @@ extern std::vector<Eigen::Vector3d> coordinates;
 extern Eigen::VectorXi indices;
 extern std::vector<std::unordered_set<int>> exclusions;
 extern Eigen::MatrixXd old_ind_dipoles;
+
+//global variables required for NuclearFields
+extern std::vector<Eigen::Vector3d> nuclei_coordinates;
+extern Eigen::VectorXd nuclei_charges;
+// also needs extern std::vector<Eigen::Vector3d> coordinates; to be set
 }
 
 #endif
