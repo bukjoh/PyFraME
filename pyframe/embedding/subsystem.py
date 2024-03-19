@@ -5,7 +5,7 @@ import numpy as np
 from mpi4py import MPI
 from dataclasses import dataclass
 from typing import Optional, Any
-from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions, engine
+from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions, engine, polytensor
 
 
 class Subsystem:
@@ -97,7 +97,7 @@ class QuantumSubsystem(Subsystem):
         Returns:
             Array of nuclear fields on the different coordinates.
         """
-        #TODO has to be parallelized for multithreading
+        # TODO has to be parallelized for multithreading
         engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
         if self.comm is not None:
             avg, res = divmod(len(coordinates), self.size)
@@ -156,13 +156,15 @@ class ClassicalSubsystem(Subsystem):
         self.num_atoms = 0
         for fragments in self.classical_fragments:
             self.num_atoms += len(fragments.atoms)
-        self.coordinates = np.zeros([self.num_atoms, 3])
+        self.coordinates = np.zeros([self.num_atoms, 3], dtype=np.float64)
         self.exclusions = []
-        self.polarizabilities = np.zeros([self.num_atoms, 3, 3])
-        self.indices = np.zeros(self.num_atoms, dtype=int)
+        self.polarizabilities = np.zeros([self.num_atoms, 3, 3], dtype=np.float64)
+        self.indices = np.zeros(self.num_atoms, dtype=np.int64)
         self.exclusions = []
         self.atoms = []
-        self.charges = np.zeros([self.num_atoms])
+        self.charges = np.zeros([self.num_atoms], dtype=np.float64)
+        self.multipoles_deg_taylor_coeff = []
+        self.multipole_orders = np.zeros([self.num_atoms], dtype=np.int64)
         k = 0
         for fragments in self.classical_fragments:
             for atom in fragments.atoms:
@@ -173,6 +175,10 @@ class ClassicalSubsystem(Subsystem):
                 self.exclusions.append(atom.exclusions)
                 self.charges[k] = atom.multipoles.data[0]
                 self.atoms.append(atom)
+                self.multipoles_deg_taylor_coeff.append(polytensor.FirstDegreePolytensor.multiply_elementwise(
+                    atom.multipoles_with_degeneracy,
+                    atom.taylor_coefficients).data)
+                self.multipole_orders[k] = atom.multipole_order
                 k += 1
         self.induced_dipoles = InducedDipoles(induced_dipoles=np.zeros([self.num_atoms, 3]),
                                               external_fields=np.zeros([self.num_atoms, 3]),
@@ -194,7 +200,11 @@ class ClassicalSubsystem(Subsystem):
     def compute_multipole_fields(self) -> None:
         """Computes the multipole fields from fragments.
         """
-        #TODO has to be parallelized for multithreading
+        engine.set_multipoles_multipoles_order(self.multipoles_deg_taylor_coeff,
+                                               self.multipole_orders)
+        engine.set_coords_idxs_exlcs(self.coordinates,
+                                     self.indices,
+                                     self.exclusions)
         self._multipole_fields = np.zeros([self.num_atoms, 3])
         if self.comm is not None:
             multipole_fields_local = np.zeros_like(self._multipole_fields)
@@ -203,28 +213,14 @@ class ClassicalSubsystem(Subsystem):
             start = sum(counts[:self.rank])
             end = sum(counts[:self.rank + 1])
             for i in range(start, end):
-                field_component = np.zeros(3)
-                for fragment_j in self.classical_fragments:
-                    for j, atom_j in enumerate(fragment_j.atoms):
-                        if atom_j.index in self.exclusions[i]:
-                            continue
-                        field_component += atom_j.potential(coordinate=self.coordinates[i],
-                                                            pot_derivative_order=1)
-                multipole_fields_local[i, :] = field_component
+                multipole_fields_local[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
             # Perform reduction
             self.comm.Allreduce([multipole_fields_local, MPI.DOUBLE],
                                 [self._multipole_fields, MPI.DOUBLE],
                                 op=MPI.SUM)
         else:
             for i in range(len(self.coordinates)):
-                field_component = np.zeros(3)
-                for fragment_j in self.classical_fragments:
-                    for j, atom_j in enumerate(fragment_j.atoms):
-                        if atom_j.index in self.exclusions[i]:
-                            continue
-                        field_component += atom_j.potential(coordinate=self.coordinates[i],
-                                                            pot_derivative_order=1)
-                self._multipole_fields[i, :] = field_component
+                self._multipole_fields[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
 
     def static_potential(self,
                          coordinate: np.ndarray,
@@ -246,7 +242,7 @@ class ClassicalSubsystem(Subsystem):
             Electrostatic potential or its derivative of the fragment at coordinates. If coord_multipole_order is given,
             the derivatives with respect to the charge or multipole at coordinate are included.
         """
-        #TODO has to be parallelized for multithreading
+        # TODO has to be parallelized for multithreading
         pot = []
         for fragments in self.classical_fragments:
             pot.append(fragments.potential(coordinate=coordinate,
@@ -266,7 +262,7 @@ class ClassicalSubsystem(Subsystem):
         Returns:
             Self energy of the ClassicalSubsystem.
         """
-        #TODO has to be parallelized for multithreading
+        # TODO has to be parallelized for multithreading
         if getattr(self, '_self_energy', None) is None:
             self._self_energy = electrostatic_interactions.compute_classical_self_energy(self.atoms, self.comm)
         return self._self_energy

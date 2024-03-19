@@ -1,4 +1,6 @@
 #include "computation.h"
+#include <iostream>
+
 
 namespace computation
 {
@@ -103,7 +105,6 @@ Eigen::MatrixXd nuclei_fields(int start, int end) {
         Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(no_atoms, 3);
         #pragma omp for
         for(int i = start; i < end; i++) {
-        // TODO add nuclei coordinates to global
             for(int j = 0; j < no_nuclei; j++) {
                 Eigen::Vector3d r_ab = global::coordinates[i] - global::nuclei_coordinates[j];
                 Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
@@ -119,4 +120,33 @@ Eigen::MatrixXd nuclei_fields(int start, int end) {
     }
     return nuclei_fields;
 }
+
+// Computes the field caused by all atoms at atom i.
+// Parallelized with OpenMP.
+Eigen::MatrixXd multipole_field(int i) {
+    Eigen::MatrixXd multipole_field = Eigen::MatrixXd::Zero(3, 1);
+    int no_atoms = static_cast<int>(global::coordinates.size());
+    #pragma omp parallel
+    {
+        Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(3, 1);
+        #pragma omp for
+        for(int j = 0; j < no_atoms; j++) {
+            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                continue;
+            }
+            Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
+            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                        global::tensor_template_potential,
+                                                        global::multipole_orders[j], 1, 0, 1);
+            field_part += (global::multipoles[j].transpose() * t_tensor).transpose() ;
+        }
+        #pragma omp critical
+        {
+            multipole_field += field_part;
+        }
+    }
+
+    return multipole_field;
+}
+
 }

@@ -202,21 +202,19 @@ Eigen::VectorXi read_vector(PyObject *vector_obj)
     Eigen::VectorXi vector(u);
     for (int j = 0; j < u; ++j)
     {
-    // FIXME is this correct?
         vector(j) = (int)*(long *)PyArray_GETPTR1((PyArrayObject *)vector_obj, j);
     }
     return vector;
 }
 
 // Reads a 1D np.ndarray into an Eigen::VectorXl.
-Eigen::VectorXd read_vector_l(PyObject *vector_obj)
+Eigen::VectorXd read_vector_d(PyObject *vector_obj)
 {
     if (!PyArray_Check(vector_obj) || PyArray_NDIM((PyArrayObject *)vector_obj) != 1)
     {
         PyErr_SetString(PyExc_TypeError, "vector must be a one-dimensional NumPy array");
         return Eigen::VectorXd();
     }
-    // FIXME is this right?
     npy_intp u = PyArray_DIM((PyArrayObject *)vector_obj, 0);
     Eigen::VectorXd vector(u);
     for (int j = 0; j < u; ++j)
@@ -225,6 +223,38 @@ Eigen::VectorXd read_vector_l(PyObject *vector_obj)
     }
     return vector;
 }
+
+std::vector<Eigen::VectorXd> read_multipoles(PyObject *multipoles_obj)
+{
+    // Check if multipoles_obj is a list
+    if (!PyList_Check(multipoles_obj))
+    {
+        PyErr_SetString(PyExc_TypeError, "Multipoles must be a list of NumPy arrays");
+        return std::vector<Eigen::VectorXd>();
+    }
+
+    std::vector<Eigen::VectorXd> multipoles;
+    Py_ssize_t num_multipoles = PyList_Size(multipoles_obj);
+
+    for (Py_ssize_t i = 0; i < num_multipoles; ++i) {
+        PyObject *numpy_array = PyList_GetItem(multipoles_obj, i);
+        PyArrayObject *arr = reinterpret_cast<PyArrayObject *>(numpy_array);
+
+        int ndim = PyArray_NDIM(arr);
+        if (ndim != 1) {
+            PyErr_SetString(PyExc_TypeError, "Expected 1-dimensional arrays");
+            return std::vector<Eigen::VectorXd>(); // Return or throw, don't mix
+        }
+
+        int array_size = PyArray_DIM(arr, 0);
+        double *ptr = reinterpret_cast<double *>(PyArray_DATA(arr));
+        Eigen::Map<Eigen::VectorXd> vector(ptr, array_size);
+        multipoles.push_back(vector);
+    }
+
+    return multipoles;
+}
+
 
 // Creates, from an Eigen::MatrixXd, a 2-dimensional np.ndarray of the same shape.
 // matrix: the matrix to use
@@ -403,13 +433,13 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
 }
 
 // Sets the global atom coordinates,nuclei_coordinates and nuclei_charges.
-// args: [coords, charges];
+// args: [atom_coords, nuclei_charges, nuclei_coords];
 static PyObject* set_coords_nuc_coords_charges(PyObject* self, PyObject* args) {
-    PyObject *coords_obj, *charges_obj, *nuc_coords_obj;
-    if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &charges_obj, &nuc_coords_obj)) {
+    PyObject *atom_coords_obj, *nuc_charges_obj, *nuc_coords_obj;
+    if (!PyArg_ParseTuple(args, "OOO", &atom_coords_obj, &nuc_charges_obj, &nuc_coords_obj)) {
         return NULL;
     }
-    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
+    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)atom_coords_obj);
     global::coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < coords.rows(); i++) {
         Eigen::Vector3d coord;
@@ -423,7 +453,7 @@ static PyObject* set_coords_nuc_coords_charges(PyObject* self, PyObject* args) {
         coord << nuc_coords(i, 0), nuc_coords(i, 1), nuc_coords(i, 2);
         global::nuclei_coordinates.push_back(coord);
     }
-    global::nuclei_charges = read_vector_l(charges_obj);
+    global::nuclei_charges = read_vector_d(nuc_charges_obj);
     Py_RETURN_NONE;
 }
 
@@ -440,6 +470,21 @@ static PyObject *set_old_ind_dipoles(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+// Sets the multipoles with degeneracy and taylor coefficients and multipole orders for the calculation of the multipole fields.
+// args: [multipoles, multipole_orders]
+static PyObject *set_multipoles_multipoles_order(PyObject *self, PyObject *args)
+{
+    PyObject *multipoles_obj, *multipole_orders_obj;
+    if (!PyArg_ParseTuple(args, "OO", &multipoles_obj, &multipole_orders_obj)) {
+        return NULL;
+    }
+    // Set MultipoleOrder
+    global::multipole_orders = read_vector(multipole_orders_obj);
+    // Set Multipoles
+    global::multipoles = read_multipoles(multipoles_obj);
+    Py_RETURN_NONE;
+}
+
 //Calculates the induced dipoles for atom at index i
 //args: [[i]] (numpy.ndarray with i as only entry)
 static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
@@ -449,6 +494,17 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     }
     int i = (int)read_vector(i_obj)(0);
     return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(i));
+}
+
+//Calculates the multipole fields for atom at index i
+//args: [[i]] (numpy.ndarray with i as only entry)
+static PyObject* multipole_fields(PyObject* self, PyObject* args) {
+    PyObject *i_obj;
+    if (!PyArg_ParseTuple(args, "O", &i_obj)) {
+        return NULL;
+    }
+    int i = (int)read_vector(i_obj)(0);
+    return (PyObject *)eigen_matrix_to_numpy(computation::multipole_field(i));
 }
 
 //Calculates the induced dipoles for atom at index i
@@ -482,6 +538,10 @@ static PyMethodDef module_methods[] = {
      "Sets atom coordinates, nuclear coordinates, and nuclear charges for the calculation of nuclei fields."},
      {"nuclei_fields", nuclei_fields, METH_VARARGS,
      "Calculates the field of the nuclei on atoms defined with start and end. Previously set nuclei_coords and nuclei_charges"},
+     {"set_multipoles_multipoles_order", set_multipoles_multipoles_order, METH_VARARGS,
+     "Sets multipoles with degeneracy and taylor coefficient and the multipole orders."},
+     {"multipole_fields", multipole_fields, METH_VARARGS,
+     "Calculates the field of the multipoles at atom i. Previously set coords, idxs, exclusions, multipoles, multipole_orders"},
     {NULL, NULL, 0, NULL}};
 
 // Module definition

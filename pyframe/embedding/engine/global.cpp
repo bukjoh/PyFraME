@@ -11,9 +11,15 @@ Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> tensor_t
 
 //global variables required for IndDipolesFields, need to be
 std::vector<Eigen::Vector3d> coordinates;
-std::vector<Eigen::Vector3d> nuclei_coordinates;
 Eigen::VectorXi indices;
-Eigen::VectorXd nuclei_charges;
 std::vector<std::unordered_set<int>> exclusions;
 Eigen::MatrixXd old_ind_dipoles;
+//global variables required for NuclearFields
+Eigen::VectorXd nuclei_charges;
+std::vector<Eigen::Vector3d> nuclei_coordinates;
+//global variables required for MultipoleFields
+Eigen::VectorXi multipole_orders;
+std::vector<Eigen::VectorXd> multipoles;
+
+
 }

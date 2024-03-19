@@ -83,7 +83,9 @@ class Atom(Particle):
                                                                              self.particle_variables.double_factorials,
                                                                              self.particle_variables.trinomials)
                     counter += i
-            self.multipoles = polytensor.FirstDegreePolytensor(self.multipole_order, tensor_data=m_elements)
+            self.multipoles = polytensor.FirstDegreePolytensor(self.multipole_order,
+                                                               tensor_data=m_elements,
+                                                               data_type=np.float64)
             self.degeneracy_tensor = self.particle_variables.degeneracies.truncate_tensor(order=self.multipole_order)
             self.multipoles_with_degeneracy = polytensor.FirstDegreePolytensor. \
                 multiply_elementwise(self.multipoles, self.degeneracy_tensor)
@@ -240,7 +242,9 @@ class Nucleus(Particle):
                                                        start_rank_b=pot_derivative_order
                                                        + origin_derivative_order)
         t_tensor.data = t_tensor.data * (-1) ** origin_derivative_order
-        return polytensor.FirstDegreePolytensor(rank=0, tensor_data=self.charge). \
+        return polytensor.FirstDegreePolytensor(rank=0,
+                                                tensor_data=self.charge,
+                                                data_type=np.float64). \
             multiply_first_degree_second_degree(t_tensor).data
 
 

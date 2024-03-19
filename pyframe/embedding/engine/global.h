@@ -25,7 +25,9 @@ extern Eigen::MatrixXd old_ind_dipoles;
 //global variables required for NuclearFields
 extern std::vector<Eigen::Vector3d> nuclei_coordinates;
 extern Eigen::VectorXd nuclei_charges;
-// also needs extern std::vector<Eigen::Vector3d> coordinates; to be set
+//global variables required for MultipoleFields
+extern Eigen::VectorXi multipole_orders;
+extern std::vector<Eigen::VectorXd> multipoles;
 }
 
 #endif
