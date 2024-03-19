@@ -364,14 +364,12 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &indices_obj, &exclusions_obj)) {
         return NULL;
     }
-    if (global::coordinates.empty()) {
-        Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
-        global::coordinates = std::vector<Eigen::Vector3d>();
-        for(int i = 0; i < coords.rows(); i++) {
-            Eigen::Vector3d coord;
-            coord << coords(i, 0), coords(i, 1), coords(i, 2);
-            global::coordinates.push_back(coord);
-        }
+    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
+    global::coordinates = std::vector<Eigen::Vector3d>();
+    for(int i = 0; i < coords.rows(); i++) {
+        Eigen::Vector3d coord;
+        coord << coords(i, 0), coords(i, 1), coords(i, 2);
+        global::coordinates.push_back(coord);
     }
     global::indices = read_vector(indices_obj);
 
@@ -404,28 +402,25 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
-// Sets the global nuclei_coordinates and nuclei_charges.
+// Sets the global atom coordinates,nuclei_coordinates and nuclei_charges.
 // args: [coords, charges];
 static PyObject* set_coords_nuc_coords_charges(PyObject* self, PyObject* args) {
     PyObject *coords_obj, *charges_obj, *nuc_coords_obj;
     if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &charges_obj, &nuc_coords_obj)) {
         return NULL;
     }
-    if (global::coordinates.empty()) {
-        Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
-        global::coordinates = std::vector<Eigen::Vector3d>();
-        for(int i = 0; i < coords.rows(); i++) {
-            Eigen::Vector3d coord;
-            coord << coords(i, 0), coords(i, 1), coords(i, 2);
-            global::coordinates.push_back(coord);
-        }
-    }
-
-    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)nuc_coords_obj);
-    global::nuclei_coordinates = std::vector<Eigen::Vector3d>();
+    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
+    global::coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < coords.rows(); i++) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
+        global::coordinates.push_back(coord);
+    }
+    Eigen::MatrixXd nuc_coords = read_matrix((PyArrayObject *)nuc_coords_obj);
+    global::nuclei_coordinates = std::vector<Eigen::Vector3d>();
+    for(int i = 0; i < nuc_coords.rows(); i++) {
+        Eigen::Vector3d coord;
+        coord << nuc_coords(i, 0), nuc_coords(i, 1), nuc_coords(i, 2);
         global::nuclei_coordinates.push_back(coord);
     }
     global::nuclei_charges = read_vector_l(charges_obj);
