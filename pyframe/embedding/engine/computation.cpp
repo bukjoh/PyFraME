@@ -157,12 +157,12 @@ double self_energy(Eigen::MatrixXi idx_arr) {
     {
         double energy_contr = 0.0;
         #pragma omp for
-        for(int k = 0; k < idx_arr.rows(); k++){
-            int i = idx_arr(k, 0);
-            int j = idx_arr(k, 1);
+        for(int k = 0; k < idx_arr.cols(); k++){
+            int i = idx_arr(0, k);
+            int j = idx_arr(1, k);
             if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
                 continue;
-            }
+
             Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
             Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                         global::tensor_template_interaction,
@@ -171,7 +171,7 @@ double self_energy(Eigen::MatrixXi idx_arr) {
         }
     #pragma omp critical
     {
-        self_energy += energy_contr;
+    self_energy += energy_contr;
     }
     }
     return self_energy;

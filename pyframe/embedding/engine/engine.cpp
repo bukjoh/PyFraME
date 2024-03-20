@@ -542,26 +542,36 @@ static PyObject* nuclei_fields(PyObject* self, PyObject* args) {
     return (PyObject *)eigen_matrix_to_numpy(computation::nuclei_fields(start, end));
 }
 
-//Calculates self energy of ClassicalSystem for array of indexes
-//args: [idx_arr] (2D numpy.ndarray of shape [N, 2] with N being the total number of idx pairs)
-static PyObject* self_energy(PyObject* self, PyObject* args) {
-    PyObject *idx_arr_obj;
-    if (!PyArg_ParseTuple(args, "O", &idx_arr_obj)) {
-        return NULL;
-    }
-    // Check if idx_arr_obj is a NumPy array
-    if (!PyArray_Check(idx_arr_obj)) {
-        PyErr_SetString(PyExc_TypeError, "Argument must be a NumPy array.");
-        return NULL;
-    }
 
-    // Check if the array is 2D
-    PyArrayObject* idx_arr_array = (PyArrayObject *)idx_arr_obj;
-    if (PyArray_NDIM(idx_arr_array) != 2) {
-        PyErr_SetString(PyExc_ValueError, "Array must be 2-dimensional.");
+Eigen::MatrixXi generateIdxPairs(int start_index, int end_index) {
+    int num_atoms = static_cast<int>(global::coordinates.size());
+    Eigen::MatrixXi idx_pairs(2, num_atoms * (num_atoms - 1) / 2);
+    int k = 0;
+    for (int i = 0; i < num_atoms; ++i) {
+        for (int j = i + 1; j < num_atoms; ++j) {
+            idx_pairs(0, k) = i;
+            idx_pairs(1, k) = j;
+            k++;
+        }
+    }
+    Eigen::MatrixXi local_idx_pairs(2, end_index - start_index);
+    for (int i = start_index; i < end_index; ++i) {
+        local_idx_pairs.col(i - start_index) = idx_pairs.col(i);
+    }
+    return local_idx_pairs;
+}
+
+
+//Calculates self energy of ClassicalSystem for array of indexes
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* self_energy(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
         return NULL;
     }
-    Eigen::MatrixXi idx_arr = read_matrix_i((PyArrayObject *)idx_arr_obj);
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    Eigen::MatrixXi idx_arr = generateIdxPairs(start, end);
     return PyFloat_FromDouble(computation::self_energy(idx_arr));
 }
 
