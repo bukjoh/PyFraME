@@ -149,4 +149,28 @@ Eigen::MatrixXd multipole_field(int i) {
     return multipole_field;
 }
 
+// Computes the self energy of a ClassicalSubsystem for given array of indexes.
+// Parallelized with OpenMP.
+double self_energy(Eigen::MatrixXi idx_arr) {
+    double self_energy = 0.0;
+    #pragma omp parallel reduction(+:self_energy)
+    {
+        double energy_contr = 0.0;
+        #pragma omp for
+        for(int k = 0; k < idx_arr.rows(); k++){
+            int i = idx_arr(k, 0);
+            int j = idx_arr(k, 1);
+            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                continue;
+            }
+            Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
+            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                        global::tensor_template_interaction,
+                                                        global::multipole_orders[j], global::multipole_orders[i], 0, 0);
+            energy_contr += global::multipoles[j].transpose() * t_tensor * global::multipoles[i];
+        }
+        self_energy += energy_contr;
+    }
+    return self_energy;
+}
 }

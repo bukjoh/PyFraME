@@ -264,7 +264,32 @@ class ClassicalSubsystem(Subsystem):
         """
         # TODO has to be parallelized for multithreading
         if getattr(self, '_self_energy', None) is None:
-            self._self_energy = electrostatic_interactions.compute_classical_self_energy(self.atoms, self.comm)
+            engine.set_multipoles_multipoles_order(self.multipoles_deg_taylor_coeff,
+                                                   self.multipole_orders)
+            engine.set_coords_idxs_exlcs(self.coordinates,
+                                         self.indices,
+                                         self.exclusions)
+            if self.comm is None:
+                idx_pairs = np.array([(i, j) for i in range(self.num_atoms) for j in range(i + 1, self.num_atoms)],
+                                     dtype=np.int64)
+                self._self_energy = engine.self_energy(idx_pairs)
+            else:
+                rank = self.comm.Get_rank()
+                size = self.comm.Get_size()
+                total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
+                # Calculate the number of iterations per process
+                iterations_per_process = total_iterations // size
+                remainder = total_iterations % size
+                # Calculate the start and end indices for this process
+                start_index = rank * iterations_per_process + min(rank, remainder)
+                end_index = start_index + iterations_per_process + (1 if rank < remainder else 0)
+                idx_pairs = np.array([(i, j) for i in range(self.num_atoms) for j in range(i + 1, self.num_atoms)],
+                                     dtype=np.int64)
+                local_idx_pairs = idx_pairs[start_index:end_index, :]
+                local_energy = engine.self_energy(local_idx_pairs)
+                global_energy = self.comm.reduce(local_energy, op=MPI.SUM, root=0)
+                global_energy = self.comm.bcast(global_energy, root=0)
+                self._self_energy = global_energy
         return self._self_energy
 
     def solve_induced_dipoles(self,

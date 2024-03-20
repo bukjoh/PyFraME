@@ -40,6 +40,10 @@ Eigen::MatrixXd nuclei_fields(int start, int end);
 // Parallelized with OpenMP.
 Eigen::MatrixXd multipole_field(int i);
 
+// Computes self energy for given array of indexes
+// Parallelized with OpenMP.
+double self_energy(Eigen::MatrixXi idx_list);
+
 }
 
 #endif

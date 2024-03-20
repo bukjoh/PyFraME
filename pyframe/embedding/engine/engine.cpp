@@ -171,7 +171,7 @@ std::vector<Eigen::MatrixXd> read_tensor(PyArrayObject *tensor_obj)
 
 // Reads a 2D np.ndarray into an Eigen::MatrixXd.
 // matrix_obj: Points to a 2-dimensional np.ndarray containing tensor coefficients
-Eigen::MatrixXd read_matrix(PyArrayObject *matrix_obj)
+Eigen::MatrixXd read_matrix_d(PyArrayObject *matrix_obj)
 {
     if (!PyArray_Check(matrix_obj) || PyArray_NDIM(matrix_obj) != 2)
     {
@@ -189,6 +189,29 @@ Eigen::MatrixXd read_matrix(PyArrayObject *matrix_obj)
     }
     return matrix;
 }
+
+
+// Reads a 2D np.ndarray into an Eigen::MatrixXi.
+// matrix_obj: Points to a 2-dimensional np.ndarray containing tensor coefficients
+Eigen::MatrixXi read_matrix_i(PyArrayObject *matrix_obj)
+{
+    if (!PyArray_Check(matrix_obj) || PyArray_NDIM(matrix_obj) != 2)
+    {
+        PyErr_SetString(PyExc_TypeError, "matrix must be a two-dimensional NumPy array");
+        return Eigen::MatrixXi();
+    }
+    npy_intp u = PyArray_DIM(matrix_obj, 0), v = PyArray_DIM(matrix_obj, 1);
+    Eigen::MatrixXi matrix(u, v);
+    for (int j = 0; j < u; ++j)
+    {
+        for (int k = 0; k < v; ++k)
+        {
+            matrix(j, k) = *(int *)PyArray_GETPTR2((PyArrayObject *)matrix_obj, j, k);
+        }
+    }
+    return matrix;
+}
+
 
 // Reads a 1D np.ndarray into an Eigen::VectorXi.
 Eigen::VectorXi read_vector(PyObject *vector_obj)
@@ -394,7 +417,7 @@ static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &indices_obj, &exclusions_obj)) {
         return NULL;
     }
-    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)coords_obj);
+    Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)coords_obj);
     global::coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < coords.rows(); i++) {
         Eigen::Vector3d coord;
@@ -439,14 +462,14 @@ static PyObject* set_coords_nuc_coords_charges(PyObject* self, PyObject* args) {
     if (!PyArg_ParseTuple(args, "OOO", &atom_coords_obj, &nuc_charges_obj, &nuc_coords_obj)) {
         return NULL;
     }
-    Eigen::MatrixXd coords = read_matrix((PyArrayObject *)atom_coords_obj);
+    Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)atom_coords_obj);
     global::coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < coords.rows(); i++) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
         global::coordinates.push_back(coord);
     }
-    Eigen::MatrixXd nuc_coords = read_matrix((PyArrayObject *)nuc_coords_obj);
+    Eigen::MatrixXd nuc_coords = read_matrix_d((PyArrayObject *)nuc_coords_obj);
     global::nuclei_coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < nuc_coords.rows(); i++) {
         Eigen::Vector3d coord;
@@ -466,7 +489,7 @@ static PyObject *set_old_ind_dipoles(PyObject *self, PyObject *args)
     {
         return NULL;
     }
-    global::old_ind_dipoles = read_matrix((PyArrayObject *)old_ind_dipoles_obj);
+    global::old_ind_dipoles = read_matrix_d((PyArrayObject *)old_ind_dipoles_obj);
     Py_RETURN_NONE;
 }
 
@@ -508,7 +531,7 @@ static PyObject* multipole_fields(PyObject* self, PyObject* args) {
 }
 
 //Calculates the induced dipoles for atom at index i
-//args: [start, end] (numpy.ndarray with i as only entry)
+//args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* nuclei_fields(PyObject* self, PyObject* args) {
     PyObject *start_end_obj;
     if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
@@ -517,6 +540,29 @@ static PyObject* nuclei_fields(PyObject* self, PyObject* args) {
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
     return (PyObject *)eigen_matrix_to_numpy(computation::nuclei_fields(start, end));
+}
+
+//Calculates self energy of ClassicalSystem for array of indexes
+//args: [idx_arr] (2D numpy.ndarray of shape [N, 2] with N being the total number of idx pairs)
+static PyObject* self_energy(PyObject* self, PyObject* args) {
+    PyObject *idx_arr_obj;
+    if (!PyArg_ParseTuple(args, "O", &idx_arr_obj)) {
+        return NULL;
+    }
+    // Check if idx_arr_obj is a NumPy array
+    if (!PyArray_Check(idx_arr_obj)) {
+        PyErr_SetString(PyExc_TypeError, "Argument must be a NumPy array.");
+        return NULL;
+    }
+
+    // Check if the array is 2D
+    PyArrayObject* idx_arr_array = (PyArrayObject *)idx_arr_obj;
+    if (PyArray_NDIM(idx_arr_array) != 2) {
+        PyErr_SetString(PyExc_ValueError, "Array must be 2-dimensional.");
+        return NULL;
+    }
+    Eigen::MatrixXi idx_arr = read_matrix_i((PyArrayObject *)idx_arr_obj);
+    return PyFloat_FromDouble(computation::self_energy(idx_arr));
 }
 
 
@@ -533,15 +579,17 @@ static PyMethodDef module_methods[] = {
     {"set_old_ind_dipoles", set_old_ind_dipoles, METH_VARARGS,
      "Sets the old induced dipole fields for the calculation of the induced dipoles."},
     {"ind_dipoles_fields", ind_dipoles_fields, METH_VARARGS,
-     "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions"},
+     "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions."},
      {"set_coords_nuc_coords_charges", set_coords_nuc_coords_charges, METH_VARARGS,
      "Sets atom coordinates, nuclear coordinates, and nuclear charges for the calculation of nuclei fields."},
      {"nuclei_fields", nuclei_fields, METH_VARARGS,
-     "Calculates the field of the nuclei on atoms defined with start and end. Previously set nuclei_coords and nuclei_charges"},
+     "Calculates the field of the nuclei on atoms defined with start and end. Previously set nuclei_coords and nuclei_charges."},
      {"set_multipoles_multipoles_order", set_multipoles_multipoles_order, METH_VARARGS,
      "Sets multipoles with degeneracy and taylor coefficient and the multipole orders."},
      {"multipole_fields", multipole_fields, METH_VARARGS,
-     "Calculates the field of the multipoles at atom i. Previously set coords, idxs, exclusions, multipoles, multipole_orders"},
+     "Calculates the field of the multipoles at atom i. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
+     {"self_energy", self_energy, METH_VARARGS,
+     "Calculates the self energy of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
     {NULL, NULL, 0, NULL}};
 
 // Module definition
