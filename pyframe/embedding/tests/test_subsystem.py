@@ -104,7 +104,8 @@ class TestClassicalSubsystem:
     def test_self_energy(self,
                          wat_wat,
                          acrolein_wat,
-                         act_wat_big
+                         act_wat_big,
+                         act_wat
                          ):
         assert self.env.self_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
         core_wat, env_wat = wat_wat
@@ -115,6 +116,8 @@ class TestClassicalSubsystem:
         # value tested against dalton with pelib
         core_act, env_act = act_wat_big
         assert pytest.approx(-5.200360556757, abs=1e-8) == env_act.self_energy
+        core_act_t, env_act_t = act_wat
+        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == env_act_t.self_energy
 
     def test_static_potential(self):
         ref_pot = np.array([0.00158312, 0.00097756, 0.00153459,
