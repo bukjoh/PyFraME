@@ -153,7 +153,7 @@ Eigen::MatrixXd multipole_field(int i) {
 // Parallelized with OpenMP.
 double self_energy(Eigen::MatrixXi idx_arr) {
     double self_energy = 0.0;
-    #pragma omp parallel reduction(+:self_energy)
+    #pragma omp parallel
     {
         double energy_contr = 0.0;
         #pragma omp for
@@ -169,7 +169,10 @@ double self_energy(Eigen::MatrixXi idx_arr) {
                                                         global::multipole_orders[j], global::multipole_orders[i], 0, 0);
             energy_contr += global::multipoles[j].transpose() * t_tensor * global::multipoles[i];
         }
+    #pragma omp critical
+    {
         self_energy += energy_contr;
+    }
     }
     return self_energy;
 }
