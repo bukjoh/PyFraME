@@ -162,7 +162,7 @@ double self_energy(Eigen::MatrixXi idx_arr) {
             int j = idx_arr(1, k);
             if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
                 continue;
-
+            }
             Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
             Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                         global::tensor_template_interaction,
