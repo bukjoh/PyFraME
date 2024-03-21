@@ -176,4 +176,30 @@ double self_energy(Eigen::MatrixXi idx_arr) {
     }
     return self_energy;
 }
+
+// Computes the energy between all atoms and the nuclei.
+// Parallelized with OpenMP.
+double e_nuc_es(int start, int end) {
+    double e_nuc_es = 0.0;
+    int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
+    #pragma omp parallel
+    {
+        double energy_contr = 0.0;
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            for(int i = 0; i < no_nuclei; i++) {
+                Eigen::Vector3d r_ab = global::nuclei_coordinates[i] - global::coordinates[j];
+                Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                            global::tensor_template_potential,
+                                                            global::multipole_orders[j], 0, 0, 0);
+                energy_contr += (global::multipoles[j].transpose() * t_tensor * global::nuclei_charges[i])[0];
+            }
+        }
+        #pragma omp critical
+        {
+            e_nuc_es += energy_contr;
+        }
+    }
+    return e_nuc_es;
+}
 }

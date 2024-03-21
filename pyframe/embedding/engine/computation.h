@@ -44,6 +44,10 @@ Eigen::MatrixXd multipole_field(int i);
 // Parallelized with OpenMP.
 double self_energy(Eigen::MatrixXi idx_list);
 
+// Computes the energy between all atoms and the nuclei.
+// Parallelized with OpenMP.
+double e_nuc_es(int start, int end);
+
 }
 
 #endif

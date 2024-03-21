@@ -575,6 +575,18 @@ static PyObject* self_energy(PyObject* self, PyObject* args) {
     return PyFloat_FromDouble(computation::self_energy(idx_arr));
 }
 
+//Calculates self energy of ClassicalSystem for array of indexes
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* e_nuc_es(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return PyFloat_FromDouble(computation::e_nuc_es(start, end));
+}
+
 
 // Method table for the module
 static PyMethodDef module_methods[] = {
@@ -600,6 +612,8 @@ static PyMethodDef module_methods[] = {
      "Calculates the field of the multipoles at atom i. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
      {"self_energy", self_energy, METH_VARARGS,
      "Calculates the self energy of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
+     {"e_nuc_es", e_nuc_es, METH_VARARGS,
+     "Calculates the electrostatic energy between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},
     {NULL, NULL, 0, NULL}};
 
 // Module definition

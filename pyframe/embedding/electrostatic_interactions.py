@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pyframe.embedding import polytensor, particle, fragment, subsystem
+from pyframe.embedding import polytensor, particle, fragment, subsystem, engine
 from typing import Union, Any, Tuple
 from mpi4py import MPI
 
@@ -94,16 +94,49 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
         nuclear_energy = 0
         for c_subsystem in classical_subsystem:
             # E_nuc_es
-            for nucleus in quantum_subsystem.nuclei:
-                nuclear_energy += (c_subsystem.static_potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+            if c_subsystem.comm is None:
+                engine.set_multipoles_multipoles_order(c_subsystem.multipoles_deg_taylor_coeff,
+                                                       c_subsystem.multipole_orders)
+                engine.set_coords_nuc_coords_charges(c_subsystem.coordinates,
+                                                     quantum_subsystem.charges,
+                                                     quantum_subsystem.coordinates)
+                nuclear_energy = engine.e_nuc_es(np.array([0, len(c_subsystem.coordinates)], dtype=np.int64))
+            else:
+                engine.set_multipoles_multipoles_order(c_subsystem.multipoles_deg_taylor_coeff,
+                                                       c_subsystem.multipole_orders)
+                engine.set_coords_nuc_coords_charges(c_subsystem.coordinates,
+                                                     quantum_subsystem.charges,
+                                                     quantum_subsystem.coordinates)
+                avg, res = divmod(len(c_subsystem.coordinates), c_subsystem.size)
+                counts = [avg + 1 if p < res else avg for p in range(c_subsystem.size)]
+                start = sum(counts[:c_subsystem.rank])
+                end = sum(counts[:c_subsystem.rank + 1])
+                nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
             # F_el_es
             fock_matrix = es_fock_matrix_contributions(classical_subsystem=c_subsystem,
                                                        integral_drv=integral_drv)
     else:
-        nuclear_energy = 0
         # E_nuc_es
-        for nucleus in quantum_subsystem.nuclei:
-            nuclear_energy += (classical_subsystem.static_potential(coordinate=nucleus.coordinate) * nucleus.charge)[0]
+        if classical_subsystem.comm is None:
+            engine.set_multipoles_multipoles_order(classical_subsystem.multipoles_deg_taylor_coeff,
+                                                   classical_subsystem.multipole_orders)
+            engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                                 quantum_subsystem.charges,
+                                                 quantum_subsystem.coordinates)
+            nuclear_energy = engine.e_nuc_es(np.array([0, len(classical_subsystem.coordinates)], dtype=np.int64))
+        else:
+            engine.set_multipoles_multipoles_order(classical_subsystem.multipoles_deg_taylor_coeff,
+                                                   classical_subsystem.multipole_orders)
+            engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                                 quantum_subsystem.charges,
+                                                 quantum_subsystem.coordinates)
+            avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.size)
+            counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.size)]
+            start = sum(counts[:classical_subsystem.rank])
+            end = sum(counts[:classical_subsystem.rank + 1])
+            nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
+
+
         # F_el_es
         fock_matrix = es_fock_matrix_contributions(classical_subsystem=classical_subsystem,
                                                    integral_drv=integral_drv)

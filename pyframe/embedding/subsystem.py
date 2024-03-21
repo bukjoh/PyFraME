@@ -97,7 +97,6 @@ class QuantumSubsystem(Subsystem):
         Returns:
             Array of nuclear fields on the different coordinates.
         """
-        # TODO has to be parallelized for multithreading
         engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
         if self.comm is not None:
             avg, res = divmod(len(coordinates), self.size)
