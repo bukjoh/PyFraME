@@ -68,21 +68,24 @@ Eigen::MatrixXd compute_t_tensor(
 
 // Computes the field caused by induced dipoles at atom i.
 // Parallelized with OpenMP.
-Eigen::MatrixXd ind_dipoles_field(int i) {
-    Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(3, 1);
+Eigen::MatrixXd ind_dipoles_field(int start, int end) {
+    int no_atoms = static_cast<int>(global::coordinates.size());
+    Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(no_atoms, 3);
     #pragma omp parallel
     {
-        Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(3, 1);
-        #pragma omp for
-        for(long j = 0; j < (long)global::coordinates.size(); j++) {
-            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
-                continue;
+        Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(no_atoms, 3);
+        for(int i = start; i < end; i++) {
+            #pragma omp for
+            for(int j = 0; j < no_atoms; j++) {
+                if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                    continue;
+                }
+                Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
+                Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                            global::tensor_template_potential,
+                                                            1, 1, 1, 1);
+                field_part.row(i) += (t_tensor * global::old_ind_dipoles.row(j).transpose()).transpose(); // (writes to 3,1)
             }
-            Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
-            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
-                                                        global::tensor_template_potential,
-                                                        1, 1, 1, 1);
-            field_part += t_tensor * global::old_ind_dipoles.row(j).transpose();
         }
         #pragma omp critical
         {

@@ -84,10 +84,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
         engine.set_old_ind_dipoles(old_ind_dipoles)
         if iteration > max_iterations:
             raise RuntimeError("Did not converge after the maximum number of iterations.")
-        for i, coordinate_i in enumerate(coordinates):
-            # TODO omp parallelize the outer loop with and without mpi
-            new_fields[i, :] = engine.ind_dipoles_fields(np.array([i], dtype=np.int64)).T
-
+        new_fields = engine.ind_dipoles_fields(np.array([0, len(coordinates)], dtype=np.int64))
         # Calculate total induced dipoles
         for i, new_field in enumerate(new_fields):
             ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
@@ -136,31 +133,20 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
     residue_norm = sys.float_info.max
     max_residue_norm = sys.float_info.max
     iteration = 0
-    ind_dipoles_local = np.zeros([len(fields), 3])
-    ind_dipoles_global = np.zeros([len(fields), 3])
+    ind_dipoles = np.zeros([len(fields), 3])
+    new_fields_local = np.zeros([len(fields), 3])
+    new_fields_global = np.zeros([len(fields), 3])
     while not (residue_norm < threshold and max_residue_norm < threshold):
         iteration += 1
+        engine.set_old_ind_dipoles(old_ind_dipoles)
         if iteration > max_iterations:
             raise RuntimeError("Did not converge after the maximum number of iterations.")
-        for i in range(start, end):
-            ind_dipoles_fields = np.zeros(3)
-            for j, coordinate_j in enumerate(coordinates):
-                if indices[j] in exclusions[i]:
-                    continue
-                # TODO cache compute t tensor if cutoff distance for interacting multipoles (Domänen)
-                ind_dipoles_fields += np.einsum('ij, j', interaction_tensor.
-                                                compute_t_tensor(r_a=coordinate_j,
-                                                                 r_b=coordinates[i],
-                                                                 rank_a=1,
-                                                                 rank_b=1,
-                                                                 start_rank_a=1,
-                                                                 start_rank_b=1,
-                                                                 is_potential=True).data,
-                                                old_ind_dipoles[j])
-            ind_dipoles_local[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(ind_dipoles_fields,
-                                                                                     fields[i]))
-        comm.Allreduce(ind_dipoles_local, ind_dipoles_global, op=MPI.SUM)
-        residue_norm = np.linalg.norm(ind_dipoles_global - old_ind_dipoles)
-        max_residue_norm = np.max(np.abs(ind_dipoles_global - old_ind_dipoles))
-        old_ind_dipoles = copy.deepcopy(ind_dipoles_global)
-    return ind_dipoles_global, iteration
+        new_fields_local = engine.ind_dipoles_fields(np.array([start, end], dtype=np.int64))
+        comm.Allreduce(new_fields_local, new_fields_global, op=MPI.SUM)
+        # Calculate total induced dipoles
+        for i, new_field in enumerate(new_fields_global):
+            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
+        residue_norm = np.linalg.norm(ind_dipoles - old_ind_dipoles)
+        max_residue_norm = np.max(np.abs(ind_dipoles - old_ind_dipoles))
+        old_ind_dipoles = copy.deepcopy(ind_dipoles)
+    return ind_dipoles, iteration

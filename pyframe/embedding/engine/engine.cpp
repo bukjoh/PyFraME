@@ -508,15 +508,16 @@ static PyObject *set_multipoles_multipoles_order(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-//Calculates the induced dipoles for atom at index i
-//args: [[i]] (numpy.ndarray with i as only entry)
+//Calculates the induced dipoles from start to end
+//args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
-    PyObject *i_obj;
-    if (!PyArg_ParseTuple(args, "O", &i_obj)) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
         return NULL;
     }
-    int i = (int)read_vector(i_obj)(0);
-    return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(i));
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(start, end));
 }
 
 //Calculates the multipole fields for atom at index i

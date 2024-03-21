@@ -5,10 +5,10 @@ import numpy as np
 try:
     from pyframe.embedding import engine
 
-    print('Using cpp_interaction_tensor_element.')
+    print('Using cpp engine.')
     cpp_tool = True
 except ImportError:
-    print('Unable to import cpp_interaction_tensor_element. Please compile engine. Using Python'
+    print('Unable to import cpp engine. Please compile engine. Using Python'
           ' version instead.')
     from pyframe.embedding import tensor_tools
 
@@ -59,8 +59,6 @@ def compute_t_tensor_py(r_a: np.ndarray,
     if cpp_tool:
         for i in range(start_a, end_a):
             for j in range(start_b, end_b):
-                # TODO calculate a block with a c++ function and insert it here with the "blockwise" function
-                # TODO benefit is also it t_tensor is actually larger for Multipole-Multipole tensor.
                 interaction_element = engine.compute_interaction_tensor_element(
                     tensor_template[i, j], r_ab)
                 interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)
