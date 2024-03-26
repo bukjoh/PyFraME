@@ -588,6 +588,80 @@ static PyObject* e_nuc_es(PyObject* self, PyObject* args) {
     return PyFloat_FromDouble(computation::e_nuc_es(start, end));
 }
 
+// Sets the global LJ 6-12 parameters sigma and epsilon for a ClassicalSubsystem and QuantumSubsystem.
+// args: [classical_sigmas, classical_epsilons, quantum_sigmas, quantum_epsilons];
+static PyObject* set_atoms_nuclei_coordinates_lj_sigma_epsilon(PyObject* self, PyObject* args) {
+    PyObject *classical_sigmas_obj, *classical_epsilons_obj, *atom_coords_obj, *quantum_sigmas_obj, *quantum_epsilons_obj, *nuc_coords_obj;
+    if (!PyArg_ParseTuple(args, "OOOOOO", &classical_sigmas_obj, &classical_epsilons_obj, &atom_coords_obj, &quantum_sigmas_obj, &quantum_epsilons_obj, &nuc_coords_obj)) {
+        return NULL;
+    }
+    global::classical_sigmas = read_vector_d(classical_sigmas_obj);
+    global::classical_epsilons = read_vector_d(classical_epsilons_obj);
+    global::quantum_sigmas = read_vector_d(quantum_sigmas_obj);
+    global::quantum_epsilons = read_vector_d(quantum_epsilons_obj);
+        Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)atom_coords_obj);
+    global::coordinates = std::vector<Eigen::Vector3d>();
+    for(int i = 0; i < coords.rows(); i++) {
+        Eigen::Vector3d coord;
+        coord << coords(i, 0), coords(i, 1), coords(i, 2);
+        global::coordinates.push_back(coord);
+    }
+    Eigen::MatrixXd nuc_coords = read_matrix_d((PyArrayObject *)nuc_coords_obj);
+    global::nuclei_coordinates = std::vector<Eigen::Vector3d>();
+    for(int i = 0; i < nuc_coords.rows(); i++) {
+        Eigen::Vector3d coord;
+        coord << nuc_coords(i, 0), nuc_coords(i, 1), nuc_coords(i, 2);
+        global::nuclei_coordinates.push_back(coord);
+    }
+    Py_RETURN_NONE;
+}
+
+static PyObject* set_combination_rule(PyObject* self, PyObject* args) {
+    PyObject *combination_rule_obj;
+
+    if (!PyArg_ParseTuple(args, "O", &combination_rule_obj)) {
+        return NULL;
+    }
+    if (!PyUnicode_Check(combination_rule_obj)) {
+        PyErr_SetString(PyExc_TypeError, "Expected a string object");
+        throw std::invalid_argument("Expected a string object");
+    }
+    // Get the UTF-8 encoded string data from the Python string
+    const char* utf8Str = PyUnicode_AsUTF8(combination_rule_obj);
+    if (!utf8Str) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to convert Python string to UTF-8");
+        throw std::runtime_error("Failed to convert Python string to UTF-8");
+    }
+    // Create a C++ std::string from the UTF-8 encoded data
+    global::combination_rule = std::string(utf8Str);
+    Py_RETURN_NONE;
+}
+
+
+// Computes the VdW potential between a ClassicalSubsystem and a QuantumSubsystem.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* unperturbed_lj_repulsion(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return PyFloat_FromDouble(computation::compute_unperturbed_lj_repulsion(start, end, global::combination_rule));
+}
+
+// Computes the VdW potential between a ClassicalSubsystem and a QuantumSubsystem.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* unperturbed_lj_dispersion(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return PyFloat_FromDouble(computation::compute_unperturbed_lj_dispersion(start, end, global::combination_rule));
+}
+
 
 // Method table for the module
 static PyMethodDef module_methods[] = {
@@ -615,6 +689,14 @@ static PyMethodDef module_methods[] = {
      "Calculates the self energy of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
      {"e_nuc_es", e_nuc_es, METH_VARARGS,
      "Calculates the electrostatic energy between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},
+     {"set_atoms_nuclei_coordinates_lj_sigma_epsilon", set_atoms_nuclei_coordinates_lj_sigma_epsilon, METH_VARARGS,
+     "Sets the LJ 6-12 parameters of a ClassicalSubsystem and a QuantumSubsystem."},
+     {"set_combination_rule", set_combination_rule, METH_VARARGS,
+     "Sets the combination rule for non-bonded VdW interactions."},
+     {"unperturbed_lj_repulsion", unperturbed_lj_repulsion, METH_VARARGS,
+     "Computes the LJ repulsion between a ClassicalSubsystem and a QuantumSubsystem."},
+     {"unperturbed_lj_dispersion", unperturbed_lj_dispersion, METH_VARARGS,
+     "Computes the LJ repulsion between a ClassicalSubsystem and a QuantumSubsystem."},
     {NULL, NULL, 0, NULL}};
 
 // Module definition

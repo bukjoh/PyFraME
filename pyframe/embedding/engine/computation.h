@@ -48,6 +48,21 @@ double self_energy(Eigen::MatrixXi idx_list);
 // Parallelized with OpenMP.
 double e_nuc_es(int start, int end);
 
+// Uses the Lorentz-Berthelot combination rules for non-bonded VdW interactions.
+std::tuple<double, double> LB_combination(double sigma_i, double sigma_j, double epsilon_i, double epsilon_j);
+
+// Computes the LJ repulsion potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Parallelized with OpenMP.
+double compute_unperturbed_lj_repulsion(int start, int end, std::string combination_rule);
+
+// Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Parallelized with OpenMP.
+double compute_unperturbed_lj_dispersion(int start, int end, std::string combination_rule);
+
+// Computes the VdW potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Parallelized with OpenMP.
+//double e_vdw_unpert(int start, int end);
+
 }
 
 #endif

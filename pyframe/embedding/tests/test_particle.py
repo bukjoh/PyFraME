@@ -30,7 +30,8 @@ class TestAtom:
         exclusions = [2, 3]
         mass = 12.01
         element = "C"
-        vdw = {'vdw_method': "6-12", 'lj_sigma': 3.0, 'lj_epsilon': 0.5}
+        repulsion = {'method': "LJ", 'parameters': {'lj_sigma': 2.0, 'lj_epsilon': 3.0}}
+        dispersion = {'method': "LJ", 'parameters': {'lj_sigma': 2.0, 'lj_epsilon': 3.0}}
         multipoles = {'elements': [-0.71543374,
                                    0.11412407,
                                    -0.27166543,
@@ -61,7 +62,8 @@ class TestAtom:
                              exclusions=exclusions,
                              mass=mass,
                              element=element,
-                             vdw=vdw,
+                             repulsion=repulsion,
+                             dispersion=dispersion,
                              multipoles=multipoles,
                              polarizabilities=polarizabilities)
         assert atom.index == index
@@ -71,9 +73,10 @@ class TestAtom:
         assert atom.exclusions == tuple(exclusions)
         assert atom._mass == mass
         assert atom._element == element
-        assert atom._vdw_method == vdw['vdw_method']
-        assert atom._lj_sigma == vdw['lj_sigma']
-        assert atom._lj_epsilon == vdw['lj_epsilon']
+        assert atom.repulsion == repulsion['method']
+        assert atom.rep_parameters == repulsion['parameters']
+        assert atom.dispersion == dispersion['method']
+        assert atom.disp_parameters == dispersion['parameters']
         assert atom.multipole_order == multipoles['order']
         assert isinstance(atom.multipoles, polytensor.FirstDegreePolytensor)
         assert np.array_equal(atom.polarizability_order, polarizabilities['order'])

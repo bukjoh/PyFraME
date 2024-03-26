@@ -52,7 +52,8 @@ class Atom(Particle):
                  exclusions: Optional[list] = None,
                  mass: Optional[float] = None,
                  element: Optional[str] = None,
-                 vdw: Optional[dict] = None,
+                 repulsion: Optional[dict] = None,
+                 dispersion: Optional[dict] = None,
                  multipoles: Optional[dict] = None,
                  polarizabilities: Optional[dict] = None,
                  ):
@@ -64,10 +65,12 @@ class Atom(Particle):
         if exclusions is not None and isinstance(exclusions, list):
             self.exclusions = tuple(exclusions)
         self._element = element
-        if vdw is not None:
-            self._vdw_method = vdw.get('vdw_method', None)
-            self._lj_sigma = vdw.get('lj_sigma', None)
-            self._lj_epsilon = vdw.get('lj_epsilon', None)
+        if repulsion is not None:
+            self.repulsion = repulsion.get('method', None)
+            self.rep_parameters = repulsion.get('parameters', None)
+        if dispersion is not None:
+            self.dispersion = dispersion.get('method', None)
+            self.disp_parameters = dispersion.get('parameters', None)
         if multipoles is not None:
             m_elements = np.array(multipoles.get('elements', None))
             if multipoles.get('order', None) is None:
@@ -176,7 +179,8 @@ class Nucleus(Particle):
                  name: Optional[str] = None,
                  mass: Optional[float] = None,
                  element: Optional[str] = None,
-                 vdw: Optional[dict] = None,
+                 repulsion: Optional[dict] = None,
+                 dispersion: Optional[dict] = None,
                  ):
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
         self.name = name
@@ -187,10 +191,12 @@ class Nucleus(Particle):
                 raise ValueError("Element does not match Charge.")
         else:
             self._element = self.charge_to_element()
-        if vdw is not None:
-            self._vdw_method = vdw.get('vdw_method', None)
-            self._lj_sigma = vdw.get('lj_sigma', None)
-            self._lj_epsilon = vdw.get('lj_epsilon', None)
+        if repulsion is not None:
+            self.repulsion = repulsion.get('method', None)
+            self.rep_parameters = repulsion.get('parameters', None)
+        if dispersion is not None:
+            self.dispersion = dispersion.get('method', None)
+            self.disp_parameters = dispersion.get('parameters', None)
 
     def charge_to_element(self) -> str:
         """Identifies the element string from its corresponding nuclear charge.

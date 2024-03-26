@@ -20,6 +20,13 @@ std::vector<Eigen::Vector3d> nuclei_coordinates;
 //global variables required for MultipoleFields
 Eigen::VectorXi multipole_orders;
 std::vector<Eigen::VectorXd> multipoles;
+// global variables required for LJ VdW-Interaction
+Eigen::VectorXd quantum_sigmas;
+Eigen::VectorXd quantum_epsilons;
+Eigen::VectorXd classical_sigmas;
+Eigen::VectorXd classical_epsilons;
+std::string combination_rule;
+
 
 
 }

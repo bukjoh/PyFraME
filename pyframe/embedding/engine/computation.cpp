@@ -205,4 +205,110 @@ double e_nuc_es(int start, int end) {
     }
     return e_nuc_es;
 }
+
+// Uses the Lorentz-Berthelot combination rules for non-bonded VdW interactions.
+std::tuple<double, double> LB_combination(double sigma_i, double sigma_j, double epsilon_i, double epsilon_j) {
+    double comb_sigma = 0.5 * (sigma_i + sigma_j);
+    double comb_epsilon = std::sqrt(epsilon_i * epsilon_j);
+    return std::make_tuple(comb_sigma, comb_epsilon);
+}
+
+
+// Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Parallelized with OpenMP.
+double compute_unperturbed_lj_dispersion(int start, int end, std::string combination_rule) {
+    double unperturbed_lj_dispersion = 0.0;
+    std::tuple<double, double> combined_sigma_epsilon;
+    int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
+    #pragma omp parallel
+    {
+        double energy_contr = 0.0;
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            for(int i = 0; i < no_nuclei; i++) {
+            if (combination_rule == "Lorentz-Berthelot") {
+                 combined_sigma_epsilon = LB_combination(global::quantum_sigmas[i],
+                                                         global::classical_sigmas[j],
+                                                         global::quantum_epsilons[i],
+                                                         global::classical_epsilons[j]);
+            }
+            double sigma = std::get<0>(combined_sigma_epsilon);
+            double epsilon = std::get<1>(combined_sigma_epsilon);
+            double recip_distance = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                      global::tensor_template_potential,
+                                                      0, 0, 0, 0)(0,0);
+            energy_contr += epsilon * std::pow(sigma, 6) * std::pow(recip_distance, 6);
+            }
+        }
+        #pragma omp critical
+        {
+            unperturbed_lj_dispersion += energy_contr;
+        }
+    }
+    return (-1) * 4 * unperturbed_lj_dispersion;
+}
+
+// Computes the LJ repulsion potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Parallelized with OpenMP.
+double compute_unperturbed_lj_repulsion(int start, int end, std::string combination_rule) {
+    double unperturbed_lj_repulsion = 0.0;
+    std::tuple<double, double> combined_sigma_epsilon;
+    int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
+    #pragma omp parallel
+    {
+        double energy_contr = 0.0;
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            for(int i = 0; i < no_nuclei; i++) {
+            if (combination_rule == "Lorentz-Berthelot") {
+                 combined_sigma_epsilon = LB_combination(global::quantum_sigmas[i],
+                                                         global::classical_sigmas[j],
+                                                         global::quantum_epsilons[i],
+                                                         global::classical_epsilons[j]);
+            }
+            double sigma = std::get<0>(combined_sigma_epsilon);
+            double epsilon = std::get<1>(combined_sigma_epsilon);
+            double recip_distance = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                     global::tensor_template_potential,
+                                                     0, 0, 0, 0)(0,0);
+                energy_contr += epsilon * std::pow(sigma, 12) * std::pow(recip_distance, 12);
+            }
+        }
+        #pragma omp critical
+        {
+            unperturbed_lj_repulsion += energy_contr;
+        }
+    }
+    return 4 * unperturbed_lj_repulsion;
+}
+
+// Computes the first order geometric perturbations of the VdW potential of a QuantumSubsystem interacting with a ClassicalSubsystem.
+// Parallelized with OpenMP.
+//double e_vdw_first_order_pert(int start, int end) {
+//    double e_vdw_first_order_pert = 0.0;
+//    int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
+//    #pragma omp parallel
+//    {
+//        double energy_contr = 0.0;
+//        #pragma omp for
+//        for(int j = start; j < end; j++){
+//            for(int i = 0; i < no_nuclei; i++) {
+//                double epsilon = std::sqrt(global::quantum_epsilons[i] * global::classical_epsilons[j]);
+//                double sigma = 0.5 * (global::quantum_sigmas[i] + global::classical_sigmas[j]);
+//                Eigen::Vector3d recip_distance = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+//                                                         global::tensor_template_potential,
+//                                                         1, 0, 1, 0);
+//                double repulsion = calc_unpert_repulsion_contr(sigma, recip_distance);
+//                double dispersion = calc_unpert_dispersion_contr(sigma, recip_distance);
+//                energy_contr += epsilon * (repulsion - dispersion);
+//            }
+//        }
+//        #pragma omp critical
+//        {
+//            e_vdw_unpert += energy_contr;
+//        }
+//    }
+//    return 4 * e_vdw_unpert;
+//}
+
 }

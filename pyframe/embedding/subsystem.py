@@ -4,7 +4,7 @@ import numpy as np
 
 from mpi4py import MPI
 from dataclasses import dataclass
-from typing import Optional, Any
+from typing import Optional, Any, Tuple
 from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions, engine, polytensor
 
 
@@ -48,13 +48,49 @@ class QuantumSubsystem(Subsystem):
         self.quantum_fragments = quantum_fragments
         self.coordinates = np.zeros([self.num_nuclei, 3], dtype=np.float64)
         self.charges = np.zeros([self.num_nuclei], dtype=np.float64)
-        for i, nucleus in enumerate(nuclei):
+        self._rep_lj_sigma = None
+        self._rep_lj_epsilon = None
+        self._disp_lj_sigma = None
+        self._disp_lj_epsilon = None
+        for i, nucleus in enumerate(self.nuclei):
             self.coordinates[i, :] = nucleus.coordinate[:]
             self.charges[i] = nucleus.charge[0]
         if self.comm is not None:
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
+    
+    @property
+    def rep_lj_sigma(self) -> np.ndarray:
+        if getattr(self, '_rep_lj_sigma', None) is None:
+            self._rep_lj_sigma = np.zeros([self.num_nuclei], dtype=np.float64)
+            for i, nucleus in enumerate(self.nuclei):
+                self._rep_lj_sigma[i] = nucleus.rep_parameters['lj_sigma']
+        return self._rep_lj_sigma
 
+    @property
+    def rep_lj_epsilon(self) -> np.ndarray:
+        if getattr(self, '_rep_lj_epsilon', None) is None:
+            self._rep_lj_epsilon = np.zeros([self.num_nuclei], dtype=np.float64)
+            for i, nucleus in enumerate(self.nuclei):
+                self._rep_lj_epsilon[i] = nucleus.rep_parameters['lj_epsilon']
+        return self._rep_lj_epsilon
+
+    @property
+    def disp_lj_sigma(self) -> np.ndarray:
+        if getattr(self, '_disp_lj_sigma', None) is None:
+            self._disp_lj_sigma = np.zeros([self.num_nuclei], dtype=np.float64)
+            for i, nucleus in enumerate(self.nuclei):
+                self._disp_lj_sigma[i] = nucleus.disp_parameters['lj_sigma']
+        return self._disp_lj_sigma
+
+    @property
+    def disp_lj_epsilon(self) -> np.ndarray:
+        if getattr(self, '_disp_lj_epsilon', None) is None:
+            self._disp_lj_epsilon = np.zeros([self.num_nuclei], dtype=np.float64)
+            for i, nucleus in enumerate(self.nuclei):
+                self._disp_lj_epsilon[i] = nucleus.disp_parameters['lj_epsilon']
+        return self._disp_lj_epsilon
+    
     def static_potential(self,
                          coordinate: np.ndarray,
                          pot_derivative_order: Optional[int] = 0,
@@ -162,6 +198,10 @@ class ClassicalSubsystem(Subsystem):
         self.exclusions = []
         self.atoms = []
         self.charges = np.zeros([self.num_atoms], dtype=np.float64)
+        self._rep_lj_sigma = None
+        self._rep_lj_epsilon = None
+        self._disp_lj_sigma = None
+        self._disp_lj_epsilon = None
         self.multipoles_deg_taylor_coeff = []
         self.multipole_orders = np.zeros([self.num_atoms], dtype=np.int64)
         k = 0
@@ -189,6 +229,38 @@ class ClassicalSubsystem(Subsystem):
         if self.comm is not None:
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
+
+    @property
+    def rep_lj_sigma(self) -> np.ndarray:
+        if getattr(self, '_rep_lj_sigma', None) is None:
+            self._rep_lj_sigma = np.zeros([self.num_atoms], dtype=np.float64)
+            for i, atom in enumerate(self.atoms):
+                self._rep_lj_sigma[i] = atom.rep_parameters['lj_sigma']
+        return self._rep_lj_sigma
+
+    @property
+    def rep_lj_epsilon(self) -> np.ndarray:
+        if getattr(self, '_rep_lj_epsilon', None) is None:
+            self._rep_lj_epsilon = np.zeros([self.num_atoms], dtype=np.float64)
+            for i, atom in enumerate(self.atoms):
+                self._rep_lj_epsilon[i] = atom.rep_parameters['lj_epsilon']
+        return self._rep_lj_epsilon
+
+    @property
+    def disp_lj_sigma(self) -> np.ndarray:
+        if getattr(self, '_disp_lj_sigma', None) is None:
+            self._disp_lj_sigma = np.zeros([self.num_atoms], dtype=np.float64)
+            for i, atom in enumerate(self.atoms):
+                self._disp_lj_sigma[i] = atom.disp_parameters['lj_sigma']
+        return self._disp_lj_sigma
+
+    @property
+    def disp_lj_epsilon(self) -> np.ndarray:
+        if getattr(self, '_disp_lj_epsilon', None) is None:
+            self._disp_lj_epsilon = np.zeros([self.num_atoms], dtype=np.float64)
+            for i, atom in enumerate(self.atoms):
+                self._disp_lj_epsilon[i] = atom.disp_parameters['lj_epsilon']
+        return self._disp_lj_epsilon
 
     @property
     def multipole_fields(self):

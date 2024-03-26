@@ -1,0 +1,84 @@
+{
+  "quantum_subsystem": {
+    "name": "QM sys",
+    "nuclei": [
+      {
+        "index": 1,
+        "element": "O",
+        "charge": 8.0,
+        "coordinate": [
+          -6.29004978e+00,
+          -1.95076428e-01,
+          -7.86126068e-04
+        ],
+        "repulsion": {
+        "method": "LJ",
+        "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+        },
+        "dispersion": {
+        "method": "LJ",
+        "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+        }
+      }
+    ]
+  },
+  "classical_subsystem": {
+    "classical_fragments": [
+      {
+        "index": 0,
+        "name": "H20",
+        "atoms": [
+          {
+            "index": 0,
+            "element": "O",
+            "exclusions": [
+              0,
+              1,
+              2
+            ],
+            "coordinate": [
+             3.29246416e+00,  4.42453105e+00, -1.40784596e-03
+            ],
+            "multipoles": {
+              "elements": [
+                -0.7424407021, -0.2840371815, 0.1671869101,
+                0.0013661730, -4.4188113058, 0.2801417448,
+                0.0002126277, -4.1129942280, 0.0039064597,
+                -5.0206529493, 0.0330216712, 0.0760732530,
+                -0.0003899377,  0.0087745562,  0.0009840165,
+                -0.1813726316, -0.1218544851, -0.0016261873,
+                 0.1033223765,  0.0025668497
+              ]
+            },
+            "polarizabilities": {
+              "elements": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+               2.2823444229,
+              -0.4207398269,
+              -0.0006457588,
+               1.8324399300,
+              -0.0069062619,
+               3.3666855109
+              ],
+              "order": [
+                1,
+                1
+              ]
+            },
+          "repulsion": {
+          "method": "LJ",
+          "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+          },
+          "dispersion": {
+          "method": "LJ",
+          "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+          }
+          }
+        ]
+      }
+    ]
+  }
+}

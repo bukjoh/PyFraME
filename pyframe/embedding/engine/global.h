@@ -28,6 +28,12 @@ extern Eigen::VectorXd nuclei_charges;
 //global variables required for MultipoleFields
 extern Eigen::VectorXi multipole_orders;
 extern std::vector<Eigen::VectorXd> multipoles;
+// global variables required for VdW-Interaction
+extern Eigen::VectorXd quantum_sigmas;
+extern Eigen::VectorXd quantum_epsilons;
+extern Eigen::VectorXd classical_sigmas;
+extern Eigen::VectorXd classical_epsilons;
+extern std::string combination_rule;
 }
 
 #endif
