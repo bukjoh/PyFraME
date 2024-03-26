@@ -7,21 +7,21 @@ from pyframe.embedding import subsystem, engine
 
 def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem,
                                    classical_subsystem: subsystem.ClassicalSubsystem,
-                                   method: str = 'lj',
-                                   combination_rule: str = 'Lorentz-Berthelot',
-                                   perturbation_order: int = 0
+                                   perturbation_order: int = 0,
+                                   method: str = 'LJ',
+                                   combination_rule: str = 'Lorentz-Berthelot'
                                    ) -> float | np.ndarray:
     comm = classical_subsystem.comm
-    if method == 'lj':
+    if method == 'LJ':
+        engine.set_atoms_nuclei_coordinates_lj_sigma_epsilon(classical_subsystem.rep_lj_sigma,
+                                                             classical_subsystem.rep_lj_epsilon,
+                                                             classical_subsystem.coordinates,
+                                                             quantum_subsystem.rep_lj_sigma,
+                                                             quantum_subsystem.rep_lj_epsilon,
+                                                             quantum_subsystem.coordinates)
         if combination_rule == 'Lorentz-Berthelot':
+            engine.set_combination_rule(combination_rule)
             if perturbation_order == 0:
-                engine.set_atoms_nuclei_coordinates_lj_sigma_epsilon(classical_subsystem.rep_lj_sigma,
-                                                                     classical_subsystem.rep_lj_epsilon,
-                                                                     classical_subsystem.coordinates,
-                                                                     quantum_subsystem.rep_lj_sigma,
-                                                                     quantum_subsystem.rep_lj_epsilon,
-                                                                     quantum_subsystem.coordinates)
-                engine.set_combination_rule(combination_rule)
                 if comm is None:
                     return engine.unperturbed_lj_repulsion(np.array([0, len(classical_subsystem.coordinates)],
                                                                     dtype=np.int64))
@@ -33,3 +33,17 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                     start = sum(counts[:rank])
                     end = sum(counts[:rank + 1])
                     return engine.unperturbed_lj_repulsion(np.array([start, end], dtype=np.int64))
+            elif perturbation_order == 1:
+                if comm is None:
+                    return engine.lj_repulsion_gradient(np.array([0, len(classical_subsystem.coordinates)],
+                                                                    dtype=np.int64))
+                else:
+                    rank = comm.Get_rank()
+                    size = comm.Get_size()
+                    avg, res = divmod(len(classical_subsystem.coordinates), size)
+                    counts = [avg + 1 if p < res else avg for p in range(size)]
+                    start = sum(counts[:rank])
+                    end = sum(counts[:rank + 1])
+                    return engine.lj_repulsion_gradient(np.array([start, end], dtype=np.int64))
+
+

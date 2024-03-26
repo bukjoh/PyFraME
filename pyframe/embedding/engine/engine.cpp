@@ -662,6 +662,52 @@ static PyObject* unperturbed_lj_dispersion(PyObject* self, PyObject* args) {
     return PyFloat_FromDouble(computation::compute_unperturbed_lj_dispersion(start, end, global::combination_rule));
 }
 
+// Function to convert std::vector<Eigen::Vector3d> to NumPy array
+PyObject* std_vec_of_eigen_vec3d_to_numpy(const std::vector<Eigen::Vector3d>& vec) {
+    int rows = vec.size();
+    int cols = 3; // Eigen::Vector3d has 3 elements
+
+    // Create a NumPy array
+    npy_intp dims[2] = {rows, cols};
+    PyObject* numpyArray = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+
+    // Get pointer to data
+    double* dataPtr = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
+
+    // Copy data from vector to NumPy array
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            dataPtr[i * cols + j] = vec[i](j);
+        }
+    }
+
+    return numpyArray;
+}
+
+// Computes the LJ repulsion potential between a ClassicalSubsystem and a QuantumSubsystem.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* lj_repulsion_gradient(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return std_vec_of_eigen_vec3d_to_numpy(computation::compute_lj_repulsion_gradient(start, end, global::combination_rule));
+}
+
+// Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* lj_dispersion_gradient(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return std_vec_of_eigen_vec3d_to_numpy(computation::compute_lj_dispersion_gradient(start, end, global::combination_rule));
+}
+
 
 // Method table for the module
 static PyMethodDef module_methods[] = {
@@ -697,6 +743,10 @@ static PyMethodDef module_methods[] = {
      "Computes the LJ repulsion between a ClassicalSubsystem and a QuantumSubsystem."},
      {"unperturbed_lj_dispersion", unperturbed_lj_dispersion, METH_VARARGS,
      "Computes the LJ repulsion between a ClassicalSubsystem and a QuantumSubsystem."},
+     {"lj_repulsion_gradient", lj_repulsion_gradient, METH_VARARGS,
+     "Computes the LJ repulsion potential between a ClassicalSubsystem and a QuantumSubsystem."},
+     {"lj_dispersion_gradient", lj_dispersion_gradient, METH_VARARGS,
+     "Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem."},
     {NULL, NULL, 0, NULL}};
 
 // Module definition

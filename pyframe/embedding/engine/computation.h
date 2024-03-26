@@ -59,9 +59,13 @@ double compute_unperturbed_lj_repulsion(int start, int end, std::string combinat
 // Parallelized with OpenMP.
 double compute_unperturbed_lj_dispersion(int start, int end, std::string combination_rule);
 
-// Computes the VdW potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Computes the LJ repulsion gradients of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
 // Parallelized with OpenMP.
-//double e_vdw_unpert(int start, int end);
+std::vector<Eigen::Vector3d> compute_lj_repulsion_gradient(int start, int end, std::string combination_rule);
+
+// Computes the LJ dispersion gradients of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
+// Parallelized with OpenMP.
+std::vector<Eigen::Vector3d> compute_lj_dispersion_gradient(int start, int end, std::string combination_rule);
 
 }
 
