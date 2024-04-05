@@ -6,10 +6,11 @@ import numpy as np
 from pyframe.embedding import repulsion_interactions, read_input
 
 
-def test_compute_repulsion_interactions():
+def test_compute_repulsion_interactions(two_oxygen,
+                                        two_wat):
     # Setup
-    core_oxygen, env_oxygen = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/two_oxygen_test.json')
-    core_two_wat, env_two_wat = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/two_wat_test.json')
+    core_oxygen, env_oxygen = two_oxygen
+    core_two_wat, env_two_wat = two_wat
     # Unperturbed repulsion potential (Pauli-Repulsion)
     ref_pot = 8.976559066274837e-07
     assert pytest.approx(ref_pot, abs=1e-12) == repulsion_interactions.compute_repulsion_interactions(core_oxygen,

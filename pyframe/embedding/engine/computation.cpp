@@ -124,6 +124,39 @@ Eigen::MatrixXd nuclei_fields(int start, int end) {
     return nuclei_fields;
 }
 
+// Computes the field of the nuclei on all atoms
+// Parallelized with OpenMP.
+std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end) {
+    int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
+    int no_atoms = static_cast<int>(global::coordinates.size());
+    std::vector<Eigen::MatrixXd> nuclei_field_gradients(no_nuclei, Eigen::MatrixXd::Zero(no_atoms, 6));
+    #pragma omp parallel
+    {
+    std::vector<Eigen::MatrixXd> local_nucleus_field_gradients(no_nuclei, Eigen::MatrixXd::Zero(no_atoms, 6));
+    for(int j = 0; j < no_nuclei; j++) {
+        Eigen::MatrixXd field_gradient_part = Eigen::MatrixXd::Zero(no_atoms, 6);
+        #pragma omp for
+        for(int i = start; i < end; i++) {
+            Eigen::Vector3d r_ab = global::coordinates[i] - global::nuclei_coordinates[j];
+            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                        global::tensor_template_potential,
+                                                        0, 2, 0, 2);
+            field_gradient_part.row(i) += t_tensor * global::nuclei_charges(j);
+        }
+        #pragma omp critical
+        {
+        local_nucleus_field_gradients[j] += field_gradient_part;
+        }
+    }
+
+    // Combine thread-local nucleus_field_gradient_part to the final nuclei_field_gradients
+    for (int k = 0; k < no_nuclei; ++k) {
+        nuclei_field_gradients[k] += local_nucleus_field_gradients[k];
+    }
+    }
+    return nuclei_field_gradients;
+}
+
 // Computes the field caused by all atoms at atom i.
 // Parallelized with OpenMP.
 Eigen::MatrixXd multipole_field(int i) {

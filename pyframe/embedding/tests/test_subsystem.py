@@ -9,8 +9,10 @@ from pyframe.embedding import subsystem
 
 class TestQuantumSubsystem:
     @pytest.fixture(autouse=True)
-    def setup(self, act_wat):
+    def setup(self, act_wat, two_oxygen, two_wat):
         self.core, self.env = act_wat
+        self.core_oxygen, self.env_oxygen = two_oxygen
+        self.core_two_wat, self.env_two_wat = two_wat
 
     def test_init_with_valid_arguments(self):
         nuclei = self.core.nuclei  # Provide appropriate Nuclei instances for testing
@@ -60,6 +62,34 @@ class TestQuantumSubsystem:
         assert np.allclose(self.core.compute_nuclear_fields(self.env.coordinates), ref_array)
         # with pytest.raises(ValueError, match="r_a and r_b cannot be equal."):
         #     self.core.compute_nuclear_fields(self.core.coordinates)
+
+    def test_compute_nuclear_field_gradients(self):
+        ref_grads = np.array([9.5311929756771267e-3, 7.7985188788112876e-3, -1.0495468203592808e-6,
+                              -2.8858133904975198e-3, -5.0597310570715463e-7, -6.6453795851796043e-3], dtype=np.float64)
+        # self.core_oxygen.compute_nuclear_field_gradients(self.env_oxygen.coordinates)
+        assert np.allclose(ref_grads, self.core_oxygen.compute_nuclear_field_gradients(self.env_oxygen.coordinates))
+
+        ref_grads = np.array([[[9.53119298e-03, 7.79851888e-03, -1.04954682e-06,
+                                -2.88581339e-03, -5.05973103e-07, -6.64537959e-03],
+                               [1.64767082e-02, 1.40353017e-02, -2.73260760e-06,
+                                -4.74648718e-03, -1.35970036e-06, -1.17302210e-02],
+                               [5.66827354e-03, 7.62087970e-03, 1.02387457e-05,
+                                -2.21554931e-04, 7.02008439e-06, -5.44671861e-03]],
+
+                              [[2.17297931e-03, 1.65026283e-03, -9.27777498e-07,
+                                -7.11799614e-04, -4.21301494e-07, -1.46117969e-03],
+                               [4.31823566e-03, 3.38501097e-03, -2.51717115e-06,
+                                -1.37061531e-03, -1.17269747e-06, -2.94762035e-03],
+                               [1.17631179e-03, 1.62630080e-03, 2.15048995e-06,
+                                -2.09897761e-05, 1.49995275e-06, -1.15532202e-03]],
+
+                              [[1.15981561e-03, 5.67359046e-04, 3.31949401e-08,
+                                -4.91851181e-04, 1.03040022e-08, -6.67964432e-04],
+                               [1.98882757e-03, 9.09798164e-04, 1.91525993e-08,
+                                -8.61596532e-04, 5.59199997e-09, -1.12723104e-03],
+                               [8.44935406e-04, 6.96866735e-04, 1.26731929e-06,
+                                -2.53431261e-04, 6.14820143e-07, -5.91504145e-04]]])
+        assert np.allclose(ref_grads, self.core_two_wat.compute_nuclear_field_gradients(self.env_two_wat.coordinates))
 
     def test_compute_electric_fields(self,
                                      act_wat_electric_fields,

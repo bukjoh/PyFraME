@@ -531,7 +531,7 @@ static PyObject* multipole_fields(PyObject* self, PyObject* args) {
     return (PyObject *)eigen_matrix_to_numpy(computation::multipole_field(i));
 }
 
-//Calculates the induced dipoles for atom at index i
+//Calculates the nuclei fields on coordinates
 //args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* nuclei_fields(PyObject* self, PyObject* args) {
     PyObject *start_end_obj;
@@ -541,6 +541,43 @@ static PyObject* nuclei_fields(PyObject* self, PyObject* args) {
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
     return (PyObject *)eigen_matrix_to_numpy(computation::nuclei_fields(start, end));
+}
+
+// Function to convert std::vector<Eigen::MatrixXd> to NumPy array
+PyObject* std_vec_of_eigen_matrixXd_to_numpy(const std::vector<Eigen::MatrixXd>& matrices) {
+    if (matrices.empty()) {
+        PyErr_SetString(PyExc_ValueError, "Input vector is empty");
+        return nullptr;
+    }
+
+    // Determine the shape of the resulting NumPy array
+    npy_intp shape[] = {static_cast<npy_intp>(matrices.size()), matrices[0].rows(), matrices[0].cols()};
+
+    // Create a NumPy array and fill it with data from the vector of Eigen matrices
+    PyObject* numpyArray = PyArray_SimpleNew(3, shape, NPY_DOUBLE);
+    double* data = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
+
+    for (const auto& matrix : matrices) {
+        for (int i = 0; i < matrix.rows(); ++i) {
+            for (int j = 0; j < matrix.cols(); ++j) {
+                *data++ = matrix(i, j); // Copy data in row-major order
+            }
+        }
+    }
+
+    return numpyArray;
+}
+
+//Calculates the nuclei field gradients on coordinates
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* nuclei_field_gradients(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return (PyObject *)std_vec_of_eigen_matrixXd_to_numpy(computation::nuclei_field_gradients(start, end));
 }
 
 
@@ -684,7 +721,7 @@ PyObject* std_vec_of_eigen_vec3d_to_numpy(const std::vector<Eigen::Vector3d>& ve
     return numpyArray;
 }
 
-// Computes the LJ repulsion potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Computes the LJ repulsion gradients of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
 //args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* lj_repulsion_gradient(PyObject* self, PyObject* args) {
     PyObject *start_end_obj;
@@ -696,7 +733,7 @@ static PyObject* lj_repulsion_gradient(PyObject* self, PyObject* args) {
     return std_vec_of_eigen_vec3d_to_numpy(computation::compute_lj_repulsion_gradient(start, end, global::combination_rule));
 }
 
-// Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem.
+// Computes the LJ dispersion gradients of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
 //args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* lj_dispersion_gradient(PyObject* self, PyObject* args) {
     PyObject *start_end_obj;
@@ -726,7 +763,9 @@ static PyMethodDef module_methods[] = {
      {"set_coords_nuc_coords_charges", set_coords_nuc_coords_charges, METH_VARARGS,
      "Sets atom coordinates, nuclear coordinates, and nuclear charges for the calculation of nuclei fields."},
      {"nuclei_fields", nuclei_fields, METH_VARARGS,
-     "Calculates the field of the nuclei on atoms defined with start and end. Previously set nuclei_coords and nuclei_charges."},
+     "Calculates the field of the nuclei on atoms defined with start and end. Previously set coordinates, nuclei_coords and nuclei_charges."},
+     {"nuclei_field_gradients", nuclei_field_gradients, METH_VARARGS,
+      "Calculates the field gradients of the nuclei on atoms defined with start and end. Previously set coordinates, nuclei_coords and nuclei_charges."},
      {"set_multipoles_multipoles_order", set_multipoles_multipoles_order, METH_VARARGS,
      "Sets multipoles with degeneracy and taylor coefficient and the multipole orders."},
      {"multipole_fields", multipole_fields, METH_VARARGS,

@@ -147,6 +147,31 @@ class QuantumSubsystem(Subsystem):
         else:
             return engine.nuclei_fields(np.array([0, len(coordinates)], dtype=np.int64))
 
+    def compute_nuclear_field_gradients(self,
+                                        coordinates
+                                        ) -> np.ndarray:
+        """Calculates the electrostatic field from the nuclei.
+
+        Args:
+            coordinates: Array of coordinates on which the field gradients are calculated for each set of coordinates.
+
+        Returns:
+            Array of nuclear field gradients on the different coordinates.
+        """
+        engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
+        if self.comm is not None:
+            avg, res = divmod(len(coordinates), self.size)
+            counts = [avg + 1 if p < res else avg for p in range(self.size)]
+            start = sum(counts[:self.rank])
+            end = sum(counts[:self.rank + 1])
+            nuclear_fields_global = np.zeros([len(coordinates), 3])
+            nuclear_fields_local = engine.nuclei_field_gradients(np.array([start, end], dtype=np.int64))
+            self.comm.Allreduce(nuclear_fields_local, nuclear_fields_global, op=MPI.SUM)
+            return nuclear_fields_global
+
+        else:
+            return engine.nuclei_field_gradients(np.array([0, len(coordinates)], dtype=np.int64))
+
     def compute_electric_fields(self,
                                 coordinates: np.ndarray,
                                 integral_drv: Any

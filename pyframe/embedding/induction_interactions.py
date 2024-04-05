@@ -34,4 +34,33 @@ def compute_induction_energy(induced_dipoles: np.ndarray,
     Returns:
         Induction energy
     """
+    # TODO move into c++ layer?
     return -0.5 * np.einsum('ij, ij', total_fields, induced_dipoles)
+
+
+def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
+                                      total_field_gradients: np.ndarray) -> np.ndarray:
+    """Calculates the induction energy contribution.
+
+     Args:
+        total_field_gradients: Field gradients from the electron density and nuclei.
+        induced_dipoles: Induced dipoles in the environment.
+
+    Returns:
+        Induction energy gradient.
+    """
+    # TODO move into c++ layer?
+    energy_gradient = np.zeros([len(total_field_gradients), 3], dtype=np.float64)
+    for i, field_gradient in enumerate(total_field_gradients):
+        for j in range(len(induced_dipoles)):
+            # Move * -1 into -=
+            energy_gradient[i, 0] -= (induced_dipoles[j, 0] * field_gradient[j, 0] +
+                                      induced_dipoles[j, 1] * field_gradient[j, 1] +
+                                      induced_dipoles[j, 2] * field_gradient[j, 2])
+            energy_gradient[i, 1] -= (induced_dipoles[j, 0] * field_gradient[j, 1] +
+                                      induced_dipoles[j, 1] * field_gradient[j, 3] +
+                                      induced_dipoles[j, 2] * field_gradient[j, 4])
+            energy_gradient[i, 2] -= (induced_dipoles[j, 0] * field_gradient[j, 2] +
+                                      induced_dipoles[j, 1] * field_gradient[j, 4] +
+                                      induced_dipoles[j, 2] * field_gradient[j, 5])
+    return energy_gradient

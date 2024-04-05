@@ -18,13 +18,13 @@ from typing import Optional
 
 
 def compute_t_tensor_py(r_a: np.ndarray,
-                            r_b: np.ndarray,
-                            rank_a: int,
-                            rank_b: int,
-                            is_potential: bool,
-                            start_rank_b: Optional[int] = 0,
-                            start_rank_a: Optional[int] = 0
-                            ) -> polytensor.SecondDegreePolytensor:
+                        r_b: np.ndarray,
+                        rank_a: int,
+                        rank_b: int,
+                        is_potential: bool,
+                        start_rank_b: Optional[int] = 0,
+                        start_rank_a: Optional[int] = 0
+                        ) -> polytensor.SecondDegreePolytensor:
     """Builds and calculates the T tensor, which is a Matrix used to calculate the potential and interaction energy of
     Particles.
 
@@ -106,6 +106,7 @@ def compute_t_tensor(r_a: np.ndarray,
     return polytensor.SecondDegreePolytensor(rank_2=[start_rank_b, rank_b],
                                              rank_1=[start_rank_a, rank_a],
                                              tensor_data=engine.compute_t_tensor(
-        r_a,
-        r_b,
-        np.array([rank_a, rank_b, start_rank_a, start_rank_b, p], dtype=np.int64)))
+                                                 r_a,
+                                                 r_b,
+                                                 np.array([rank_a, rank_b, start_rank_a, start_rank_b, p],
+                                                          dtype=np.int64)))

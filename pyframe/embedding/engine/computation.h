@@ -36,6 +36,10 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end);
 // Parallelized with OpenMP.
 Eigen::MatrixXd nuclei_fields(int start, int end);
 
+// Computes the field gradients of the nuclei on all atoms
+// Parallelized with OpenMP.
+std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end);
+
 // Computes the field of the multipoles on a the ith coordinates
 // Parallelized with OpenMP.
 Eigen::MatrixXd multipole_field(int i);

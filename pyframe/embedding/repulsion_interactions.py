@@ -11,6 +11,19 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                                    method: str = 'LJ',
                                    combination_rule: str = 'Lorentz-Berthelot'
                                    ) -> float | np.ndarray:
+    """Computes the repulsion (Pauli-Repulsion) potential or gradients of the Nuclei of a QuantumSubsystem interacting
+    with a ClassicalSubsystem.
+
+    Args:
+        quantum_subsystem: QuantumSubsystem
+        classical_subsystem: ClassicalSubsystem
+        perturbation_order: Order of geometric perturbation of the nuclei.
+        method: Flag to set the method to be used.
+        combination_rule: Flag to set the combination rule to be used. Default is Lorentz-Berthelot.
+
+    Returns:
+        Repulsion potential or gradient.
+    """
     comm = classical_subsystem.comm
     if method == 'LJ':
         engine.set_atoms_nuclei_coordinates_lj_sigma_epsilon(classical_subsystem.rep_lj_sigma,
@@ -45,5 +58,5 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                     start = sum(counts[:rank])
                     end = sum(counts[:rank + 1])
                     return engine.lj_repulsion_gradient(np.array([start, end], dtype=np.int64))
-
-
+            else:
+                raise NotImplementedError("Perturbation order > 1 has not been implemented yet.")

@@ -113,3 +113,29 @@ def test_compute_induction_energy(wat_wat,
     assert e_mul_ind == pytest.approx(0.000114734186, abs=1e-10)
     assert e_el_ind == pytest.approx(-0.0429913387, abs=1e-8)
     assert isinstance(e_ind, float)
+
+
+def test_compute_induction_energy_gradient(two_oxygen, two_wat):
+    # Setup
+    core_oxygen, env_oxygen = two_oxygen
+    core_two_wat, env_two_wat = two_wat
+    # Calculate induced dipoles
+    env_oxygen.solve_induced_dipoles(external_fields=core_oxygen.compute_nuclear_fields(env_oxygen.coordinates))
+    env_two_wat.solve_induced_dipoles(external_fields=core_two_wat.compute_nuclear_fields(env_two_wat.coordinates))
+    # Calculate nuclear field gradients
+    nuclear_field_gradients_two_ox = core_oxygen.compute_nuclear_field_gradients(env_oxygen.coordinates)
+    nuclear_field_gradients_two_wat = core_two_wat.compute_nuclear_field_gradients(env_two_wat.coordinates)
+    # TODO missing electric field gradient
+    # Calculate induction energy gradient
+    induction_energy_gradient_two_ox = induction_interactions.compute_induction_energy_gradient(
+        induced_dipoles=env_oxygen.induced_dipoles.induced_dipoles,
+        total_field_gradients=nuclear_field_gradients_two_ox)
+    induction_energy_gradient_two_wat = induction_interactions.compute_induction_energy_gradient(
+        induced_dipoles=env_two_wat.induced_dipoles.induced_dipoles,
+        total_field_gradients=nuclear_field_gradients_two_wat)
+    ref_energy_gradient_two_ox = np.array([1.49189868e-03, 9.47675498e-04, 1.62073790e-06], dtype=np.float64)
+    ref_energy_gradient_two_wat = np.array([[4.85319304e-03, 2.74198596e-03, 1.12304565e-06],
+                                           [1.16342801e-03, 6.03914172e-04, -1.47528824e-07],
+                                           [5.31607331e-04, 1.47436487e-04, 1.78351047e-07]], dtype=np.float64)
+    assert np.allclose(ref_energy_gradient_two_ox, induction_energy_gradient_two_ox)
+    assert np.allclose(ref_energy_gradient_two_wat, induction_energy_gradient_two_wat)

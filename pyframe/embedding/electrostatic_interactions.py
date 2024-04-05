@@ -142,6 +142,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
                                                    integral_drv=integral_drv)
     return nuclear_energy, fock_matrix
 
+# TODO write e_nuc_es gradient
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
                                  integral_drv: Any
