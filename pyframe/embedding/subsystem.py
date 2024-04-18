@@ -58,7 +58,7 @@ class QuantumSubsystem(Subsystem):
         if self.comm is not None:
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
-    
+
     @property
     def rep_lj_sigma(self) -> np.ndarray:
         if getattr(self, '_rep_lj_sigma', None) is None:
@@ -90,7 +90,7 @@ class QuantumSubsystem(Subsystem):
             for i, nucleus in enumerate(self.nuclei):
                 self._disp_lj_epsilon[i] = nucleus.disp_parameters['lj_epsilon']
         return self._disp_lj_epsilon
-    
+
     def static_potential(self,
                          coordinate: np.ndarray,
                          pot_derivative_order: Optional[int] = 0,
@@ -249,6 +249,7 @@ class ClassicalSubsystem(Subsystem):
                                               number_of_iterations=0,
                                               threshold=1e-8,
                                               solver="None")
+        self.perturbed_induced_dipoles = []
         self._multipole_fields = None
         self._self_energy = None
         if self.comm is not None:
@@ -384,10 +385,11 @@ class ClassicalSubsystem(Subsystem):
 
     def solve_induced_dipoles(self,
                               threshold: float = 1e-8,
-                              max_iterations: float = 100,
+                              max_iterations: int = 100,
                               solver: Optional[str] = 'jacobi',
-                              external_fields: Optional[np.ndarray] = None
-                              ) -> None:
+                              external_fields: Optional[np.ndarray] = None,
+                              perturbed: bool = False
+                              ) -> None | np.ndarray:
         """Solves for the induced dipoles on all atoms.
 
         Args:
@@ -395,31 +397,61 @@ class ClassicalSubsystem(Subsystem):
             max_iterations: Maximum number of iterations.
             solver: Type of solver used.
             external_fields: External fields that contribute additionally to the internal fields to induce dipoles.
+            perturbed: Flag that indicates if induced dipoles from perturbed fields are to be calculated.
         """
         if external_fields is not None:
-            static_fields = self.multipole_fields + external_fields
+            if not perturbed:
+                static_fields = self.multipole_fields + external_fields
+            else:
+                static_fields = external_fields
         else:
             static_fields = self.multipole_fields
             external_fields = np.zeros([self.num_atoms, 3])
         # First guess for induced dipoles
-        if np.all(self.induced_dipoles.induced_dipoles == 0):
-            starting_guess = np.zeros([self.num_atoms, 3])
-            for i, field in enumerate(static_fields):
-                starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
-        else:
-            residue_norm = np.linalg.norm(external_fields - self.induced_dipoles.external_fields)
-            max_residue_norm = np.max(np.abs(external_fields - self.induced_dipoles.external_fields))
-            if residue_norm == 0 and max_residue_norm == 0:
-                print("Residue norm between new and old external fields is 0, induced dipoles will not be "
-                      "recalculated.")
-                return
-            elif residue_norm < 1e-6 and max_residue_norm < 1e-6:
-                print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
-                      "be used as a starting guess.")
-                starting_guess = self.induced_dipoles.induced_dipoles
+        if not perturbed:
+            if np.all(self.induced_dipoles.induced_dipoles == 0):
+                starting_guess = np.zeros([self.num_atoms, 3])
+                for i, field in enumerate(static_fields):
+                    starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
             else:
-                print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
-                      "not be used as a starting guess.")
+                residue_norm = np.linalg.norm(external_fields - self.induced_dipoles.external_fields)
+                max_residue_norm = np.max(np.abs(external_fields - self.induced_dipoles.external_fields))
+                if residue_norm == 0 and max_residue_norm == 0:
+                    print("Residue norm between new and old external fields is 0, induced dipoles will not be "
+                          "recalculated.")
+                    return
+                elif residue_norm < 1e-6 and max_residue_norm < 1e-6:
+                    print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
+                          "be used as a starting guess.")
+                    starting_guess = self.induced_dipoles.induced_dipoles
+                else:
+                    print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
+                          "not be used as a starting guess.")
+                    starting_guess = np.zeros([self.num_atoms, 3])
+                    for i, field in enumerate(static_fields):
+                        starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
+        else:
+            # check perturbed induced dipoles
+            residue_norms = []
+            for old_pert_induced_dipole in self.perturbed_induced_dipoles:
+                residue_norm = np.linalg.norm(external_fields - old_pert_induced_dipole.external_fields)
+                if residue_norm == 0:
+                    print("Residue norm between new and old external fields is 0, induced dipoles will not be "
+                          "recalculated.")
+                    return old_pert_induced_dipole.induced_dipoles
+                else:
+                    residue_norms.append(residue_norm)
+            # check which residue norm is the smallest
+            min_res_norm = min(residue_norms)
+            if min_res_norm < 1e-6 :
+                print(
+                    "Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
+                    "be used as a starting guess.")
+                starting_guess = self.perturbed_induced_dipoles[residue_norms.index(min_res_norm)].induced_dipoles
+            else:
+                print(
+                    "Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
+                    "not be used as a starting guess.")
                 starting_guess = np.zeros([self.num_atoms, 3])
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
@@ -439,11 +471,20 @@ class ClassicalSubsystem(Subsystem):
             for atom in fragment.atoms:
                 atom.induced_dipole = induced_dipoles[k]
                 k += 1
-        self.induced_dipoles = InducedDipoles(induced_dipoles=induced_dipoles,
-                                              external_fields=external_fields,
-                                              number_of_iterations=num_iter,
-                                              solver=solver,
-                                              threshold=threshold)
+        if not perturbed:
+            self.induced_dipoles = InducedDipoles(induced_dipoles=induced_dipoles,
+                                                  external_fields=external_fields,
+                                                  number_of_iterations=num_iter,
+                                                  solver=solver,
+                                                  threshold=threshold)
+        else:
+            # FIXME Maybe this will cache too much if the property is of too high order?
+            self.perturbed_induced_dipoles.append(InducedDipoles(induced_dipoles=induced_dipoles,
+                                                                 external_fields=external_fields,
+                                                                 number_of_iterations=num_iter,
+                                                                 solver=solver,
+                                                                 threshold=threshold))
+            return induced_dipoles
 
 
 @dataclass

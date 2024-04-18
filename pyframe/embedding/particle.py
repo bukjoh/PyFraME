@@ -174,7 +174,7 @@ class Nucleus(Particle):
 
     def __init__(self,
                  index: int,
-                 coordinate: np.array,
+                 coordinate: np.ndarray,
                  charge: float,
                  name: Optional[str] = None,
                  mass: Optional[float] = None,

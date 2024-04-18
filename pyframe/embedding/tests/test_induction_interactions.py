@@ -1,8 +1,10 @@
 """Tests PyFraME.embedding.induction_interactions.py"""
 import pytest
 import numpy as np
+import copy
 
 from pyframe.embedding import induction_interactions
+from pyframe.embedding.pert_tuple_cache import rspPert, rspPertTuple, rspCache
 
 
 def test_compute_induction_interaction(wat_wat,
@@ -135,7 +137,26 @@ def test_compute_induction_energy_gradient(two_oxygen, two_wat):
         total_field_gradients=nuclear_field_gradients_two_wat)
     ref_energy_gradient_two_ox = np.array([1.49189868e-03, 9.47675498e-04, 1.62073790e-06], dtype=np.float64)
     ref_energy_gradient_two_wat = np.array([[4.85319304e-03, 2.74198596e-03, 1.12304565e-06],
-                                           [1.16342801e-03, 6.03914172e-04, -1.47528824e-07],
-                                           [5.31607331e-04, 1.47436487e-04, 1.78351047e-07]], dtype=np.float64)
+                                            [1.16342801e-03, 6.03914172e-04, -1.47528824e-07],
+                                            [5.31607331e-04, 1.47436487e-04, 1.78351047e-07]], dtype=np.float64)
     assert np.allclose(ref_energy_gradient_two_ox, induction_energy_gradient_two_ox)
     assert np.allclose(ref_energy_gradient_two_wat, induction_energy_gradient_two_wat)
+
+
+def test_compute_rsp_induction_energy(wat_wat):
+    # Setup
+    core, env = wat_wat
+    geo_templ = rspPert('GEO', 0.0)
+    el_0_templ = rspPert('EL', 0.0)
+    el_0_4_templ = rspPert('EL', 0.4)
+    perts_geo_el0 = rspPertTuple([copy.deepcopy(geo_templ), copy.deepcopy(el_0_templ)])
+    comps_geo_el0 = {((4, 1),), ((5, 2),), ((10, 0),)}
+    p_tuple_geo_el0 = [perts_geo_el0]
+    energy_props_geo_el0 = rspCache(p_tuple_geo_el0, k=1, n=0, comps=comps_geo_el0)
+    # Important set Ids!
+    energy_props_geo_el0.setIds()
+    density_bank = dict()
+    # induction_interactions.compute_rsp_induction_energy(input_cache=energy_props_geo_el0,
+    #                                                     density_bank=density_bank,
+    #                                                     quantum_subsystem=core,
+    #                                                     classical_subsystem=env)

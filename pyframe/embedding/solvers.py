@@ -3,7 +3,6 @@ import sys
 import numpy as np
 
 from mpi4py import MPI
-from pyframe.embedding import constants, interaction_tensor
 from pyframe.embedding import engine
 from typing import Tuple, Optional
 
@@ -15,7 +14,7 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                            fields: np.ndarray,
                            starting_guess: np.ndarray,
                            threshold: float,
-                           max_iterations: Optional[float] = 100,
+                           max_iterations: Optional[int] = 100,
                            comm: Optional[MPI.Comm] = None
                            ) -> Tuple[np.ndarray, int]:
     if not isinstance(coordinates, np.ndarray) or not isinstance(polarizabilities, np.ndarray) or \
@@ -50,7 +49,7 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
                                   fields: np.ndarray,
                                   starting_guess: np.ndarray,
                                   threshold: float,
-                                  max_iterations: float
+                                  max_iterations: int
                                   ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
@@ -101,7 +100,7 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
                                     fields: np.ndarray,
                                     starting_guess: np.ndarray,
                                     threshold: float,
-                                    max_iterations: float,
+                                    max_iterations: int,
                                     comm: MPI.Comm = None
                                     ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
