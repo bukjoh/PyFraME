@@ -136,11 +136,11 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
             end = sum(counts[:classical_subsystem.rank + 1])
             nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
 
-
         # F_el_es
         fock_matrix = es_fock_matrix_contributions(classical_subsystem=classical_subsystem,
                                                    integral_drv=integral_drv)
     return nuclear_energy, fock_matrix
+
 
 # TODO write e_nuc_es gradient
 
@@ -157,3 +157,39 @@ def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsyst
     fock_matrix_contribution = integral_drv.multipole_potential_integrals(charges=classical_subsystem.charges,
                                                                           coordinates=classical_subsystem.coordinates)
     return fock_matrix_contribution
+
+
+def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
+                                                classical_subsystem: Union[subsystem.ClassicalSubsystem, list],
+                                                perturbation_indices: list,
+                                                nucleus_idx: int
+                                                ) -> float:
+    # nucleus index!
+    # perturbed E_es_nuc
+    # E_nuc_es
+    # FIXME has to be tested
+    if classical_subsystem.comm is None:
+        engine.set_multipoles_multipoles_order(classical_subsystem.multipoles_deg_taylor_coeff,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        nuclear_energy = engine.e_nuc_es_perturbed(np.array([0, len(classical_subsystem.coordinates),
+                                                             nucleus_idx], dtype=np.int64),
+                                                   [np.array([0, 0, 0], dtype=np.int64),
+                                                    np.array(perturbation_indices, dtype=np.int64)])
+    else:
+        engine.set_multipoles_multipoles_order(classical_subsystem.multipoles_deg_taylor_coeff,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.size)
+        counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.size)]
+        start = sum(counts[:classical_subsystem.rank])
+        end = sum(counts[:classical_subsystem.rank + 1])
+        nuclear_energy = engine.e_nuc_es_perturbed(np.array([start, end, nucleus_idx], dtype=np.int64),
+                                                   [np.array([0, 0, 0], dtype=np.int64),
+                                                    np.array(perturbation_indices, dtype=np.int64)])
+    # FIXME the electric contributions are missing
+    return nuclear_energy

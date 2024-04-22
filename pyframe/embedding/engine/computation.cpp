@@ -66,6 +66,33 @@ Eigen::MatrixXd compute_t_tensor(
     return interaction_tensor;
 }
 
+//Computes the t_tensor for the interaction of two atoms in a specified range of indices.
+Eigen::MatrixXd compute_perturbed_t_tensor(
+    const Eigen::Vector3d &r_ab,
+    const Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> &tensor_template,
+    const Eigen::Matrix<int, 2, 3> &perturbation_tuple,
+    int rank_a,
+    int rank_b,
+    int start_rank_a,
+    int start_rank_b) {
+    Eigen::MatrixXd interaction_tensor(get_polytensor_length(start_rank_a, rank_a),
+                                        get_polytensor_length(start_rank_b, rank_b));
+    int start_b = (start_rank_b) * (start_rank_b + 1) * (start_rank_b + 2) / 6;
+    int end_b = (rank_b + 1) * (rank_b + 2) * (rank_b + 3) / 6;
+    int start_a = (start_rank_a) * (start_rank_a + 1) * (start_rank_a + 2) / 6;
+    int end_a = (rank_a + 1) * (rank_a + 2) * (rank_a + 3) / 6;
+
+    for(int i = start_a; i < end_a; i++) {
+        for(int j = start_b; j < end_b; j++) {
+            double interaction_element = compute_interaction_tensor_element(
+                tensor_template(i, j) + perturbation_tuple, r_ab, global::tensor_coefficients);
+            interaction_tensor(i - start_a, j - start_b) = interaction_element;
+        }
+    }
+    return interaction_tensor;
+}
+
+
 // Computes the field caused by induced dipoles at atom i.
 // Parallelized with OpenMP.
 Eigen::MatrixXd ind_dipoles_field(int start, int end) {
@@ -230,6 +257,31 @@ double e_nuc_es(int start, int end) {
                                                             global::multipole_orders[j], 0, 0, 0);
                 energy_contr += (global::multipoles[j].transpose() * t_tensor * global::nuclei_charges[i])[0];
             }
+        }
+        #pragma omp critical
+        {
+            e_nuc_es += energy_contr;
+        }
+    }
+    return e_nuc_es;
+}
+
+// Computes the energy between all atoms and the nuclei.
+// Parallelized with OpenMP.
+double e_nuc_es_perturbed(int start, int end, int nuc_idx, const Eigen::Matrix<int, 2, 3> &perturbation_tuple) {
+    double e_nuc_es = 0.0;
+    int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
+    #pragma omp parallel
+    {
+        double energy_contr = 0.0;
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            Eigen::Vector3d r_ab = global::nuclei_coordinates[nuc_idx] - global::coordinates[j];
+            Eigen::MatrixXd t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                                  global::tensor_template_potential,
+                                                                  perturbation_tuple,
+                                                                  global::multipole_orders[j], 0, 0, 0);
+            energy_contr += (global::multipoles[j].transpose() * t_tensor * global::nuclei_charges[nuc_idx])[0];
         }
         #pragma omp critical
         {

@@ -613,7 +613,7 @@ static PyObject* self_energy(PyObject* self, PyObject* args) {
     return PyFloat_FromDouble(computation::self_energy(idx_arr));
 }
 
-//Calculates self energy of ClassicalSystem for array of indexes
+//Calculates electrostatic interaction energy between the nuclei and the ClassicalSystem
 //args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* e_nuc_es(PyObject* self, PyObject* args) {
     PyObject *start_end_obj;
@@ -623,6 +623,22 @@ static PyObject* e_nuc_es(PyObject* self, PyObject* args) {
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
     return PyFloat_FromDouble(computation::e_nuc_es(start, end));
+}
+
+
+//Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* e_nuc_es_perturbed(PyObject* self, PyObject* args) {
+    PyObject *start_end_nuc_idx_obj;
+    PyObject *perturbation_obj;
+    if (!PyArg_ParseTuple(args, "OO", &start_end_nuc_idx_obj, &perturbation_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_nuc_idx_obj)(0);
+    int end = (int)read_vector(start_end_nuc_idx_obj)(1);
+    int nuc_idx = (int)read_vector(start_end_nuc_idx_obj)(2);
+    Eigen::Matrix<int, 2, 3> perturbation_tuple = read_multiindex(perturbation_obj);
+    return PyFloat_FromDouble(computation::e_nuc_es_perturbed(start, end, nuc_idx, perturbation_tuple));
 }
 
 // Sets the global LJ 6-12 parameters sigma and epsilon for a ClassicalSubsystem and QuantumSubsystem.
@@ -774,6 +790,8 @@ static PyMethodDef module_methods[] = {
      "Calculates the self energy of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
      {"e_nuc_es", e_nuc_es, METH_VARARGS,
      "Calculates the electrostatic energy between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},
+     {"e_nuc_es_perturbed", e_nuc_es_perturbed, METH_VARARGS,
+     "Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem"},
      {"set_atoms_nuclei_coordinates_lj_sigma_epsilon", set_atoms_nuclei_coordinates_lj_sigma_epsilon, METH_VARARGS,
      "Sets the LJ 6-12 parameters of a ClassicalSubsystem and a QuantumSubsystem."},
      {"set_combination_rule", set_combination_rule, METH_VARARGS,

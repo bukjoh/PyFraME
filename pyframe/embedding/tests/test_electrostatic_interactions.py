@@ -188,3 +188,19 @@ def test_compute_electrostatic_interaction(
     e_el_es = np.einsum("ab, ab", D, f_el_es)
     assert e_nuc_es == pytest.approx(-0.08545956, abs=1.5e-8)
     assert e_el_es == pytest.approx(0.00987780, abs=1.5e-8)
+
+
+def test_compute_perturbed_electrostatic_interaction(two_oxygen,
+                                                     neon):
+    core, env = neon
+    print(electrostatic_interactions.compute_perturbed_electrostatic_interaction(quantum_subsystem=core,
+                                                                                 classical_subsystem=env,
+                                                                                 perturbation_indices=[1, 0, 0],
+                                                                                 nucleus_idx=0))
+    # in frame: -2.3142853266046650 not in frame: 2.314285326604665
+    # for deriv in y and z direction is 0.0 as in the test
+
+    # for second order derivative
+    # [-2.2266673873992375_dp, 0.0_dp, 0.0_dp, 1.1133336936996188_dp, 0.0_dp, &
+    #                             1.1133336936996188_dp]
+    # my results 200 -2.2266673873992375 020 1.1133336936996188 002 1.1133336936996188

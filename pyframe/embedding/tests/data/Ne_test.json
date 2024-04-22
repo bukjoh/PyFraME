@@ -1,0 +1,42 @@
+{
+  "quantum_subsystem": {
+    "name": "QM sys",
+    "nuclei": [
+      {
+        "index": 0,
+        "element": "Ne",
+        "charge": 10.0,
+        "coordinate": [
+          3.2125344276661281,
+          0.0,
+          0.0
+        ]
+      }
+    ]
+  },
+  "classical_subsystem": {
+    "classical_fragments": [
+      {
+        "index": 0,
+        "name": "Ne",
+        "atoms": [
+          {
+            "index": 0,
+            "element": "Ne",
+            "exclusions": [
+              0
+            ],
+            "coordinate": [
+             5.2912331499820509,  0.0, 0.0
+            ],
+            "multipoles": {
+              "elements": [
+                -1.0
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -28,6 +28,21 @@ Eigen::MatrixXd compute_t_tensor(
     int start_rank_a,
     int start_rank_b);
 
+Eigen::MatrixXd compute_perturbed_t_tensor(
+    const Eigen::Vector3d &r_ab,
+    const Eigen::Matrix<Eigen::Matrix<int, 2, 3>, Eigen::Dynamic, Eigen::Dynamic> &tensor_template,
+    const Eigen::Matrix<int, 2, 3> &perturbation_tuple,
+    int rank_a,
+    int rank_b,
+    int start_rank_a,
+    int start_rank_b);
+
+double e_nuc_es_perturbed(
+       int start,
+       int end,
+       int nuc_idx,
+       const Eigen::Matrix<int, 2, 3> &perturbation_tuple);
+
 // Computes the field caused by induced dipoles at site i.
 // Parallelized with OpenMP.
 Eigen::MatrixXd ind_dipoles_field(int start, int end);

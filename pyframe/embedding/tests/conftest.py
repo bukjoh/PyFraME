@@ -1613,3 +1613,8 @@ def two_oxygen():
 @pytest.fixture(scope='session')
 def two_wat():
     return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/two_wat_test.json')
+
+
+@pytest.fixture(scope='session')
+def neon():
+    return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/Ne_test.json')

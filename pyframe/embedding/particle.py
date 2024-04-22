@@ -100,6 +100,8 @@ class Atom(Particle):
             p_elements = np.array(polarizabilities.get('elements', None))
             self.polarizability = p_elements
             self.polarizability_order = np.array(polarizabilities.get('order', None))
+        else:
+            self.polarizability = np.array([], dtype=np.float64)
 
     def potential(self,
                   coordinate: np.ndarray,

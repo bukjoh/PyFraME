@@ -3,7 +3,7 @@
     "name": "QM sys",
     "nuclei": [
       {
-        "index": 1,
+        "index": 0,
         "element": "O",
         "charge": 8.0,
         "coordinate": [

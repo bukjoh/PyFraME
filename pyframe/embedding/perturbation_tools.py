@@ -636,3 +636,26 @@ def calc_pert_ind_contr(ids: list,
                                                             external_fields=unique_f_cache[hash(ids[0])].vals[comp],
                                                             perturbed=True)
         return np.einsum('ij, ij', unique_f_cache[hash(ids[1])].vals[comp], ind_dip)
+
+
+def subsets_of_list(filled_list) -> list:
+    """Identifies all the distinct ways the elements in a list can be grouped into non-empty subsets,
+     where each element is included exactly once. The number of subsets generated is given through 2^(n-1), where n
+     corresponds to the number of elements of the given list.
+
+    Args:
+        filled_list: List filled me elements (non-empty), for which subsets are determined.
+
+    Returns:
+        List of subsets (list of lists).
+    """
+    def backtrack(start, path):
+        if start == len(filled_list):
+            partitions.append(path[:])
+            return
+        for i in range(start, len(filled_list)):
+            backtrack(i + 1, path + [filled_list[start:i + 1]])
+
+    partitions = []
+    backtrack(0, [])
+    return partitions
