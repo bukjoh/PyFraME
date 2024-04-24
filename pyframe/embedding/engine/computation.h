@@ -86,6 +86,15 @@ std::vector<Eigen::Vector3d> compute_lj_repulsion_gradient(int start, int end, s
 // Parallelized with OpenMP.
 std::vector<Eigen::Vector3d> compute_lj_dispersion_gradient(int start, int end, std::string combination_rule);
 
+// Computes the derivative of the LJ repulsion potential between a ClassicalSubsystem and a nucleus.
+// Parallelized with OpenMP.
+double compute_perturbed_lj_repulsion(int start,
+                                      int end,
+                                      int nuc_idx,
+                                      std::string combination_rule,
+                                      std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions);
+
+
 }
 
 #endif

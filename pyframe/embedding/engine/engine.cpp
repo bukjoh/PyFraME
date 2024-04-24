@@ -669,6 +669,19 @@ static PyObject* set_atoms_nuclei_coordinates_lj_sigma_epsilon(PyObject* self, P
     Py_RETURN_NONE;
 }
 
+// Sets the global factorial parameter.
+// args: [factorials];
+static PyObject* set_factorials(PyObject* self, PyObject* args) {
+    PyObject *factorials_obj;
+    if (!PyArg_ParseTuple(args, "O", &factorials_obj)) {
+        return NULL;
+    }
+    global::factorials = read_vector_d(factorials_obj);
+    Py_RETURN_NONE;
+}
+
+// Sets the combination rule for non-bonded VdW interactions from python string.
+// args: [combination_rule];
 static PyObject* set_combination_rule(PyObject* self, PyObject* args) {
     PyObject *combination_rule_obj;
 
@@ -761,6 +774,84 @@ static PyObject* lj_dispersion_gradient(PyObject* self, PyObject* args) {
     return std_vec_of_eigen_vec3d_to_numpy(computation::compute_lj_dispersion_gradient(start, end, global::combination_rule));
 }
 
+std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> read_k_partitions(PyObject *k_partitions_obj) {
+    std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions;
+
+    // Check if k_partitions is a list
+    if (!PyList_Check(k_partitions_obj)) {
+        PyErr_SetString(PyExc_TypeError, "k_partitions must be a list of lists of lists");
+        return k_partitions;
+    }
+
+    // Iterate over the outer list
+    for (Py_ssize_t i = 0; i < PyList_Size(k_partitions_obj); ++i) {
+        PyObject *inner_list = PyList_GetItem(k_partitions_obj, i);
+
+        // Check if inner_list is a list
+        if (!PyList_Check(inner_list)) {
+            PyErr_SetString(PyExc_TypeError, "Each element of k_partitions must be a list");
+            return k_partitions;
+        }
+
+        std::vector<std::vector<Eigen::Matrix<int, 2, 3>>> inner_vec;
+
+        // Iterate over the middle list
+        for (Py_ssize_t j = 0; j < PyList_Size(inner_list); ++j) {
+            PyObject *inner_inner_list = PyList_GetItem(inner_list, j);
+
+            // Check if inner_inner_list is a list
+            if (!PyList_Check(inner_inner_list)) {
+                PyErr_SetString(PyExc_TypeError, "Each element of the inner list must be a list");
+                return k_partitions;
+            }
+
+            std::vector<Eigen::Matrix<int, 2, 3>> inner_inner_vec;
+
+            // Iterate over the inner inner list
+            for (Py_ssize_t k = 0; k < PyList_Size(inner_inner_list); ++k) {
+                PyObject *multiindex_obj = PyList_GetItem(inner_inner_list, k);
+
+                // Check if multiindex_obj is a list
+                if (!PyList_Check(multiindex_obj) || PyList_Size(multiindex_obj) != 2) {
+                    PyErr_SetString(PyExc_TypeError, "Each element of the inner inner list must be a list of two NumPy arrays");
+                    return k_partitions;
+                }
+
+                Eigen::Matrix<int, 2, 3> multiindex = read_multiindex(multiindex_obj);
+
+                if (multiindex.rows() != 2 || multiindex.cols() != 3) {
+                    PyErr_SetString(PyExc_ValueError, "Each NumPy array in multiindex must be of size 2x3");
+                    return k_partitions;
+                }
+
+                inner_inner_vec.push_back(multiindex);
+            }
+
+            inner_vec.push_back(inner_inner_vec);
+        }
+
+        k_partitions.push_back(inner_vec);
+    }
+
+    return k_partitions;
+}
+
+// Computes the perturbed VdW potential between a ClassicalSubsystem and a nucleus.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* perturbed_lj_repulsion(PyObject* self, PyObject* args) {
+    PyObject *start_end_nuc_idx_obj;
+    PyObject *k_partitions_obj;
+    if (!PyArg_ParseTuple(args, "OO", &start_end_nuc_idx_obj, &k_partitions_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_nuc_idx_obj)(0);
+    int end = (int)read_vector(start_end_nuc_idx_obj)(1);
+    int nuc_idx = (int)read_vector(start_end_nuc_idx_obj)(2);
+    std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions = read_k_partitions(k_partitions_obj);
+    return PyFloat_FromDouble(computation::compute_perturbed_lj_repulsion(start, end, nuc_idx, global::combination_rule, k_partitions));
+}
+
+
 
 // Method table for the module
 static PyMethodDef module_methods[] = {
@@ -794,6 +885,8 @@ static PyMethodDef module_methods[] = {
      "Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem"},
      {"set_atoms_nuclei_coordinates_lj_sigma_epsilon", set_atoms_nuclei_coordinates_lj_sigma_epsilon, METH_VARARGS,
      "Sets the LJ 6-12 parameters of a ClassicalSubsystem and a QuantumSubsystem."},
+     {"set_factorials", set_factorials, METH_VARARGS,
+     "Sets the global factorial parameter."},
      {"set_combination_rule", set_combination_rule, METH_VARARGS,
      "Sets the combination rule for non-bonded VdW interactions."},
      {"unperturbed_lj_repulsion", unperturbed_lj_repulsion, METH_VARARGS,
@@ -804,6 +897,8 @@ static PyMethodDef module_methods[] = {
      "Computes the LJ repulsion potential between a ClassicalSubsystem and a QuantumSubsystem."},
      {"lj_dispersion_gradient", lj_dispersion_gradient, METH_VARARGS,
      "Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem."},
+     {"perturbed_lj_repulsion", perturbed_lj_repulsion, METH_VARARGS,
+     "Computes the perturbed VdW potential between a ClassicalSubsystem and a nucleus."},
     {NULL, NULL, 0, NULL}};
 
 // Module definition

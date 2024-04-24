@@ -73,7 +73,6 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
     residue_norm = sys.float_info.max
     max_residue_norm = sys.float_info.max
     iteration = 0
-    new_fields = np.zeros([len(old_ind_dipoles), 3])
     ind_dipoles = np.zeros([len(fields), 3])
 
     engine.set_coords_idxs_exlcs(coordinates, indices, exclusions)
@@ -133,7 +132,6 @@ def induced_dipoles_jacobi_parallel(coordinates: np.ndarray,
     max_residue_norm = sys.float_info.max
     iteration = 0
     ind_dipoles = np.zeros([len(fields), 3])
-    new_fields_local = np.zeros([len(fields), 3])
     new_fields_global = np.zeros([len(fields), 3])
     while not (residue_norm < threshold and max_residue_norm < threshold):
         iteration += 1

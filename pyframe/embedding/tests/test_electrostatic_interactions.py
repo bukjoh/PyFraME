@@ -192,11 +192,18 @@ def test_compute_electrostatic_interaction(
 
 def test_compute_perturbed_electrostatic_interaction(two_oxygen,
                                                      neon):
+    # FIXME somehow this is not clear??
     core, env = neon
-    print(electrostatic_interactions.compute_perturbed_electrostatic_interaction(quantum_subsystem=core,
-                                                                                 classical_subsystem=env,
-                                                                                 perturbation_indices=[1, 0, 0],
-                                                                                 nucleus_idx=0))
+    distance = core.coordinates[0] - env.coordinates[0]
+    from pyframe.embedding import tensor_tools, constants
+    # print(tensor_tools.compute_interaction_tensor_element(distance_vector=distance,
+    #                                                       multi_index=[np.array([0, 0, 0], dtype=np.int64),
+    #                                                                    np.array([1, 0, 0], dtype=np.int64)],
+    #                                                       tensor_coefficients=constants.values.tensor_coefficients))
+    # print(electrostatic_interactions.compute_perturbed_electrostatic_interaction(quantum_subsystem=core,
+    #                                                                              classical_subsystem=env,
+    #                                                                              perturbation_indices=[1, 0, 0],
+    #                                                                              nucleus_idx=0))
     # in frame: -2.3142853266046650 not in frame: 2.314285326604665
     # for deriv in y and z direction is 0.0 as in the test
 

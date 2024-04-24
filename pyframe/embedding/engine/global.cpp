@@ -26,6 +26,7 @@ Eigen::VectorXd quantum_epsilons;
 Eigen::VectorXd classical_sigmas;
 Eigen::VectorXd classical_epsilons;
 std::string combination_rule;
+Eigen::VectorXd factorials;
 
 
 
