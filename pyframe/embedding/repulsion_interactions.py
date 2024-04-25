@@ -14,8 +14,8 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                                    combination_rule: str = 'Lorentz-Berthelot',
                                    perturbation_cache: Optional[pert_tuple_cache.rspCache] = None
                                    ) -> float | dict:
-    """Computes the repulsion (Pauli-Repulsion) potential or gradients of the Nuclei of a QuantumSubsystem interacting
-    with a ClassicalSubsystem.
+    """Computes the perturbed or unperturbed repulsion (Pauli-Repulsion) potential of the Nuclei of a QuantumSubsystem
+    interacting with a ClassicalSubsystem.
 
     Args:
         quantum_subsystem: QuantumSubsystem
@@ -26,7 +26,7 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
         perturbation_cache: rspCache containing the perturbation tuple and components (perturbed has to be True).
 
     Returns:
-        Repulsion potential or gradient.
+        Perturbed or unperturbed repulsion potential.
     """
     comm = classical_subsystem.comm
     if method == 'LJ':
@@ -49,10 +49,23 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                     counts = [avg + 1 if p < res else avg for p in range(size)]
                     start = sum(counts[:rank])
                     end = sum(counts[:rank + 1])
-                    return engine.unperturbed_lj_repulsion(np.array([start, end], dtype=np.int64))
+                    global_contr = 0
+                    local_contr = engine.unperturbed_lj_repulsion(np.array([start, end], dtype=np.int64))
+                    comm.Allreduce(local_contr, global_contr, op=MPI.SUM)
+                    return global_contr
             else:
                 # Set global factorials
                 engine.set_factorials(constants.values.factorials)
+                if comm is None:
+                    start = 0
+                    end = len(classical_subsystem.coordinates)
+                else:
+                    rank = comm.Get_rank()
+                    size = comm.Get_size()
+                    avg, res = divmod(len(classical_subsystem.coordinates), size)
+                    counts = [avg + 1 if p < res else avg for p in range(size)]
+                    start = sum(counts[:rank])
+                    end = sum(counts[:rank + 1])
                 # Test if perturbation tuple contains EL
                 repulsion_contr = {}
                 for i, p_tuple in enumerate(perturbation_cache.p_tuples):
@@ -61,12 +74,12 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                         if k.o == 'EL':
                             el = True
                     if el:
-                        if not p_tuple.h in repulsion_contr:
+                        if p_tuple.h not in repulsion_contr:
                             repulsion_contr[p_tuple.h] = {}
                         for comp in perturbation_cache.comps:
                             repulsion_contr[p_tuple.h][comp[i]] = 0.0
                     else:
-                        if not p_tuple.h in repulsion_contr:
+                        if p_tuple.h not in repulsion_contr:
                             repulsion_contr[p_tuple.h] = {}
                         # Loop over Components
                         for comp in perturbation_cache.comps:
@@ -79,9 +92,10 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                                                   np.array([0, 0, 0], dtype=np.int64)]]
                             # nuc_index = None
                             pert_idx = None
+                            k_dict = {}
                             k_list = []
                             same_nuc = True
-                            for k in comp[i]:
+                            for counter, k in enumerate(comp[i]):
                                 # Single integer to describe index and multiindex
                                 nuc_index = k // 3
                                 if pert_idx is None:
@@ -91,22 +105,30 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                                     same_nuc = False
                                     break
                                 mod = k % 3
-                                k_list.append(multi_indices_xyz[mod])
+                                k_dict[counter] = multi_indices_xyz[mod]
+                                k_list.append(counter)
                             if not same_nuc:
                                 repulsion_contr[p_tuple.h][comp[i]] = 0.0
                                 continue
                             else:
                                 # It is always the same nucleus
                                 k_partitions = perturbation_tools.subsets_of_list(k_list)
+                                k_perturbations = perturbation_tools.replace_keys_with_values(dictionary=k_dict,
+                                                                                              nested_list=k_partitions)
                                 # check if comp already in dict
-                                if not comp[i] in repulsion_contr[p_tuple.h]:
+                                if comp[i] not in repulsion_contr[p_tuple.h]:
                                     # Pass k partitions and nucleus index to the function
-                                    repulsion_contr[p_tuple.h][comp[i]] = engine.perturbed_lj_repulsion(
-                                        np.array([0, len(classical_subsystem.coordinates), nuc_index],
-                                                 dtype=np.int64), k_partitions)
+                                    if comm is None:
+                                        repulsion_contr[p_tuple.h][comp[i]] = engine.perturbed_lj_repulsion(
+                                            np.array([start, end, nuc_index],
+                                                     dtype=np.int64), k_perturbations)
+                                    else:
+                                        global_contr = 0.0
+                                        local_contr = engine.perturbed_lj_repulsion(
+                                            np.array([start, end, nuc_index], dtype=np.int64), k_perturbations)
+                                        comm.Allreduce(local_contr, global_contr, op=MPI.SUM)
+                                        repulsion_contr[p_tuple.h][comp[i]] = global_contr
                 return repulsion_contr
-
-
         else:
             raise NotImplementedError("This combination rule has not been implemented yet.")
     else:
@@ -118,6 +140,18 @@ def compute_repulsion_interactions_gradient(quantum_subsystem: subsystem.Quantum
                                             method: str = 'LJ',
                                             combination_rule: str = 'Lorentz-Berthelot'
                                             ) -> np.ndarray:
+    """Computes the repulsion (Pauli-Repulsion) gradients of the Nuclei of a QuantumSubsystem interacting
+    with a ClassicalSubsystem.
+
+    Args:
+        quantum_subsystem: QuantumSubsystem
+        classical_subsystem: ClassicalSubsystem
+        method: Flag to set the method to be used.
+        combination_rule: Flag to set the combination rule to be used. Default is Lorentz-Berthelot.
+
+    Returns:
+        Repulsion gradient.
+    """
     comm = classical_subsystem.comm
     if method == 'LJ':
         engine.set_atoms_nuclei_coordinates_lj_sigma_epsilon(classical_subsystem.rep_lj_sigma,

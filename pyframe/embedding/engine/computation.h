@@ -94,6 +94,13 @@ double compute_perturbed_lj_repulsion(int start,
                                       std::string combination_rule,
                                       std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions);
 
+// Computes the derivative of the LJ dispersion potential between a ClassicalSubsystem and a nucleus.
+// Parallelized with OpenMP.
+double compute_perturbed_lj_dispersion(int start,
+                                      int end,
+                                      int nuc_idx,
+                                      std::string combination_rule,
+                                      std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions);
 
 }
 

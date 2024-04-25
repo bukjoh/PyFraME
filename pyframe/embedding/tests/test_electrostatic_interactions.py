@@ -192,22 +192,29 @@ def test_compute_electrostatic_interaction(
 
 def test_compute_perturbed_electrostatic_interaction(two_oxygen,
                                                      neon):
-    # FIXME somehow this is not clear??
-    core, env = neon
-    distance = core.coordinates[0] - env.coordinates[0]
-    from pyframe.embedding import tensor_tools, constants
-    # print(tensor_tools.compute_interaction_tensor_element(distance_vector=distance,
-    #                                                       multi_index=[np.array([0, 0, 0], dtype=np.int64),
-    #                                                                    np.array([1, 0, 0], dtype=np.int64)],
-    #                                                       tensor_coefficients=constants.values.tensor_coefficients))
-    # print(electrostatic_interactions.compute_perturbed_electrostatic_interaction(quantum_subsystem=core,
-    #                                                                              classical_subsystem=env,
-    #                                                                              perturbation_indices=[1, 0, 0],
-    #                                                                              nucleus_idx=0))
-    # in frame: -2.3142853266046650 not in frame: 2.314285326604665
-    # for deriv in y and z direction is 0.0 as in the test
-
-    # for second order derivative
-    # [-2.2266673873992375_dp, 0.0_dp, 0.0_dp, 1.1133336936996188_dp, 0.0_dp, &
-    #                             1.1133336936996188_dp]
-    # my results 200 -2.2266673873992375 020 1.1133336936996188 002 1.1133336936996188
+    core_ne, env_ne = neon
+    ref_energy = [2.3142853266046646, 0.0, 0.0]
+    for i in range(3):
+        perturbation = [0, 0, 0]
+        perturbation[i] += 1
+        assert (electrostatic_interactions.
+                compute_perturbed_electrostatic_interaction(quantum_subsystem=core_ne,
+                                                            classical_subsystem=env_ne,
+                                                            perturbation_indices=perturbation,
+                                                            nucleus_idx=0) == pytest.approx(ref_energy[i],
+                                                                                            rel=1e-8))
+    ref_energy = [-2.2266673873992375, 0.0, 0.0, 1.1133336936996188, 0.0, 1.1133336936996188]
+    counter = 0
+    for i in range(3):
+        perturbation1 = [0, 0, 0]
+        perturbation1[i] += 1
+        for j in range(i, 3):
+            perturbation2 = perturbation1
+            perturbation2[j] += 1
+            assert (electrostatic_interactions.
+                    compute_perturbed_electrostatic_interaction(quantum_subsystem=core_ne,
+                                                                classical_subsystem=env_ne,
+                                                                perturbation_indices=perturbation2,
+                                                                nucleus_idx=0) == pytest.approx(ref_energy[counter],
+                                                                                                rel=1e-8))
+            counter += 1

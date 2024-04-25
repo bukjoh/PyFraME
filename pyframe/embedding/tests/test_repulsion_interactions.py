@@ -3,12 +3,13 @@ import pytest
 import numpy as np
 import copy
 
-from pyframe.embedding import repulsion_interactions, read_input
+from pyframe.embedding import repulsion_interactions
 from pyframe.embedding.pert_tuple_cache import rspPert, rspPertTuple, rspCache
 
 
 def test_compute_repulsion_interactions(two_oxygen,
-                                        two_wat):
+                                        two_wat,
+                                        neon):
     # Setup
     core_oxygen, env_oxygen = two_oxygen
     core_two_wat, env_two_wat = two_wat
@@ -41,11 +42,6 @@ def test_compute_repulsion_interactions(two_oxygen,
     p_tuple_geo_and_el0 = [perts_geo, perts_el0]
     energy_props_geo_el0 = rspCache(p_tuple_geo_el0, k=1, n=0, comps=comps_geo_el0)
     energy_props_geo_and_el0 = rspCache(p_tuple_geo_and_el0, k=1, n=0, comps=comps_geo_and_el0)
-
-
-
-
-
     # Test Oxygen - Oxygen
     ref_grad = np.array([9.12130838e-07, 4.39726617e-07, -5.91796568e-11])
     result_geo_and_el_0 = (repulsion_interactions.
@@ -84,7 +80,7 @@ def test_compute_repulsion_interactions(two_oxygen,
                                                           combination_rule='Lorentz-Berthelot',
                                                           perturbation_cache=energy_props_geo_and_el0))
     for pert in range(9):
-        assert result_geo_and_el_0[perts_geo.h][(pert,)] == pytest.approx(ref_grad[pert//3, pert%3], rel=1e-8)
+        assert result_geo_and_el_0[perts_geo.h][(pert,)] == pytest.approx(ref_grad[pert // 3, pert % 3], rel=1e-8)
         assert result_geo_and_el_0[perts_el0.h][(pert,)] == 0.0
     # Test if any pert is EL the result becomes 0.0 for every component
     comps_geo_el0 = {((0, 0),), ((1, 1),), ((2, 2),),
@@ -92,14 +88,95 @@ def test_compute_repulsion_interactions(two_oxygen,
                      ((6, 0),), ((7, 1),), ((8, 2),)}
     energy_props_geo_el0 = rspCache(p_tuple_geo_el0, k=1, n=0, comps=comps_geo_el0)
     result_geo_el_0 = (repulsion_interactions.
-                       compute_repulsion_interactions(quantum_subsystem=core_oxygen,
-                                                      classical_subsystem=env_oxygen,
+                       compute_repulsion_interactions(quantum_subsystem=core_two_wat,
+                                                      classical_subsystem=env_two_wat,
                                                       perturbed=True,
                                                       method='LJ',
                                                       combination_rule='Lorentz-Berthelot',
                                                       perturbation_cache=energy_props_geo_el0))
     for res in result_geo_el_0[perts_geo_el0.h].values():
         assert res == 0.0
+    # Test Ne - Ne
+    geo_templ = rspPert('GEO', 0.0)
+    core_neon, env_neon = neon
+    perts_g = rspPertTuple([copy.deepcopy(geo_templ)])
+    perts_gg = rspPertTuple([copy.deepcopy(geo_templ),
+                             copy.deepcopy(geo_templ)])
+    perts_ggg = rspPertTuple([copy.deepcopy(geo_templ),
+                              copy.deepcopy(geo_templ),
+                              copy.deepcopy(geo_templ)])
+    perts_gggg = rspPertTuple([copy.deepcopy(geo_templ),
+                               copy.deepcopy(geo_templ),
+                               copy.deepcopy(geo_templ),
+                               copy.deepcopy(geo_templ)])
+    p_tuple_g = [perts_g]
+    p_tuple_gg = [perts_gg]
+    p_tuple_ggg = [perts_ggg]
+    p_tuple_gggg = [perts_gggg]
+    comps_g = {((0,),), ((1,),), ((2,),)}
+    comps_gg = {((0, 0),), ((1, 1),), ((2, 2),), ((0, 1),), ((0, 2),), ((1, 2),)}
+    comps_ggg = {((0, 0, 0),), ((0, 0, 1),), ((0, 0, 2),), ((0, 1, 1),), ((0, 1, 2),), ((0, 2, 2),), ((1, 1, 1),),
+                 ((1, 1, 2),), ((1, 2, 2),), ((2, 2, 2),)}
+    comps_gggg = {((0, 0, 0, 0),), ((0, 0, 0, 1),), ((0, 0, 0, 2),), ((0, 0, 1, 1),), ((0, 0, 1, 2),), ((0, 0, 2, 2),),
+                  ((0, 1, 1, 1),), ((0, 1, 1, 2),), ((0, 1, 2, 2),), ((0, 2, 2, 2),), ((1, 1, 1, 1),), ((1, 1, 1, 2),),
+                  ((1, 1, 2, 2),), ((1, 2, 2, 2),), ((2, 2, 2, 2),)}
+    energy_props_g = rspCache(p_tuple_g, k=0, n=0, comps=comps_g)
+    energy_props_gg = rspCache(p_tuple_gg, k=0, n=0, comps=comps_gg)
+    energy_props_ggg = rspCache(p_tuple_ggg, k=0, n=0, comps=comps_ggg)
+    energy_props_gggg = rspCache(p_tuple_gggg, k=0, n=0, comps=comps_gggg)
+    ref_contr = [422.92289720831826, 0.0, 0.0]
+    result_g = (repulsion_interactions.
+                compute_repulsion_interactions(quantum_subsystem=core_neon,
+                                               classical_subsystem=env_neon,
+                                               perturbed=True,
+                                               method='LJ',
+                                               combination_rule='Lorentz-Berthelot',
+                                               perturbation_cache=energy_props_g))
+    for i in range(3):
+        assert pytest.approx(ref_contr[i], rel=1e-8) == result_g[perts_g.h][(i,)]
+    result_gg = (repulsion_interactions.
+                 compute_repulsion_interactions(quantum_subsystem=core_neon,
+                                                classical_subsystem=env_neon,
+                                                perturbed=True,
+                                                method='LJ',
+                                                combination_rule='Lorentz-Berthelot',
+                                                perturbation_cache=energy_props_gg))
+    ref_contr = [2644.9228090075026, 0.0, 0.0, -203.45560069288484, 0.0, -203.45560069288484]
+    counter = 0
+    for i in range(3):
+        for j in range(i, 3):
+            assert pytest.approx(ref_contr[counter], rel=1e-8) == result_gg[perts_gg.h][(i, j)]
+            counter += 1
+    result_ggg = (repulsion_interactions.
+                  compute_repulsion_interactions(quantum_subsystem=core_neon,
+                                                 classical_subsystem=env_neon,
+                                                 perturbed=True,
+                                                 method='LJ',
+                                                 combination_rule='Lorentz-Berthelot',
+                                                 perturbation_cache=energy_props_ggg))
+    ref_contr = [17813.50944635706, 0.0, 0.0, -1370.2699574120813, 0.0, -1370.2699574120813, 0.0, 0.0, 0.0, 0.0]
+    counter = 0
+    for i in range(3):
+        for j in range(i, 3):
+            for k in range(j, 3):
+                assert pytest.approx(ref_contr[counter], rel=1e-8) == result_ggg[perts_ggg.h][(i, j, k)]
+                counter += 1
+    result_gggg = (repulsion_interactions.
+                   compute_repulsion_interactions(quantum_subsystem=core_neon,
+                                                  classical_subsystem=env_neon,
+                                                  perturbed=True,
+                                                  method='LJ',
+                                                  combination_rule='Lorentz-Berthelot',
+                                                  perturbation_cache=energy_props_gggg))
+    ref_contr = [128543.22698464915, 0.0, 0.0, -9887.940537280705, 0.0, -9887.940537280705, 0.0, 0.0, 0.0, 0.0,
+                 1977.588107456141, 0.0, 659.1960358187137, 0.0, 1977.588107456141]
+    counter = 0
+    for i in range(3):
+        for j in range(i, 3):
+            for k in range(j, 3):
+                for l in range(k, 3):
+                    assert pytest.approx(ref_contr[counter], rel=1e-8) == result_gggg[perts_gggg.h][(i, j, k, l)]
+                    counter += 1
 
 
 def test_compute_repulsion_interactions_gradient(two_oxygen,

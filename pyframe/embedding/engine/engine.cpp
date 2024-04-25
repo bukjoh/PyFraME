@@ -836,7 +836,7 @@ std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> read_k_partition
     return k_partitions;
 }
 
-// Computes the perturbed VdW potential between a ClassicalSubsystem and a nucleus.
+// Computes the perturbed repulsion potential between a ClassicalSubsystem and a nucleus.
 //args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* perturbed_lj_repulsion(PyObject* self, PyObject* args) {
     PyObject *start_end_nuc_idx_obj;
@@ -849,6 +849,21 @@ static PyObject* perturbed_lj_repulsion(PyObject* self, PyObject* args) {
     int nuc_idx = (int)read_vector(start_end_nuc_idx_obj)(2);
     std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions = read_k_partitions(k_partitions_obj);
     return PyFloat_FromDouble(computation::compute_perturbed_lj_repulsion(start, end, nuc_idx, global::combination_rule, k_partitions));
+}
+
+// Computes the perturbed dispersion potential between a ClassicalSubsystem and a nucleus.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* perturbed_lj_dispersion(PyObject* self, PyObject* args) {
+    PyObject *start_end_nuc_idx_obj;
+    PyObject *k_partitions_obj;
+    if (!PyArg_ParseTuple(args, "OO", &start_end_nuc_idx_obj, &k_partitions_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_nuc_idx_obj)(0);
+    int end = (int)read_vector(start_end_nuc_idx_obj)(1);
+    int nuc_idx = (int)read_vector(start_end_nuc_idx_obj)(2);
+    std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions = read_k_partitions(k_partitions_obj);
+    return PyFloat_FromDouble(computation::compute_perturbed_lj_dispersion(start, end, nuc_idx, global::combination_rule, k_partitions));
 }
 
 
@@ -898,7 +913,9 @@ static PyMethodDef module_methods[] = {
      {"lj_dispersion_gradient", lj_dispersion_gradient, METH_VARARGS,
      "Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem."},
      {"perturbed_lj_repulsion", perturbed_lj_repulsion, METH_VARARGS,
-     "Computes the perturbed VdW potential between a ClassicalSubsystem and a nucleus."},
+     "Computes the perturbed repulsion potential between a ClassicalSubsystem and a nucleus."},
+     {"perturbed_lj_dispersion", perturbed_lj_dispersion, METH_VARARGS,
+     "Computes the perturbed dispersion potential between a ClassicalSubsystem and a nucleus."},
     {NULL, NULL, 0, NULL}};
 
 // Module definition

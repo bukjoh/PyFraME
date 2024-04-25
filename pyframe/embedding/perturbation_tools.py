@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import copy
 
-from typing import Optional
+from typing import Optional, Dict, List, Any
 from pyframe.embedding import subsystem, tensor_tools, constants
 from pyframe.embedding.pert_tuple_cache import rspPertTuple, rspCache
 
@@ -639,23 +639,51 @@ def calc_pert_ind_contr(ids: list,
 
 
 def subsets_of_list(filled_list) -> list:
-    """Identifies all the distinct ways the elements in a list can be grouped into non-empty subsets,
-     where each element is included exactly once. The number of subsets generated is given through 2^(n-1), where n
-     corresponds to the number of elements of the given list.
+    """Generates all distinct ways the elements in a set can be grouped into non-empty subsets, where each element is
+    included exactly once. This is also known as the set of all partitions of a set. The number of partitions of a set
+    with n elements is given through the Bell numbers.
 
     Args:
-        filled_list: List filled me elements (non-empty), for which subsets are determined.
+        filled_list: List filled with elements (non-empty), for which subsets are determined.
 
     Returns:
-        List of subsets (list of lists).
+        List of subsets (list of lists of lists).
     """
-    def backtrack(start, path):
-        if start == len(filled_list):
-            partitions.append(path[:])
-            return
-        for i in range(start, len(filled_list)):
-            backtrack(i + 1, path + [filled_list[start:i + 1]])
+    from itertools import combinations
+
+    def get_partitions(n, I=1):
+        yield (n,)
+        for i in range(I, n // 2 + 1):
+            for p in get_partitions(n - i, i):
+                yield (i,) + p
 
     partitions = []
-    backtrack(0, [])
+    for partition in get_partitions(len(filled_list)):
+        for combo in combinations(filled_list, partition[0]):
+            remaining = [x for x in filled_list if x not in combo]
+            if len(partition) == 1:
+                partitions.append([list(combo)])
+            else:
+                for sub_partition in subsets_of_list(remaining):
+                    partitions.append([list(combo)] + sub_partition)
+
+    # Remove duplicates by converting each partition to a set of frozensets (which are hashable), then back to lists
+    partitions = [list(map(list, partition)) for partition in set(map(frozenset, map(lambda x: map(frozenset, x),
+                                                                                     partitions)))]
+
     return partitions
+
+
+def replace_keys_with_values(dictionary: Dict[Any, Any],
+                             nested_list: List[List[List[Any]]]
+                             ) -> List[List[List[Any]]]:
+    """Replace keys in a nested list with corresponding values from a dictionary.
+
+       Args:
+           dictionary: A dictionary containing keys and values.
+           nested_list: A nested list containing elements to be replaced.
+
+       Returns:
+           A nested list with keys replaced by corresponding values from the dictionary.
+       """
+    return [[[dictionary[element] for element in partition] for partition in term] for term in nested_list]
