@@ -656,7 +656,6 @@ def subsets_of_list(filled_list) -> list:
         for i in range(I, n // 2 + 1):
             for p in get_partitions(n - i, i):
                 yield (i,) + p
-
     partitions = []
     for partition in get_partitions(len(filled_list)):
         for combo in combinations(filled_list, partition[0]):
@@ -666,11 +665,9 @@ def subsets_of_list(filled_list) -> list:
             else:
                 for sub_partition in subsets_of_list(remaining):
                     partitions.append([list(combo)] + sub_partition)
-
     # Remove duplicates by converting each partition to a set of frozensets (which are hashable), then back to lists
     partitions = [list(map(list, partition)) for partition in set(map(frozenset, map(lambda x: map(frozenset, x),
                                                                                      partitions)))]
-
     return partitions
 
 

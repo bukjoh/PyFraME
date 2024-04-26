@@ -89,6 +89,7 @@ class TestQuantumSubsystem:
                                 -8.61596532e-04, 5.59199997e-09, -1.12723104e-03],
                                [8.44935406e-04, 6.96866735e-04, 1.26731929e-06,
                                 -2.53431261e-04, 6.14820143e-07, -5.91504145e-04]]])
+        # FIXME ist einmal im test gefailed???
         assert np.allclose(ref_grads, self.core_two_wat.compute_nuclear_field_gradients(self.env_two_wat.coordinates))
 
     def test_compute_electric_fields(self,

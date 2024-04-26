@@ -1,7 +1,4 @@
 """Tests PyFraME.embedding.perturbatino_tools.py"""
-import pytest
-import numpy as np
-
 from pyframe.embedding import perturbation_tools
 
 
@@ -36,6 +33,8 @@ def test_subsets_of_list():
                                                               [[1, 2, 3], [4]],
                                                               [[3], [4], [1, 2]],
                                                               [[1], [2, 3, 4]]]
-
-    input_list = [1, 2, 3, 4, 5]
-    print(len(perturbation_tools.subsets_of_list(input_list)))
+    bell_numbers = [1, 1, 2, 5, 15, 52, 203]
+    input_list = []
+    for i in range(7):
+        assert len(perturbation_tools.subsets_of_list(input_list)) == bell_numbers[i]
+        input_list.append(i)
