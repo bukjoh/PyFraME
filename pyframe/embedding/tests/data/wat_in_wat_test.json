@@ -1,5 +1,5 @@
 {
-  "quantum_subsystem": {
+  "quantum_subsystems": [{
     "name": "QM sys",
     "comment": "Density matrix of h2o in the cc-pvdz basis run with vlx ScfRestrictedDriver",
     "density_matrix": [[ 2.00299568e+00, -3.81768375e-03, -1.23572710e-02,
@@ -226,8 +226,8 @@
                 ]
       }
     ]
-  },
-  "classical_subsystem": {
+  }],
+  "classical_subsystems": [{
     "classical_fragments": [
       {
         "index": 0,
@@ -554,5 +554,5 @@
         ]
       }
     ]
-  }
+  }]
 }

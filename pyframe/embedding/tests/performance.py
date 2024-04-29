@@ -9,7 +9,7 @@ import cProfile
 os.environ["OMP_NUM_THREADS"] = "4"
 comm = MPI.COMM_WORLD
 # comm = None
-core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
+core, env = read_input.reader(subsystems_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
                               comm=comm)
 # # cProfile.run('env.self_energy')
 #
@@ -82,7 +82,7 @@ ref_dipoles_act_wat_mid = np.array(
 # ref_exec_time = 0.3774082660675049
 #
 comm = None
-core_s, env_s = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
+core_s, env_s = read_input.reader(subsystems_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
                                   comm=comm)
 print("Calculate induced dipoles without external fields.")
 start_time = time.time()

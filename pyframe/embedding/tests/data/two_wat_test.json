@@ -1,5 +1,5 @@
 {
-  "quantum_subsystem": {
+  "quantum_subsystems": [{
     "name": "QM sys",
     "nuclei": [
       {
@@ -57,8 +57,8 @@
         }
       }
     ]
-  },
-  "classical_subsystem": {
+  }],
+  "classical_subsystems": [{
     "classical_fragments": [
       {
         "index": 0,
@@ -227,5 +227,5 @@
         ]
       }
     ]
-  }
+  }]
 }

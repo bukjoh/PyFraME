@@ -283,9 +283,9 @@ def water_fragment_dict():
 def water_fragments():
     # Read fragments from JSON
     with open(f'{os.path.dirname(__file__)}/data/act_wat_test.json') as json_file:
-        input_data = json.load(json_file).get('classical_subsystem', None)
+        input_data = json.load(json_file).get('classical_subsystems', None)
     classical_fragments = []
-    for f in input_data['classical_fragments']:
+    for f in input_data[0]['classical_fragments']:
         classical_fragments.append(fragment.ClassicalFragment(**f))
     return classical_fragments
 

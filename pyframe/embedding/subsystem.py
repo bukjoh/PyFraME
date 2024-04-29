@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import numpy as np
-
 from mpi4py import MPI
 from dataclasses import dataclass
-from typing import Optional, Any, Tuple
-from pyframe.embedding import density_matrix, tensor_tools, solvers, electrostatic_interactions, engine, polytensor
+from typing import Optional, Any
+
+from pyframe.embedding import engine
+from .polytensor import FirstDegreePolytensor
+from .density_matrix import DensityMatrix
+from .tensor_tools import uncompress_symmetric_matrix
+from .solvers import induced_dipoles_jacobi
 
 
 class Subsystem:
@@ -26,7 +30,7 @@ class QuantumSubsystem(Subsystem):
 
     Args:
         nuclei: List of Nuclei.
-        dens_mat: Density Matrix.
+        density_matrix: Density Matrix.
         quantum_fragments: Fragments of the QuantumSubsystem.
         name: Name of the QuantumSubsystem.
         comm: The MPI communicator.
@@ -34,7 +38,7 @@ class QuantumSubsystem(Subsystem):
 
     def __init__(self,
                  nuclei: list,
-                 dens_mat: density_matrix.DensityMatrix,
+                 density_matrix: DensityMatrix,
                  quantum_fragments: Optional[list] = None,
                  name: Optional[str] = None,
                  comm: Optional[MPI.Comm] = None
@@ -44,7 +48,7 @@ class QuantumSubsystem(Subsystem):
         Subsystem.__init__(self, name=name, comm=comm)
         self.num_nuclei = len(nuclei)
         self.nuclei = nuclei
-        self.density_matrix = dens_mat
+        self.density_matrix = density_matrix
         self.quantum_fragments = quantum_fragments
         self.coordinates = np.zeros([self.num_nuclei, 3], dtype=np.float64)
         self.charges = np.zeros([self.num_nuclei], dtype=np.float64)
@@ -58,6 +62,9 @@ class QuantumSubsystem(Subsystem):
         if self.comm is not None:
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
+
+    def __repr__(self):
+        return f"<QuantumSubsystem {self.name}>"
 
     @property
     def rep_lj_sigma(self) -> np.ndarray:
@@ -234,12 +241,12 @@ class ClassicalSubsystem(Subsystem):
             for atom in fragments.atoms:
                 self.indices[k] = atom.index
                 if len(atom.polarizability) == 10:
-                    self.polarizabilities[k, :, :] = tensor_tools.uncompress_symmetric_matrix(atom.polarizability[4:10])
+                    self.polarizabilities[k, :, :] = uncompress_symmetric_matrix(atom.polarizability[4:10])
                 self.coordinates[k, :] = atom.coordinate[:]
                 self.exclusions.append(atom.exclusions)
                 self.charges[k] = atom.multipoles.data[0]
                 self.atoms.append(atom)
-                self.multipoles_deg_taylor_coeff.append(polytensor.FirstDegreePolytensor.multiply_elementwise(
+                self.multipoles_deg_taylor_coeff.append(FirstDegreePolytensor.multiply_elementwise(
                     atom.multipoles_with_degeneracy,
                     atom.taylor_coefficients).data)
                 self.multipole_orders[k] = atom.multipole_order
@@ -255,6 +262,9 @@ class ClassicalSubsystem(Subsystem):
         if self.comm is not None:
             self.rank = self.comm.Get_rank()
             self.size = self.comm.Get_size()
+
+    def __repr__(self):
+        return f"<ClassicalSubsystem {self.name}>"
 
     @property
     def rep_lj_sigma(self) -> np.ndarray:
@@ -457,7 +467,7 @@ class ClassicalSubsystem(Subsystem):
                     starting_guess[i, :] = np.einsum('ij, j', self.polarizabilities[i], field)
         induced_dipoles, num_iter = None, None
         if solver == 'jacobi':
-            induced_dipoles, num_iter = solvers.induced_dipoles_jacobi(coordinates=self.coordinates,
+            induced_dipoles, num_iter = induced_dipoles_jacobi(coordinates=self.coordinates,
                                                                        polarizabilities=self.polarizabilities,
                                                                        exclusions=self.exclusions,
                                                                        indices=self.indices,

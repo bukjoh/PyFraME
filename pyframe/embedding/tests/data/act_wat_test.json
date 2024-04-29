@@ -1,5 +1,5 @@
 {
-    "quantum_subsystem": {
+    "quantum_subsystems": [{
         "_comment": "Density matrix of acetone in the STO-3G basis run with vlx ScfRestrictedDriver",
         "density_matrix": [[ 2.07244612e+00, -2.31982418e-01,  1.70988985e-02,
                             -4.59345455e-02,  1.87840788e-02, -4.91415913e-02,
@@ -337,8 +337,8 @@
                 ]
             }
         ]
-    },
-    "classical_subsystem": {
+    }],
+    "classical_subsystems": [{
         "classical_fragments": [
             {
                 "index": 1,
@@ -558,5 +558,5 @@
                 ]
             }
         ]
-    }
+    }]
 }

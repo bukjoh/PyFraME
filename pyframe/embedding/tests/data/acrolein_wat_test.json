@@ -1,5 +1,5 @@
 {
-    "quantum_subsystem": {
+    "quantum_subsystems": [{
         "nuclei": [
             {
                 "index": 1,
@@ -50,8 +50,8 @@
                 "coordinate": [ 5.05562776e+00, -4.75602303e+00, -1.27178568e-03]
             }
         ]
-    },
-    "classical_subsystem": {
+    }],
+    "classical_subsystems": [{
     "classical_fragments": [
       {
         "index": 1,
@@ -277,5 +277,5 @@
         ]
       }
     ]
-  }
+  }]
 }

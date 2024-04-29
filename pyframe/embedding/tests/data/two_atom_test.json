@@ -1,5 +1,5 @@
 {
-  "quantum_subsystem": {
+  "quantum_subsystems": [{
     "_comment": "Density matrix of h2 in the sto-3g basis run with vlx ScfRestrictedDriver",
     "density_matrix": [[0.77139152, 0.77139152],
                       [0.77139152, 0.77139152]],
@@ -25,8 +25,8 @@
                 ]
       }
     ]
-  },
-  "classical_subsystem": {
+  }],
+  "classical_subsystems": [{
     "classical_fragments": [
       {
         "index": 0,
@@ -90,5 +90,5 @@
       }]
       }
     ]
-  }
+  }]
 }

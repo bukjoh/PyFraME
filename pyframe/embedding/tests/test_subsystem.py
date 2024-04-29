@@ -19,7 +19,7 @@ class TestQuantumSubsystem:
         dens_mat = self.core.density_matrix  # Provide appropriate DensityMatrix instance for testing
         quantum_fragments = self.core.quantum_fragments  # Provide appropriate QuantumFragments instances for testing
         name = "TestQuantumSubsystem"
-        q_subsystem = subsystem.QuantumSubsystem(nuclei=nuclei, dens_mat=dens_mat, quantum_fragments=quantum_fragments,
+        q_subsystem = subsystem.QuantumSubsystem(nuclei=nuclei, density_matrix=dens_mat, quantum_fragments=quantum_fragments,
                                                  name=name)
         assert q_subsystem.name == name
         assert q_subsystem.nuclei == nuclei
@@ -30,7 +30,7 @@ class TestQuantumSubsystem:
 
     def test_init_with_empty_nuclei(self):
         with pytest.raises(ValueError, match="QuantumSubsystem must have at least one Nucleus."):
-            subsystem.QuantumSubsystem(nuclei=[], dens_mat=self.core.density_matrix)
+            subsystem.QuantumSubsystem(nuclei=[], density_matrix=self.core.density_matrix)
 
     def test_static_potential(self):
         ref_pot_array = np.array([1.9344114763470204, 2.034614421586786,
