@@ -375,7 +375,7 @@ class ClassicalSubsystem(Subsystem):
         return self._multipole_fields
 
     def compute_multipole_fields(self) -> None:
-        """Compute the electric fields from all multipoles on all polarizable sites."""
+        """Compute the electric fields from all multipoles on all polarizable atoms."""
         engine.set_multipoles_multipoles_order(self.degenerate_multipoles_with_taylor_coefficients,
                                                self.multipole_orders)
         engine.set_coords_idcs_exlcs(self.coordinates,
