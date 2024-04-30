@@ -9,7 +9,7 @@ from mpi4py import MPI
 
 
 def example_data(data):
-    return data.coordinates, data.polarizabilities, data.exclusions, data.indices, data.multipole_fields
+    return data.coordinates, data.dipole_dipole_polarizabilities, data.exclusions, data.indices, data.multipole_fields
 
 
 def test_induced_dipoles_jacobi(

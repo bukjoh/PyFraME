@@ -16,7 +16,7 @@ class Fragment:
     def __init__(self,
                  index: int,
                  name: Optional[str] = None
-                 ):
+                 ) -> None:
         self._index = index
         self._name = name
 
@@ -34,7 +34,7 @@ class ClassicalFragment(Fragment):
                  index: int,
                  atoms: list,
                  name: Optional[str] = None,
-                 ):
+                 ) -> None:
         Fragment.__init__(self, index=index, name=name)
         self.atoms = []
         self.coordinates = np.zeros([len(atoms), 3])
@@ -85,7 +85,7 @@ class QuantumFragment(Fragment):
                  nuclei: list,
                  e_density_matrix: np.ndarray | list,
                  name: Optional[str] = None
-                 ):
+                 ) -> None:
         Fragment.__init__(self, index=index, name=name)
         self.nuclei = []
         for n in nuclei:

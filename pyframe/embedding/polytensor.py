@@ -22,7 +22,7 @@ class FirstDegreePolytensor:
                  rank: int,
                  data_type=float,
                  tensor_data: Optional[np.ndarray] = None
-                 ):
+                 ) -> None:
         self._rank = rank
         self.length = (rank + 1) * (rank + 2) * (rank + 3) // 6
         if tensor_data is not None:
@@ -135,7 +135,7 @@ class SecondDegreePolytensor:
                  rank_2: int | list,
                  data_type=float,
                  tensor_data: Optional[np.ndarray] = None
-                 ):
+                 ) -> None:
         if isinstance(rank_1, list):
             self.length_1 = 0
             for i in range(rank_1[0], rank_1[1] + 1):

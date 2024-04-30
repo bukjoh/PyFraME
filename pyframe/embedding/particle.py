@@ -22,7 +22,7 @@ class Particle:
                  index: int,
                  coordinate: np.ndarray,
                  mass: Optional[float] = None
-                 ):
+                 ) -> None:
         self.index = index
         self._mass = mass
         self.coordinate = coordinate
@@ -56,7 +56,7 @@ class Atom(Particle):
                  dispersion: Optional[dict] = None,
                  multipoles: Optional[dict] = None,
                  polarizabilities: Optional[dict] = None,
-                 ):
+                 ) -> None:
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
         if exclusions is not None and not isinstance(exclusions, list):
             raise ValueError("Exclusions must be a list.")
@@ -183,7 +183,7 @@ class Nucleus(Particle):
                  element: Optional[str] = None,
                  repulsion: Optional[dict] = None,
                  dispersion: Optional[dict] = None,
-                 ):
+                 ) -> None:
         Particle.__init__(self, index=index, mass=mass, coordinate=coordinate)
         self.name = name
         self.charge = np.array([charge], dtype=np.float64)
@@ -268,5 +268,5 @@ class VirtualParticle(Particle):
     def __init__(self,
                  index: int,
                  coordinate: np.array
-                 ):
+                 ) -> None:
         Particle.__init__(self, index=index, coordinate=coordinate)

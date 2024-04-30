@@ -411,18 +411,18 @@ static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args) {
 
 // Sets the global coordinates, indices and exclusions.
 // args: [coords, indices, exclusions];
-static PyObject* set_coords_idxs_exlcs(PyObject* self, PyObject* args) {
+static PyObject* set_coords_idcs_exlcs(PyObject* self, PyObject* args) {
     PyObject *coords_obj, *indices_obj, *exclusions_obj;
 
     if (!PyArg_ParseTuple(args, "OOO", &coords_obj, &indices_obj, &exclusions_obj)) {
         return NULL;
     }
     Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)coords_obj);
-    global::coordinates = std::vector<Eigen::Vector3d>();
+    global::atom_coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < coords.rows(); i++) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
-        global::coordinates.push_back(coord);
+        global::atom_coordinates.push_back(coord);
     }
     global::indices = read_vector(indices_obj);
 
@@ -582,7 +582,7 @@ static PyObject* nuclei_field_gradients(PyObject* self, PyObject* args) {
 
 
 Eigen::MatrixXi generateIdxPairs(int start_index, int end_index) {
-    int num_atoms = static_cast<int>(global::coordinates.size());
+    int num_atoms = static_cast<int>(global::atom_coordinates.size());
     Eigen::MatrixXi idx_pairs(2, num_atoms * (num_atoms - 1) / 2);
     int k = 0;
     for (int i = 0; i < num_atoms; ++i) {
@@ -876,7 +876,7 @@ static PyMethodDef module_methods[] = {
      "Computes t_tensor."},
     {"set_tensor_coefficients", set_tensor_coefficients, METH_VARARGS,
      "Sets tensor coefficients and templates for interaction and potential tensors."},
-    {"set_coords_idxs_exlcs", set_coords_idxs_exlcs, METH_VARARGS,
+    {"set_coords_idcs_exlcs", set_coords_idcs_exlcs, METH_VARARGS,
      "Sets coordinates, indices and exclusions for the inner loop of the solver."},
     {"set_old_ind_dipoles", set_old_ind_dipoles, METH_VARARGS,
      "Sets the old induced dipole fields for the calculation of the induced dipoles."},

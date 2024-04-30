@@ -11,7 +11,7 @@ class DensityMatrix:
     """
     def __init__(self,
                  density: np.ndarray | list
-                 ):
+                 ) -> None:
         if not isinstance(density, (np.ndarray, list)):
             raise ValueError("Density must be a numpy array or a list")
         if isinstance(density, list):

@@ -65,7 +65,7 @@ def reader(input_data: dict | Path | str,
     quantum_fragments = None
     quantum_subsystem_name = None
     classical_subsystem_name = None
-    density_matrix = DensityMatrix(np.zeros(1))
+    density_matrix = None
     # Quantum Subsystems
     if subsystems_data.get('quantum_subsystems', None) is not None:
         quantum_subsystems = subsystems_data.get('quantum_subsystems', None)

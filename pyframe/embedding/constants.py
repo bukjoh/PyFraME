@@ -20,7 +20,7 @@ class Constants:
     def __init__(self,
                  max_order: Optional[int] = 42,
                  t_rank: Optional[int] = 15
-                 ):
+                 ) -> None:
         if max_order < 0:
             raise ValueError("max_order must be non-negative")
         if t_rank < 0:

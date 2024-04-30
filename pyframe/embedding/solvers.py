@@ -21,6 +21,7 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
             not isinstance(exclusions, list) or not isinstance(indices, np.ndarray) or \
             not isinstance(fields, np.ndarray) or not isinstance(starting_guess, np.ndarray):
         raise ValueError("Wrong input format.")
+    engine.set_coords_idcs_exlcs(coordinates, indices, exclusions)
     if comm is None:
         return induced_dipoles_jacobi_serial(coordinates=coordinates,
                                              polarizabilities=polarizabilities,
@@ -74,9 +75,6 @@ def induced_dipoles_jacobi_serial(coordinates: np.ndarray,
     max_residue_norm = sys.float_info.max
     iteration = 0
     ind_dipoles = np.zeros([len(fields), 3])
-
-    engine.set_coords_idxs_exlcs(coordinates, indices, exclusions)
-
     while not (residue_norm < threshold and max_residue_norm < threshold):
         iteration += 1
         engine.set_old_ind_dipoles(old_ind_dipoles)
