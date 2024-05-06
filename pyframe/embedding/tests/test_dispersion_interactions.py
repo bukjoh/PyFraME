@@ -131,6 +131,7 @@ def test_compute_dispersion_interactions(two_oxygen,
                                                                         method='LJ',
                                                                         combination_rule='Lorentz-Berthelot',
                                                                         perturbation_cache=energy_props_g))
+    print(result_g)
     for i in range(3):
         assert pytest.approx(ref_contr[i], rel=1e-8) == result_g[perts_g.h][(i,)]
     result_gg = (dispersion_interactions.compute_dispersion_interactions(quantum_subsystem=core_neon,
