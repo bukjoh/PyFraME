@@ -142,6 +142,30 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
     return nuclear_energy, fock_matrix
 
 
+def compute_electrostatic_nuclear_energy(quantum_subsystem: subsystem.QuantumSubsystem,
+                                         classical_subsystem: subsystem.ClassicalSubsystem):
+    if classical_subsystem.comm is None:
+        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        nuclear_energy = engine.e_nuc_es(np.array([0, len(classical_subsystem.coordinates)], dtype=np.int64))
+    else:
+        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.size)
+        counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.size)]
+        start = sum(counts[:classical_subsystem.rank])
+        end = sum(counts[:classical_subsystem.rank + 1])
+        nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
+    return nuclear_energy
+
+
+
 # TODO write e_nuc_es gradient
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,

@@ -529,7 +529,7 @@ double compute_perturbed_lj_dispersion(int start,
         if (length > 6) {
         partition_contr += 0.0;
         } else {
-                #pragma omp parallel
+                #pragma omp parallel reduction(+:partition_contr)
                 {
                     double partition_tmp;
                     #pragma omp for
@@ -557,10 +557,7 @@ double compute_perturbed_lj_dispersion(int start,
                                                                                  global::tensor_coefficients);
                         }
                     }
-                    #pragma omp critical
-                    {
-                        partition_contr += partition_tmp;
-                    }
+                    partition_contr += partition_tmp;
                 }
         }
         perturbed_lj_dispersion += partition_contr;

@@ -15,19 +15,19 @@ def test_compute_dispersion_interactions(two_oxygen,
     core_two_wat, env_two_wat = two_wat
     # Unperturbed dispersion potential
     ref_pot = -3.1268623466642326e-05
-    assert (pytest.approx(ref_pot, abs=1e-12) == dispersion_interactions.compute_dispersion_interactions(
-        quantum_subsystem=core_oxygen,
-        classical_subsystem=env_oxygen,
-        perturbed=False,
-        method='LJ',
-        combination_rule='Lorentz-Berthelot'))
+    assert (pytest.approx(ref_pot, abs=1e-12) == dispersion_interactions.
+            compute_dispersion_interactions(quantum_subsystem=core_oxygen,
+                                            classical_subsystem=env_oxygen,
+                                            perturbed=False,
+                                            method='LJ',
+                                            combination_rule='Lorentz-Berthelot'))
     ref_pot = -3.60476858172198e-05
-    assert (pytest.approx(ref_pot, abs=1e-12) == dispersion_interactions.compute_dispersion_interactions(
-        quantum_subsystem=core_two_wat,
-        classical_subsystem=env_two_wat,
-        perturbed=False,
-        method='LJ',
-        combination_rule='Lorentz-Berthelot'))
+    assert (pytest.approx(ref_pot, abs=1e-12) == dispersion_interactions.
+            compute_dispersion_interactions(quantum_subsystem=core_two_wat,
+                                            classical_subsystem=env_two_wat,
+                                            perturbed=False,
+                                            method='LJ',
+                                            combination_rule='Lorentz-Berthelot'))
     # First order perturbed repulsion potential
     geo_templ = rspPert('GEO', 0.0)
     el_0_templ = rspPert('EL', 0.0)
@@ -49,6 +49,7 @@ def test_compute_dispersion_interactions(two_oxygen,
                                                            method='LJ',
                                                            combination_rule='Lorentz-Berthelot',
                                                            perturbation_cache=energy_props_geo_and_el0))
+
     for pert in range(3):
         assert result_geo_and_el_0[perts_geo.h][(pert,)] == pytest.approx(ref_grad[pert], rel=1e-8)
         assert result_geo_and_el_0[perts_el0.h][(pert,)] == 0.0
@@ -166,7 +167,7 @@ def test_compute_dispersion_interactions(two_oxygen,
                                                                            combination_rule='Lorentz-Berthelot',
                                                                            perturbation_cache=energy_props_gggg))
     ref_contr = [-3920.995417507122, 0.0, 0.0, 560.1422025010173, 0.0, 560.1422025010173, 0.0, 0.0, 0.0, 0.0,
-                -186.71406750033913, 0.0, -62.23802250011304, 0.0, -186.71406750033913]
+                 -186.71406750033913, 0.0, -62.23802250011304, 0.0, -186.71406750033913]
     counter = 0
     for i in range(3):
         for j in range(i, 3):
