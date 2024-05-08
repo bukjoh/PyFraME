@@ -415,7 +415,6 @@ class InputWriters(object):
     @staticmethod
     def frame_json(system, incoming_unit, filename=None):
         """Write potential file for PyFraME"""
-        print(len(system.potential))
         if filename is None:
             filename = system.name
         sys_dict = {}
@@ -478,8 +477,6 @@ class InputWriters(object):
             constants = PhysicalConstantsContext('CODATA2018')
             for index, site in system.potential.items():
                 atom = {}
-                # TODO site does not have mass, induced dipole, and name as an attribute
-                # TODO site does not have vdw and vdw method as attributes.
                 if isinstance(site.epsilon, float) and isinstance(site.sigma, float):
                     atom['vdw'] = {"lj_sigma": site.sigma,
                                    "lj_epsilon": site.epsilon,
@@ -515,8 +512,6 @@ class InputWriters(object):
         elif incoming_unit == "Bohr":
             for index, site in system.potential.items():
                 atom = {}
-                # TODO site does not have mass, induced dipole, and name as an attribute
-                # TODO site does not have vdw and vdw method as attributes.
                 if isinstance(site.epsilon, float) and isinstance(site.sigma, float):
                     atom['vdw'] = {"lj_sigma": site.sigma,
                                    "lj_epsilon": site.epsilon,
@@ -549,7 +544,6 @@ class InputWriters(object):
                                                                                      // 2))
                                 atom['polarizabilities']["order"].append([j, i])
                 sys_dict["classical_subsystems"][0]["classical_fragments"][0]['atoms'].append(atom)
-
         with open('{0}.json'.format(filename), 'w') as json_file:
             json.dump(sys_dict, json_file)
 
