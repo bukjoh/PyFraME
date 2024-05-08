@@ -435,7 +435,7 @@ class ClassicalSubsystem(Subsystem):
                               perturbed: bool = False,
                               solver: str = 'jacobi',
                               external_fields: np.ndarray | None = None
-                              ) -> None | np.ndarray:
+                              ) -> np.ndarray | None:
         """Solve for induced dipoles.
 
         Args:

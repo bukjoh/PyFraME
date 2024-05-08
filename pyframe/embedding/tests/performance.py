@@ -9,8 +9,11 @@ import cProfile
 os.environ["OMP_NUM_THREADS"] = "4"
 comm = MPI.COMM_WORLD
 # comm = None
-core, env = read_input.reader(subsystems_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
-                              comm=comm)
+# core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/nilered.json',
+#                               comm=comm)
+# print(core.num_nuclei)
+# print(env.num_atoms)
+# print(np.max(env.multipole_orders))
 # # cProfile.run('env.self_energy')
 #
 # # print(env.multipole_fields)
@@ -18,7 +21,7 @@ print("Calculate induced dipoles without external fields.")
 start_time = time.time()
 # print(env.self_energy)
 # # print(env.self_energy)
-env.solve_induced_dipoles()
+# env.solve_induced_dipoles()
 # nuc_fields = core.compute_nuclear_fields(env.coordinates)
 end_time = time.time()
 print("Execution time:", end_time - start_time)
@@ -30,7 +33,7 @@ print("Execution time:", end_time - start_time)
 # print("Execution time:", end_time - start_time)
 
 # Print number of iterations
-print(env.induced_dipoles.number_of_iterations)
+# print(env.induced_dipoles.number_of_iterations)
 # # Print induced dipoles
 # print(env.induced_dipoles.induced_dipoles)
 
@@ -81,20 +84,20 @@ ref_dipoles_act_wat_mid = np.array(
 # ref_num_iter = 16
 # ref_exec_time = 0.3774082660675049
 #
-comm = None
-core_s, env_s = read_input.reader(subsystems_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
-                                  comm=comm)
-print("Calculate induced dipoles without external fields.")
-start_time = time.time()
-env_s.solve_induced_dipoles()
-# env_s.multipole_fields
-end_time = time.time()
-print("Execution time:", end_time - start_time)
-# #
-assert np.allclose(env.induced_dipoles.induced_dipoles, env_s.induced_dipoles.induced_dipoles)
-assert env.induced_dipoles.number_of_iterations == env_s.induced_dipoles.number_of_iterations
-# # assert np.allclose(nuc_fields, nuc_s_fields)
-# assert np.allclose(env_s.multipole_fields, env.multipole_fields)
-print(env_s.induced_dipoles.number_of_iterations)
+# comm = None
+# core_s, env_s = read_input.reader(subsystems_data=f'{os.path.dirname(__file__)}/data/act_wat_big.json',
+#                                   comm=comm)
+# print("Calculate induced dipoles without external fields.")
+# start_time = time.time()
+# env_s.solve_induced_dipoles()
+# # env_s.multipole_fields
+# end_time = time.time()
+# print("Execution time:", end_time - start_time)
+# # #
+# assert np.allclose(env.induced_dipoles.induced_dipoles, env_s.induced_dipoles.induced_dipoles)
+# assert env.induced_dipoles.number_of_iterations == env_s.induced_dipoles.number_of_iterations
+# # # assert np.allclose(nuc_fields, nuc_s_fields)
+# # assert np.allclose(env_s.multipole_fields, env.multipole_fields)
+# print(env_s.induced_dipoles.number_of_iterations)
 # Run in terminal to compile cpp
 # python .\setup.py build_ext --inplace

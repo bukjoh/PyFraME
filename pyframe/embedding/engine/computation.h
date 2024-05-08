@@ -43,9 +43,13 @@ double e_nuc_es_perturbed(
        int nuc_idx,
        const Eigen::Matrix<int, 2, 3> &perturbation_tuple);
 
-// Computes the field caused by induced dipoles at site i.
+// Computes the field caused by induced dipoles at atom with index start to end.
 // Parallelized with OpenMP.
 Eigen::MatrixXd ind_dipoles_field(int start, int end);
+
+// Computes the field caused by induced dipoles at the targets from the sources.
+// Parallelized with OpenMP.
+Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources);
 
 // Computes the field of the nuclei on all atoms
 // Parallelized with OpenMP.

@@ -155,8 +155,6 @@ def test_compute_dispersion_interactions(two_oxygen,
     for i in range(3):
         for j in range(i, 3):
             for k in range(j, 3):
-                # print(((i, j, k),))
-                # print(result_ggg[perts_ggg.h][(i, j, k)])
                 assert pytest.approx(ref_contr[counter], rel=1e-8) == result_ggg[perts_ggg.h][(i, j, k)]
                 counter += 1
     result_gggg = (dispersion_interactions.compute_dispersion_interactions(quantum_subsystem=core_neon,

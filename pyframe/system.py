@@ -535,7 +535,7 @@ class MolecularSystem(object):
         if filetype == "pot":
             InputWriters.pelib_potential(self, filename)
         if filetype == "json":
-            InputWriters.frame_json(self,filename=filename,incoming_unit=incoming_unit)
+            InputWriters.frame_json(self, filename=filename, incoming_unit=incoming_unit)
         # InputWriters.frame_potential(self, filename)
 
     def reset(self):

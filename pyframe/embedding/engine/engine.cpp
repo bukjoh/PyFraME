@@ -520,6 +520,19 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(start, end));
 }
 
+//Calculates the induced dipoles for all targets from all sources
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* target_source_ind_dipoles_fields(PyObject* self, PyObject* args) {
+    PyObject *target_obj;
+    PyObject *source_obj;
+    if (!PyArg_ParseTuple(args, "OO", &target_obj, &source_obj)) {
+        return NULL;
+    }
+    Eigen::VectorXi targets = read_vector(target_obj);
+    Eigen::VectorXi sources = read_vector(source_obj);
+    return (PyObject *)eigen_matrix_to_numpy(computation::target_source_ind_dipoles_field(targets, sources));
+}
+
 //Calculates the multipole fields for atom at index i
 //args: [[i]] (numpy.ndarray with i as only entry)
 static PyObject* multipole_fields(PyObject* self, PyObject* args) {
@@ -882,6 +895,8 @@ static PyMethodDef module_methods[] = {
      "Sets the old induced dipole fields for the calculation of the induced dipoles."},
     {"ind_dipoles_fields", ind_dipoles_fields, METH_VARARGS,
      "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions."},
+     {"target_source_ind_dipoles_fields", target_source_ind_dipoles_fields, METH_VARARGS,
+     "Calculates the induced dipoles for all targets from all sources"},
      {"set_coords_nuc_coords_charges", set_coords_nuc_coords_charges, METH_VARARGS,
      "Sets atom coordinates, nuclear coordinates, and nuclear charges for the calculation of nuclei fields."},
      {"nuclei_fields", nuclei_fields, METH_VARARGS,

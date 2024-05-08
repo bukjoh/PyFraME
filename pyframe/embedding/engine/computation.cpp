@@ -98,28 +98,42 @@ Eigen::MatrixXd compute_perturbed_t_tensor(
 Eigen::MatrixXd ind_dipoles_field(int start, int end) {
     int no_atoms = static_cast<int>(global::atom_coordinates.size());
     Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(no_atoms, 3);
-    #pragma omp parallel
-    {
-        Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(no_atoms, 3);
-        for(int i = start; i < end; i++) {
-            #pragma omp for
-            for(int j = 0; j < no_atoms; j++) {
-                if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
-                    continue;
-                }
-                Eigen::Vector3d r_ab = global::atom_coordinates[i] - global::atom_coordinates[j];
-                Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
-                                                            global::tensor_template_potential,
-                                                            1, 1, 1, 1);
-                field_part.row(i) += (t_tensor * global::old_ind_dipoles.row(j).transpose()).transpose(); // (writes to 3,1)
+    for(int i = start; i < end; i++) {
+        #pragma omp for
+        for(int j = 0; j < no_atoms; j++) {
+            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                continue;
             }
-        }
-        #pragma omp critical
-        {
-            ind_dipoles_field += field_part;
+            Eigen::Vector3d r_ab = global::atom_coordinates[i] - global::atom_coordinates[j];
+            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                        global::tensor_template_potential,
+                                                        1, 1, 1, 1);
+            #pragma omp critical
+            ind_dipoles_field.row(i) += (t_tensor * global::old_ind_dipoles.row(j).transpose()).transpose();
         }
     }
+    return ind_dipoles_field;
+}
 
+
+// Computes the field caused by induced dipoles at atom i.
+// Parallelized with OpenMP.
+Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources) {
+    Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(targets.size(), 3);
+    for (int i = 0; i < targets.size(); i++) {
+        #pragma omp for
+        for(int j = 0; j < sources.size(); j++) {
+            if(global::exclusions[targets[i]].find(global::indices[sources[j]]) != global::exclusions[targets[i]].end()) {
+                continue;
+            }
+            Eigen::Vector3d r_ab = global::atom_coordinates[targets[i]] - global::atom_coordinates[sources[j]];
+            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                        global::tensor_template_potential,
+                                                        1, 1, 1, 1);
+            #pragma omp critical
+            ind_dipoles_field.row(targets[i]) += (t_tensor * global::old_ind_dipoles.row(sources[j]).transpose()).transpose();
+        }
+    }
     return ind_dipoles_field;
 }
 
@@ -458,53 +472,44 @@ double compute_perturbed_lj_repulsion(int start,
                                       std::string combination_rule,
                                       std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions) {
     double perturbed_lj_repulsion = 0.0;
-    // Define the function pointer type
     std::tuple<double, double> (*combination_func)(double, double, double, double);
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
     }
-    for (const auto& partition_term : k_partitions){
-        double partition_contr = 0.0;
-        // Get the length of the partition
-        std::size_t length = partition_term.size();
-        if (length > 12) {
-        partition_contr += 0.0;
-        } else {
-                #pragma omp parallel
-                {
-                    double partition_tmp;
-                    #pragma omp for
-                    for(int j = start; j < end; j++){
-                        std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::quantum_sigmas[nuc_idx],
-                                                                                                global::classical_sigmas[j],
-                                                                                                global::quantum_epsilons[nuc_idx],
-                                                                                                global::classical_epsilons[j]);
-                        double sigma = std::get<0>(combined_sigma_epsilon);
-                        double epsilon = std::get<1>(combined_sigma_epsilon);
-                        double recip_distance = compute_t_tensor((global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
-                                                                 global::tensor_template_potential,
-                                                                 0, 0, 0, 0)(0,0);
-                        double factorial_prefactor = global::factorials[12] / global::factorials[12 - length];
-                        partition_tmp = epsilon * factorial_prefactor * std::pow(sigma, 12) * std::pow(recip_distance, 12 - length);
-                        Eigen::Matrix<int, 2, 3> sum_matrix = Eigen::Matrix<int, 2, 3>::Zero();
-                        for (const auto& partition : partition_term) {
-                            // loop to sum up all the multi indices
-                            sum_matrix.setZero(); // Reset sum_matrix to zero for each partition
-                            for (const auto& element : partition){
-                                sum_matrix += element;
-                            }
-                            partition_tmp *= compute_interaction_tensor_element(sum_matrix,
-                                                                                 (global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
-                                                                                 global::tensor_coefficients);
-                        }
+    #pragma omp parallel for reduction(+:perturbed_lj_repulsion)
+    for (int j = start; j < end; j++) {
+        for (const auto& partition_term : k_partitions){
+            double partition_contr = 0.0;
+            std::size_t length = partition_term.size();
+            if (length > 12) {
+                partition_contr += 0.0;
+            } else {
+                double partition_tmp;
+                std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::quantum_sigmas[nuc_idx],
+                                                                                        global::classical_sigmas[j],
+                                                                                        global::quantum_epsilons[nuc_idx],
+                                                                                        global::classical_epsilons[j]);
+                double sigma = std::get<0>(combined_sigma_epsilon);
+                double epsilon = std::get<1>(combined_sigma_epsilon);
+                double recip_distance = compute_t_tensor((global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
+                                                         global::tensor_template_potential,
+                                                         0, 0, 0, 0)(0,0);
+                double factorial_prefactor = global::factorials[12] / global::factorials[12 - length];
+                partition_tmp = epsilon * factorial_prefactor * std::pow(sigma, 12) * std::pow(recip_distance, 12 - length);
+                Eigen::Matrix<int, 2, 3> sum_matrix = Eigen::Matrix<int, 2, 3>::Zero();
+                for (const auto& partition : partition_term) {
+                    sum_matrix.setZero();
+                    for (const auto& element : partition){
+                        sum_matrix += element;
                     }
-                    #pragma omp critical
-                    {
-                        partition_contr += partition_tmp;
-                    }
+                    partition_tmp *= compute_interaction_tensor_element(sum_matrix,
+                                                                         (global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
+                                                                         global::tensor_coefficients);
                 }
+                partition_contr += partition_tmp;
+            }
+            perturbed_lj_repulsion += partition_contr;
         }
-        perturbed_lj_repulsion += partition_contr;
     }
     return 4.0 * perturbed_lj_repulsion;
 }
@@ -512,58 +517,49 @@ double compute_perturbed_lj_repulsion(int start,
 // Computes the derivative of the LJ dispersion potential between a ClassicalSubsystem and a nucleus.
 // Parallelized with OpenMP.
 double compute_perturbed_lj_dispersion(int start,
-                                      int end,
-                                      int nuc_idx,
-                                      std::string combination_rule,
-                                      std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions) {
+                                        int end,
+                                        int nuc_idx,
+                                        std::string combination_rule,
+                                        std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions) {
     double perturbed_lj_dispersion = 0.0;
-    // Define the function pointer type
     std::tuple<double, double> (*combination_func)(double, double, double, double);
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
     }
-    for (const auto& partition_term : k_partitions){
-        double partition_contr = 0.0;
-        // Get the length of the partition
-        std::size_t length = partition_term.size();
-        if (length > 6) {
-        partition_contr += 0.0;
-        } else {
-                #pragma omp parallel
-                {
-                    double partition_tmp;
-                    #pragma omp for
-                    for(int j = start; j < end; j++){
-                        std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::quantum_sigmas[nuc_idx],
-                                                                                                global::classical_sigmas[j],
-                                                                                                global::quantum_epsilons[nuc_idx],
-                                                                                                global::classical_epsilons[j]);
-                        double sigma = std::get<0>(combined_sigma_epsilon);
-                        double epsilon = std::get<1>(combined_sigma_epsilon);
-                        double recip_distance = compute_t_tensor((global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
-                                                                 global::tensor_template_potential,
-                                                                 0, 0, 0, 0)(0,0);
-                        double factorial_prefactor = global::factorials[6] / global::factorials[6 - length];
-                        partition_tmp = epsilon * factorial_prefactor * std::pow(sigma, 6) * std::pow(recip_distance, 6 - length);
-                        Eigen::Matrix<int, 2, 3> sum_matrix = Eigen::Matrix<int, 2, 3>::Zero();
-                        for (const auto& partition : partition_term) {
-                            // loop to sum up all the multi indices
-                            sum_matrix.setZero(); // Reset sum_matrix to zero for each partition
-                            for (const auto& element : partition){
-                                sum_matrix += element;
-                            }
-                            partition_tmp *= compute_interaction_tensor_element(sum_matrix,
-                                                                                 (global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
-                                                                                 global::tensor_coefficients);
-                        }
+    #pragma omp parallel for reduction(+:perturbed_lj_dispersion)
+    for (int j = start; j < end; j++) {
+        for (const auto& partition_term : k_partitions){
+            double partition_contr = 0.0;
+            std::size_t length = partition_term.size();
+            if (length > 6) {
+                partition_contr += 0.0;
+            } else {
+                double partition_tmp;
+                std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::quantum_sigmas[nuc_idx],
+                                                                                        global::classical_sigmas[j],
+                                                                                        global::quantum_epsilons[nuc_idx],
+                                                                                        global::classical_epsilons[j]);
+                double sigma = std::get<0>(combined_sigma_epsilon);
+                double epsilon = std::get<1>(combined_sigma_epsilon);
+                double recip_distance = compute_t_tensor((global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
+                                                         global::tensor_template_potential,
+                                                         0, 0, 0, 0)(0,0);
+                double factorial_prefactor = global::factorials[6] / global::factorials[6 - length];
+                partition_tmp = epsilon * factorial_prefactor * std::pow(sigma, 6) * std::pow(recip_distance, 6 - length);
+                Eigen::Matrix<int, 2, 3> sum_matrix = Eigen::Matrix<int, 2, 3>::Zero();
+                for (const auto& partition : partition_term) {
+                    sum_matrix.setZero();
+                    for (const auto& element : partition){
+                        sum_matrix += element;
                     }
-                    #pragma omp critical
-                    {
-                        partition_contr += partition_tmp;
-                    }
+                    partition_tmp *= compute_interaction_tensor_element(sum_matrix,
+                                                                         (global::nuclei_coordinates[nuc_idx] - global::coordinates[j]),
+                                                                         global::tensor_coefficients);
                 }
+                partition_contr += partition_tmp;
+            }
+            perturbed_lj_dispersion += partition_contr;
         }
-        perturbed_lj_dispersion += partition_contr;
     }
     return -4.0 * perturbed_lj_dispersion;
 }
