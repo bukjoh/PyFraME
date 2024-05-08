@@ -7,7 +7,6 @@ import os
 
 from pyframe.embedding import read_input, induction_interactions, electrostatic_interactions
 
-
 mol = gto.M(atom='''                                                                                                            
         6        0.000000    0.000000   -0.542500          
         8        0.000000    0.000000    0.677500             
@@ -16,18 +15,23 @@ mol = gto.M(atom='''
             ''', basis='sto3g', verbose=7,
             output='/dev/null')
 
-core, env = read_input.reader(input_data='/home/jvest/test_pyscf/pyscf_test.json')
+result = read_input.reader(input_data='/home/jvest/test_pyscf/pyscf_test.json')
+core = result[0]
+env = result[1]
+
 
 class PolarizableEmbedding:
     # create molecule from quantum_subsystem?
-    def __init__(self, molecule, quantum_subsystem = None, classical_subsystem = None):
+    def __init__(self, molecule, quantum_subsystem=None, classical_subsystem=None):
         self.mol = molecule
         self.max_memory = mol.max_memory
         self.quantum_subsystem = quantum_subsystem
         self.classical_subsystem = classical_subsystem
         self.f_el_es = self.compute_multipole_potential()
-        self.e_nuc_es = electrostatic_interactions.compute_electrostatic_nuclear_energy(quantum_subsystem=self.quantum_subsystem,
-                                                                                        classical_subsystem=self.classical_subsystem)
+        self.e_nuc_es = electrostatic_interactions.compute_electrostatic_nuclear_energy(
+            quantum_subsystem=self.quantum_subsystem,
+            classical_subsystem=self.classical_subsystem)
+
     def compute_multipole_potential(self):
         if np.any(self.classical_subsystem.multipole_orders > 2):
             raise NotImplementedError("""Multipole potential integrals not
@@ -72,12 +76,12 @@ class PolarizableEmbedding:
         is_single_dm = density_matrices.ndim == 2
 
         nao = density_matrices.shape[-1]
-        density_matrices = density_matrices.reshape(-1,nao,nao)
+        density_matrices = density_matrices.reshape(-1, nao, nao)
         n_dm = density_matrices.shape[0]
         max_memory = self.max_memory
 
-            # very conservative estimate (based on multipole potential integrals)
-            # when all sites have a charge, dipole, and quadrupole moment
+        # very conservative estimate (based on multipole potential integrals)
+        # when all sites have a charge, dipole, and quadrupole moment
 
         e_el_es = np.einsum('ij,xij->x', self.f_el_es, density_matrices)[0]
 
@@ -118,61 +122,60 @@ class PolarizableEmbedding:
                                  -4.28150058e-05, 9.85866739e-07, 1.45899728e-05, 1.30652106e-07,
                                  -7.26071496e-06, -1.41519063e-05, 2.77200006e-05, 1.79187127e-04]])
 
-        #print("HEREHERE", np.max(np.abs(self.f_el_es - ref_f_el_es)))
-
         fakemol = gto.fakemol_for_charges(self.classical_subsystem.coordinates)
         # first order derivative of the electronic potential integral
         j3c = df.incore.aux_e2(self.mol, fakemol, intor='int3c2e_ip1')
-        print(j3c)
-        # is sign negative?
-        electric_fields = (np.einsum('aijg,nij->nga', j3c, density_matrices) +
-                           np.einsum('aijg,nji->nga', j3c, density_matrices))
+        electric_fields = (np.einsum('aijg,ij->ga', j3c, density_matrices[0]) +
+                           np.einsum('aijg,ji->ga', j3c, density_matrices[0]))
         nuclear_fields = self.quantum_subsystem.compute_nuclear_fields(self.classical_subsystem.coordinates)
-        #print(electric_fields[0])
-        self.classical_subsystem.solve_induced_dipoles(external_fields=electric_fields[0] + nuclear_fields)
-        #print(nuclear_fields)
-        #print(self.classical_subsystem.induced_dipoles.induced_dipoles)
+        self.classical_subsystem.solve_induced_dipoles(external_fields= (-electric_fields + nuclear_fields))
+        # TODO nuclear fields wrong sign????
         #print(self.classical_subsystem.induced_dipoles)
-        e_ind = induction_interactions.compute_induction_energy(induced_dipoles=self.classical_subsystem.induced_dipoles.
-                                                        induced_dipoles,
-                                                        total_fields=electric_fields[0] + nuclear_fields +
-                                                        self.classical_subsystem.multipole_fields)
-        #print(j3c.shape)
-        #print(self.classical_subsystem.induced_dipoles.induced_dipoles)
-        #print(self.classical_subsystem.induced_dipoles.induced_dipoles.shape)
+        e_ind = induction_interactions.compute_induction_energy(
+            induced_dipoles=self.classical_subsystem.induced_dipoles.
+            induced_dipoles,
+            total_fields= -electric_fields + nuclear_fields +
+                         self.classical_subsystem.multipole_fields)
         f_el_ind = np.einsum('aijg,ga->ij', j3c, self.classical_subsystem.induced_dipoles.
-                                                        induced_dipoles)
-        # print(f_el_ind)
+                             induced_dipoles)
         f_el_ind = f_el_ind + f_el_ind.T
-        # returns e, vmat
-        # print(-f_el_ind)
-        # print(e_el_es)
+        #print(f_el_ind)
         return e_ind + self.e_nuc_es + e_el_es, self.f_el_es - f_el_ind
+
 
 instance = PolarizableEmbedding(molecule=mol, quantum_subsystem=core, classical_subsystem=env)
 
-input_density =  np.array([
- [ 2.12280187e+00, -4.93652920e-01,  0.00000000e+00, -2.35983379e-18, -5.58513371e-03,  1.53845837e-03, -9.03007827e-03,  0.00000000e+00, -6.77626358e-20,  1.18757148e-03, -1.21543243e-02, -1.21543243e-02],
- [-4.93652920e-01,  2.03741294e+00,  0.00000000e+00,  9.02598309e-18,  3.64895492e-02, -9.13472107e-03,  2.09723567e-02,  0.00000000e+00,  1.24683250e-18, -5.14592408e-02,  4.38359626e-02,  4.38359626e-02],
- [ 0.00000000e+00,  0.00000000e+00,  6.52126455e-01,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  4.50073255e-02,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00],
- [-2.35983379e-18,  9.02598309e-18,  0.00000000e+00,  5.71033336e-01, -3.58125530e-18, -3.79470760e-19,  1.50433051e-18,  0.00000000e+00,  3.54615665e-02, -8.11457563e-19,  2.55307834e-02, -2.55307834e-02],
- [-5.58513371e-03,  3.64895492e-02,  0.00000000e+00, -3.58125530e-18,  6.11110709e-01, -4.83765994e-03,  1.37696114e-02,  0.00000000e+00, -3.04931861e-19,  4.41505593e-03, -1.10191499e-02, -1.10191499e-02],
- [ 1.53845837e-03, -9.13472107e-03,  0.00000000e+00, -3.79470760e-19, -4.83765994e-03,  2.11511132e+00, -4.89815305e-01,  0.00000000e+00,  7.62329653e-20, -1.50658112e-02, -2.53355896e-03, -2.53355896e-03],
- [-9.03007827e-03,  2.09723567e-02,  0.00000000e+00,  1.50433051e-18,  1.37696114e-02, -4.89815305e-01,  2.10157970e+00,  0.00000000e+00, -3.38813179e-19,  6.15155822e-02,  1.19874343e-02,  1.19874343e-02],
- [ 0.00000000e+00,  0.00000000e+00,  4.50073255e-02,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.25868374e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  0.00000000e+00],
- [-6.77626358e-20,  1.24683250e-18,  0.00000000e+00,  3.54615665e-02, -3.04931861e-19,  7.62329653e-20, -3.38813179e-19,  0.00000000e+00,  1.26401517e+00,  3.38813179e-19,  1.67996930e-02, -1.67996930e-02],
- [ 1.18757148e-03, -5.14592408e-02,  0.00000000e+00, -8.11457563e-19,  4.41505593e-03, -1.50658112e-02,  6.15155822e-02,  0.00000000e+00,  3.38813179e-19,  1.19905448e+00, -1.24242430e-02, -1.24242430e-02],
- [-1.21543243e-02,  4.38359626e-02,  0.00000000e+00,  2.55307834e-02, -1.10191499e-02, -2.53355896e-03,  1.19874343e-02,  0.00000000e+00,  1.67996930e-02, -1.24242430e-02,  9.45707426e-01,  1.79597856e-02],
- [-1.21543243e-02,  4.38359626e-02,  0.00000000e+00, -2.55307834e-02, -1.10191499e-02, -2.53355896e-03,  1.19874343e-02,  0.00000000e+00, -1.67996930e-02, -1.24242430e-02,  1.79597856e-02,  9.45707426e-01]
+input_density = np.array([
+    [2.12280187e+00, -4.93652920e-01, 0.00000000e+00, -2.35983379e-18, -5.58513371e-03, 1.53845837e-03, -9.03007827e-03,
+     0.00000000e+00, -6.77626358e-20, 1.18757148e-03, -1.21543243e-02, -1.21543243e-02],
+    [-4.93652920e-01, 2.03741294e+00, 0.00000000e+00, 9.02598309e-18, 3.64895492e-02, -9.13472107e-03, 2.09723567e-02,
+     0.00000000e+00, 1.24683250e-18, -5.14592408e-02, 4.38359626e-02, 4.38359626e-02],
+    [0.00000000e+00, 0.00000000e+00, 6.52126455e-01, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+     4.50073255e-02, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
+    [-2.35983379e-18, 9.02598309e-18, 0.00000000e+00, 5.71033336e-01, -3.58125530e-18, -3.79470760e-19, 1.50433051e-18,
+     0.00000000e+00, 3.54615665e-02, -8.11457563e-19, 2.55307834e-02, -2.55307834e-02],
+    [-5.58513371e-03, 3.64895492e-02, 0.00000000e+00, -3.58125530e-18, 6.11110709e-01, -4.83765994e-03, 1.37696114e-02,
+     0.00000000e+00, -3.04931861e-19, 4.41505593e-03, -1.10191499e-02, -1.10191499e-02],
+    [1.53845837e-03, -9.13472107e-03, 0.00000000e+00, -3.79470760e-19, -4.83765994e-03, 2.11511132e+00, -4.89815305e-01,
+     0.00000000e+00, 7.62329653e-20, -1.50658112e-02, -2.53355896e-03, -2.53355896e-03],
+    [-9.03007827e-03, 2.09723567e-02, 0.00000000e+00, 1.50433051e-18, 1.37696114e-02, -4.89815305e-01, 2.10157970e+00,
+     0.00000000e+00, -3.38813179e-19, 6.15155822e-02, 1.19874343e-02, 1.19874343e-02],
+    [0.00000000e+00, 0.00000000e+00, 4.50073255e-02, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
+     1.25868374e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00],
+    [-6.77626358e-20, 1.24683250e-18, 0.00000000e+00, 3.54615665e-02, -3.04931861e-19, 7.62329653e-20, -3.38813179e-19,
+     0.00000000e+00, 1.26401517e+00, 3.38813179e-19, 1.67996930e-02, -1.67996930e-02],
+    [1.18757148e-03, -5.14592408e-02, 0.00000000e+00, -8.11457563e-19, 4.41505593e-03, -1.50658112e-02, 6.15155822e-02,
+     0.00000000e+00, 3.38813179e-19, 1.19905448e+00, -1.24242430e-02, -1.24242430e-02],
+    [-1.21543243e-02, 4.38359626e-02, 0.00000000e+00, 2.55307834e-02, -1.10191499e-02, -2.53355896e-03, 1.19874343e-02,
+     0.00000000e+00, 1.67996930e-02, -1.24242430e-02, 9.45707426e-01, 1.79597856e-02],
+    [-1.21543243e-02, 4.38359626e-02, 0.00000000e+00, -2.55307834e-02, -1.10191499e-02, -2.53355896e-03, 1.19874343e-02,
+     0.00000000e+00, -1.67996930e-02, -1.24242430e-02, 1.79597856e-02, 9.45707426e-01]
 ])
 ref_energy = -8.551984169348457e-05
 
-
-
+# input_density = input_density + input_density.T
 
 
 # liste von density matrices?
-instance.compute_pe_contributions(density_matrix=input_density)
-
-
-
+# instance.compute_pe_contributions(density_matrix=input_density)
+print(instance.compute_pe_contributions(density_matrix=input_density))
