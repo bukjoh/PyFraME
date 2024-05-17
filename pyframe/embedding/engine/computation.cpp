@@ -99,17 +99,20 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end) {
     int no_atoms = static_cast<int>(global::atom_coordinates.size());
     Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(no_atoms, 3);
     for(int i = start; i < end; i++) {
-        #pragma omp for
-        for(int j = 0; j < no_atoms; j++) {
-            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
-                continue;
+        #pragma omp parallel
+        {
+            #pragma omp for
+            for(int j = 0; j < no_atoms; j++) {
+                if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                    continue;
+                }
+                Eigen::Vector3d r_ab = global::atom_coordinates[i] - global::atom_coordinates[j];
+                Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                            global::tensor_template_potential,
+                                                            1, 1, 1, 1);
+                #pragma omp critical
+                ind_dipoles_field.row(i) += (t_tensor * global::old_ind_dipoles.row(j).transpose()).transpose();
             }
-            Eigen::Vector3d r_ab = global::atom_coordinates[i] - global::atom_coordinates[j];
-            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
-                                                        global::tensor_template_potential,
-                                                        1, 1, 1, 1);
-            #pragma omp critical
-            ind_dipoles_field.row(i) += (t_tensor * global::old_ind_dipoles.row(j).transpose()).transpose();
         }
     }
     return ind_dipoles_field;
@@ -121,17 +124,20 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end) {
 Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources) {
     Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(targets.size(), 3);
     for (int i = 0; i < targets.size(); i++) {
-        #pragma omp for
-        for(int j = 0; j < sources.size(); j++) {
-            if(global::exclusions[targets[i]].find(global::indices[sources[j]]) != global::exclusions[targets[i]].end()) {
-                continue;
+        #pragma omp parallel
+        {
+            #pragma omp for
+            for(int j = 0; j < sources.size(); j++) {
+                if(global::exclusions[targets[i]].find(global::indices[sources[j]]) != global::exclusions[targets[i]].end()) {
+                    continue;
+                }
+                Eigen::Vector3d r_ab = global::atom_coordinates[targets[i]] - global::atom_coordinates[sources[j]];
+                Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                            global::tensor_template_potential,
+                                                            1, 1, 1, 1);
+                #pragma omp critical
+                ind_dipoles_field.row(i) += (t_tensor * global::old_ind_dipoles.row(sources[j]).transpose()).transpose();
             }
-            Eigen::Vector3d r_ab = global::atom_coordinates[targets[i]] - global::atom_coordinates[sources[j]];
-            Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
-                                                        global::tensor_template_potential,
-                                                        1, 1, 1, 1);
-            #pragma omp critical
-            ind_dipoles_field.row(targets[i]) += (t_tensor * global::old_ind_dipoles.row(sources[j]).transpose()).transpose();
         }
     }
     return ind_dipoles_field;
