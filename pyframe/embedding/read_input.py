@@ -7,7 +7,6 @@ from mpi4py import MPI
 
 from .fragment import QuantumFragment, ClassicalFragment
 from .particle import Nucleus
-from .density_matrix import DensityMatrix
 from .subsystem import QuantumSubsystem, ClassicalSubsystem
 
 __all__ = 'reader'
@@ -65,7 +64,6 @@ def reader(input_data: dict | Path | str,
     quantum_fragments = None
     quantum_subsystem_name = None
     classical_subsystem_name = None
-    density_matrix = None
     # Quantum Subsystems
     if subsystems_data.get('quantum_subsystems', None) is not None:
         quantum_subsystems = subsystems_data.get('quantum_subsystems', None)
@@ -83,10 +81,7 @@ def reader(input_data: dict | Path | str,
                 quantum_fragments = []
                 for fragment in quantum_subsystem_data['quantum_fragments']:
                     quantum_fragments.append(QuantumFragment(**fragment))
-            if quantum_subsystem_data.get('density_matrix', None) is not None:
-                density_matrix = DensityMatrix(quantum_subsystem_data['density_matrix'])
             system.append(QuantumSubsystem(nuclei=nuclei,
-                                           density_matrix=density_matrix,
                                            quantum_fragments=quantum_fragments,
                                            name=quantum_subsystem_name,
                                            comm=comm))

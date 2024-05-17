@@ -212,8 +212,8 @@ Eigen::MatrixXd multipole_field(int i) {
 
 // Computes the self energy of a ClassicalSubsystem for given array of indexes.
 // Parallelized with OpenMP.
-double self_energy(Eigen::MatrixXi idx_arr) {
-    double self_energy = 0.0;
+double environment_energy(Eigen::MatrixXi idx_arr) {
+    double environment_energy = 0.0;
     #pragma omp parallel
     {
         double energy_contr = 0.0;
@@ -232,10 +232,10 @@ double self_energy(Eigen::MatrixXi idx_arr) {
         }
     #pragma omp critical
     {
-    self_energy += energy_contr;
+    environment_energy += energy_contr;
     }
     }
-    return self_energy;
+    return environment_energy;
 }
 
 // Computes the energy between all atoms and the nuclei.

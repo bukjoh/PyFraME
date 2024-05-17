@@ -18,8 +18,7 @@ def sample_json(tmp_path):
             "quantum_fragments": [{"name": "fragment1",
                                    "index": 1,
                                    "nuclei": [{"coordinate": [0, 0, 2], "name": "nucleus1", "index": 1, "charge": 1.0}],
-                                   "e_density_matrix": [0, 0, 0, 0]}],
-            "density_matrix": [1, 0, 0, 1]
+                                   }],
         }],
         "classical_subsystems": [{
             "name": "classical",

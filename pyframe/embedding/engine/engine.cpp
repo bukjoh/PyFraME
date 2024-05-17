@@ -602,7 +602,7 @@ Eigen::MatrixXi generateIdxPairs(int start_index, int end_index) {
 
 //Calculates self energy of ClassicalSystem for array of indexes
 //args: [start, end] (numpy.ndarray with start and end as entries)
-static PyObject* self_energy(PyObject* self, PyObject* args) {
+static PyObject* environment_energy(PyObject* self, PyObject* args) {
     PyObject *start_end_obj;
     if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
         return NULL;
@@ -610,7 +610,7 @@ static PyObject* self_energy(PyObject* self, PyObject* args) {
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
     Eigen::MatrixXi idx_arr = generateIdxPairs(start, end);
-    return PyFloat_FromDouble(computation::self_energy(idx_arr));
+    return PyFloat_FromDouble(computation::environment_energy(idx_arr));
 }
 
 //Calculates electrostatic interaction energy between the nuclei and the ClassicalSystem
@@ -892,7 +892,7 @@ static PyMethodDef module_methods[] = {
      "Sets multipoles with degeneracy and taylor coefficient and the multipole orders."},
      {"multipole_fields", multipole_fields, METH_VARARGS,
      "Calculates the field of the multipoles at atom i. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
-     {"self_energy", self_energy, METH_VARARGS,
+     {"environment_energy", environment_energy, METH_VARARGS,
      "Calculates the self energy of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
      {"e_nuc_es", e_nuc_es, METH_VARARGS,
      "Calculates the electrostatic energy between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},

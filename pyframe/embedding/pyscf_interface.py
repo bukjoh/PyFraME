@@ -52,7 +52,7 @@ class PolarizableEmbedding:
             integral1 = df.incore.aux_e2(self.mol, fakemol, intor='int3c2e_ip1')
 
             moments_1 = np.array([moments[i][1:4] for i in idx])
-            v = np.einsum('aijg,ga,a->ij', integral1, moments_1, )
+            v = np.einsum('aijg,ga->ij', integral1, moments_1)
             op -= v + v.T
         if np.any(self.classical_subsystem.multipole_orders >= 2):
             idx = np.where(self.classical_subsystem.multipole_orders >= 2)[0]

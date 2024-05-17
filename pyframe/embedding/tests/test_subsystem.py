@@ -16,20 +16,18 @@ class TestQuantumSubsystem:
 
     def test_init_with_valid_arguments(self):
         nuclei = self.core.nuclei  # Provide appropriate Nuclei instances for testing
-        dens_mat = self.core.density_matrix  # Provide appropriate DensityMatrix instance for testing
         quantum_fragments = self.core.quantum_fragments  # Provide appropriate QuantumFragments instances for testing
         name = "TestQuantumSubsystem"
-        q_subsystem = subsystem.QuantumSubsystem(nuclei=nuclei, density_matrix=dens_mat, quantum_fragments=quantum_fragments,
+        q_subsystem = subsystem.QuantumSubsystem(nuclei=nuclei, quantum_fragments=quantum_fragments,
                                                  name=name)
         assert q_subsystem.name == name
         assert q_subsystem.nuclei == nuclei
-        assert q_subsystem.density_matrix == dens_mat
         assert q_subsystem.quantum_fragments == quantum_fragments
         assert q_subsystem.num_nuclei == len(nuclei)
         assert q_subsystem.coordinates.shape == (q_subsystem.num_nuclei, 3)
 
     def test_init_with_no_nuclei(self):
-        c_subsystem = subsystem.QuantumSubsystem(nuclei=None, density_matrix=self.core.density_matrix)
+        c_subsystem = subsystem.QuantumSubsystem(nuclei=None)
         assert c_subsystem.num_nuclei == 0
 
     def test_compute_nuclear_fields(self):
@@ -74,19 +72,14 @@ class TestQuantumSubsystem:
 
     def test_compute_electric_fields(self,
                                      act_wat_electric_fields,
+                                     act_wat_density_matrix,
                                      dummy_integral_driver_factory
                                      ):
         int_driver = dummy_integral_driver_factory(act_wat_electric_fields)
         el_field = self.core.compute_electronic_fields(coordinates=self.env.coordinates,
+                                                       density_matrix=act_wat_density_matrix,
                                                        integral_driver=int_driver)
         assert np.allclose(el_field, int_driver.ref_data)
-
-    def test_update_density(self):
-        old_density = self.core.density_matrix.density
-        new_density = np.eye(3)
-        self.core.update_density_matrix(new_density)
-        assert np.allclose(new_density, self.core.density_matrix.density)
-        assert not np.array_equal(old_density, self.core.density_matrix.density)
 
 
 class TestClassicalSubsystem:
@@ -112,30 +105,33 @@ class TestClassicalSubsystem:
         with pytest.raises(ValueError, match="ClassicalSubsystem must have at least one ClassicalFragment"):
             subsystem.ClassicalSubsystem(classical_fragments=[])
 
-    def test_self_energy(self,
+    def test_environment_energy(self,
                          wat_wat,
                          acrolein_wat,
                          act_wat_big,
                          act_wat
                          ):
-        assert self.env.self_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
+        assert self.env.environment_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
         core_wat, env_wat = wat_wat
-        assert env_wat.self_energy == pytest.approx(-0.00718198734326498, abs=1e-12)
+        assert env_wat.environment_energy == pytest.approx(-0.00718198734326498, abs=1e-12)
         # value tested against dalton with pelib
         core_ac, env_ac = acrolein_wat
-        assert pytest.approx(0.001012591928, abs=1e-9) == env_ac.self_energy
+        assert pytest.approx(0.001012591928, abs=1e-9) == env_ac.environment_energy
         # value tested against dalton with pelib
         core_act, env_act = act_wat_big
-        assert pytest.approx(-5.200360556757, abs=1e-8) == env_act.self_energy
+        assert pytest.approx(-5.200360556757, abs=1e-8) == env_act.environment_energy
         core_act_t, env_act_t = act_wat
-        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == env_act_t.self_energy
+        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == env_act_t.environment_energy
 
     def test_solve_induced_dipoles(self,
                                    act_wat_electric_fields,
+                                   act_wat_density_matrix,
                                    dummy_integral_driver_factory
                                    ):
         int_driver = dummy_integral_driver_factory(act_wat_electric_fields)
-        electric_field = self.core.compute_electronic_fields(coordinates=self.env.coordinates, integral_driver=int_driver)
+        electric_field = self.core.compute_electronic_fields(coordinates=self.env.coordinates,
+                                                             density_matrix=act_wat_density_matrix,
+                                                             integral_driver=int_driver)
         nuclear_field = self.core.compute_nuclear_fields(coordinates=self.env.coordinates)
         self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)
         ref_dipoles = np.array([[-0.05130705, -0.25165223, -0.4511121],

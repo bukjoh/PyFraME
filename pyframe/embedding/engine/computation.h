@@ -61,7 +61,7 @@ Eigen::MatrixXd multipole_field(int i);
 
 // Computes self energy for given array of indexes
 // Parallelized with OpenMP.
-double self_energy(Eigen::MatrixXi idx_list);
+double environment_energy(Eigen::MatrixXi idx_list);
 
 // Computes the energy between all atoms and the nuclei.
 // Parallelized with OpenMP.
