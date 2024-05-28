@@ -80,7 +80,7 @@ def compute_fragment_particle_interactions(c_particle: particle,
 
 def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
                                       classical_subsystem: Union[subsystem.ClassicalSubsystem, list],
-                                      integral_drv: Any
+                                      integral_driver: Any
                                       ) -> Tuple[float, np.ndarray]:
     """Calculates the electrostatic interaction between a Quantum subsystem and one or several Classical subsystems.
 
@@ -114,7 +114,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
                 nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
             # F_el_es
             fock_matrix = es_fock_matrix_contributions(classical_subsystem=c_subsystem,
-                                                       integral_drv=integral_drv)
+                                                       integral_driver=integral_driver)
     else:
         # E_nuc_es
         if classical_subsystem.comm is None:
@@ -138,7 +138,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
 
         # F_el_es
         fock_matrix = es_fock_matrix_contributions(classical_subsystem=classical_subsystem,
-                                                   integral_drv=integral_drv)
+                                                   integral_driver=integral_driver)
     return nuclear_energy, fock_matrix
 
 
@@ -165,11 +165,10 @@ def compute_electrostatic_nuclear_energy(quantum_subsystem: subsystem.QuantumSub
     return nuclear_energy
 
 
-
 # TODO write e_nuc_es gradient
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
-                                 integral_drv: Any
+                                 integral_driver: Any
                                  ) -> np.ndarray:
     """Calculates the electrostatic Fock matrix contributions h_es (M*t) from a Classical subsystem and the one-electron
     integrals.
@@ -177,10 +176,10 @@ def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsyst
     Returns:
         Electrostatic Fock matrix contribution.
     """
-    # TODO check if integral driver also accepts np array and not list of np arrays.
-    fock_matrix_contribution = integral_drv.multipole_potential_integrals(charges=classical_subsystem.charges,
-                                                                          coordinates=classical_subsystem.coordinates)
-    return fock_matrix_contribution
+    return integral_driver.multipole_potential_integrals(multipole_coordinates=classical_subsystem.coordinates,
+                                                         multipole_orders=classical_subsystem.multipole_orders,
+                                                         multipoles=classical_subsystem.
+                                                         degenerate_multipoles_with_taylor_coefficients)
 
 
 def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,

@@ -1783,30 +1783,34 @@ def wat_wat_h_ind():
 class DummyIntegralDriver:
     def __init__(self, ref_data=None):
         self.ref_data = ref_data
-        self.charges = None
         self.coordinates = None
-        self.density = None
-        self.dipoles = None
+        self.multipole_coordinates = None
+        self.multipole_orders = None
+        self.multipoles = None
+        self.density_matrix = None
+        self.induced_dipoles = None
 
     def multipole_potential_integrals(self,
-                                      charges: list,
-                                      coordinates: list):
-        self.charges = charges
-        self.coordinates = coordinates
+                                      multipole_coordinates: np.ndarray,
+                                      multipole_orders: np.ndarray,
+                                      multipoles: list[np.ndarray]) -> np.ndarray:
+        self.multipole_coordinates = multipole_coordinates
+        self.multipole_orders = multipole_orders
+        self.multipoles = multipoles
         return self.ref_data
 
-    def electric_fields(self,
-                        coordinates: np.ndarray,
-                        density: np.ndarray):
+    def electronic_fields(self,
+                          coordinates: np.ndarray,
+                          density_matrix: np.ndarray) -> np.ndarray:
         self.coordinates = coordinates
-        self.density = density
+        self.density_matrix = density_matrix
         return self.ref_data
 
-    def multipole_field_integrals(self,
-                                  dipoles,
-                                  coordinates):
+    def induced_dipoles_potential_integrals(self,
+                                            induced_dipoles: np.ndarray,
+                                            coordinates: np.ndarray) -> np.ndarray:
         self.coordinates = coordinates
-        self.dipoles = dipoles
+        self.induced_dipoles = induced_dipoles
         return self.ref_data
 
 
@@ -1857,3 +1861,8 @@ def two_wat():
 @pytest.fixture(scope='session')
 def neon():
     return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/Ne_test.json')
+
+
+@pytest.fixture(scope='session')
+def butadiene_water():
+    return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/butadiene_water.json')

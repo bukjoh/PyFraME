@@ -106,11 +106,11 @@ class TestClassicalSubsystem:
             subsystem.ClassicalSubsystem(classical_fragments=[])
 
     def test_environment_energy(self,
-                         wat_wat,
-                         acrolein_wat,
-                         act_wat_big,
-                         act_wat
-                         ):
+                                wat_wat,
+                                acrolein_wat,
+                                act_wat_big,
+                                act_wat
+                                ):
         assert self.env.environment_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
         core_wat, env_wat = wat_wat
         assert env_wat.environment_energy == pytest.approx(-0.00718198734326498, abs=1e-12)

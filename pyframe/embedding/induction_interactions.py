@@ -8,23 +8,18 @@ from pyframe.embedding import subsystem
 from pyframe.embedding.pert_tuple_cache import rspCache, rspPert, rspPertTuple
 
 
-def compute_induction_interaction(induced_dipoles: np.ndarray,
-                                  coordinates: np.ndarray,
-                                  integral_drv: Any
+def ind_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
+                                  integral_driver: Any
                                   ) -> np.ndarray:
-    """Calculates the induction fock matrix contribution.
-
-    Args:
-        induced_dipoles: Induced dipoles in the environment.
-        coordinates: 2D-array (N_{atom}x3) of coordinates of all particle.Atom objects in the classical subsystem/s.
-        integral_drv: Integral driver to calculate the field of the density contracted with the multipoles.
+    """Calculates the induced Fock matrix contributions h_es (M*t) from a ClassicalSubsystem and the one-electron
+    integrals.
 
     Returns:
-        Induction fock matrix contribution.
+        Induced Fock matrix contribution.
     """
-    fock_matrix = integral_drv.multipole_field_integrals(dipoles=induced_dipoles,
-                                                         coordinates=coordinates)
-    return fock_matrix
+    return integral_driver.induced_dipoles_potential_integrals(
+        induced_dipoles=classical_subsystem.induced_dipoles.induced_dipoles,
+        coordinates=classical_subsystem.coordinates)
 
 
 def compute_induction_energy(induced_dipoles: np.ndarray,
@@ -38,7 +33,6 @@ def compute_induction_energy(induced_dipoles: np.ndarray,
     Returns:
         Induction energy
     """
-    # TODO move into c++ layer?
     return -0.5 * np.einsum('ij, ij', total_fields, induced_dipoles)
 
 

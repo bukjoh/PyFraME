@@ -9,14 +9,14 @@ class IntegralDriverTemplate(ABC):
     @abstractmethod
     def electronic_fields(self,
                           coordinates: np.ndarray,
-                          density_matrices: np.ndarray) -> np.ndarray:
+                          density_matrix: np.ndarray) -> np.ndarray:
         """Calculate the electronic fields on coordinates.
 
         Args:
             coordinates: Coordinates on which the fields are to be evaluated.
                 Shape: (number of atoms, 3)
                 Dtype: np.float64
-            density_matrices: Density Matrices that are the source of the electronic field.
+            density_matrix: Density Matrix that is the source of the electronic field.
                 Shape: (number of ao functions, number of ao functions)
                 Dtype: np.float64
 
@@ -45,7 +45,7 @@ class IntegralDriverTemplate(ABC):
 
         Returns:
             Product of electronic potential integrals and multipoles.
-                Shape: (number of atoms, number of ao functions, number of ao functions, number of multipole elements)
+                Shape: (number of ao functions, number of ao functions)
                 Dtype: np.float64
         """
         raise NotImplementedError
@@ -55,7 +55,7 @@ class IntegralDriverTemplate(ABC):
                                                 multipole_coordinates: np.ndarray,
                                                 multipole_orders: np.ndarray,
                                                 multipoles: list[np.ndarray],
-                                                density_matrices: np.ndarray) -> np.ndarray:
+                                                density_matrix: np.ndarray) -> np.ndarray:
         """Calculate the interaction energy between multipoles and the electron density.
 
         Args:
@@ -68,7 +68,7 @@ class IntegralDriverTemplate(ABC):
             multipoles: Multipoles multiplied with degeneracy coefficients and taylor coefficients.
                 Shape: (number of atoms, number of multipole elements)
                 Dtype: np.float64
-            density_matrices: Density matrices that interact with the multipoles.
+            density_matrix: Density matrix that interacts with the multipoles.
 
         Returns:
             Interaction energy between multipoles and electrons.
@@ -77,6 +77,7 @@ class IntegralDriverTemplate(ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def electronic_potential_integrals(self,
                                        coordinates: np.ndarray) -> np.ndarray:
         """Calculate the electronic potential integrals.
@@ -89,6 +90,27 @@ class IntegralDriverTemplate(ABC):
         Returns:
             Electronic potential integrals.
                 Shape: (number of coordinates, number of ao functions, number of ao functions)
+                Dtype: np.float64
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def induced_dipoles_potential_integrals(self,
+                                            induced_dipoles: np.ndarray,
+                                            coordinates: np.ndarray) -> np.ndarray:
+        """Calculate the electronic potential integrals and contract with the induced dipoles of Atoms.
+
+        Args:
+            induced_dipoles: Induced dipoles
+                Shape (number of induced dipoles, 3)
+                Dtype: np.float64
+            coordinates: Coordinates of the induced dipoles on which the integrals are to be evaluated.
+                Shape (number of induced dipoles, 3)
+                Dtype: np.float64
+
+        Returns:
+            Product of the electronic potential integrals and the induced dipoles.
+                Shape: (number of ao functions, number of ao functions)
                 Dtype: np.float64
         """
         raise NotImplementedError

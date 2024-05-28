@@ -176,14 +176,14 @@ def test_compute_electrostatic_interaction(
     es_fock_contr = electrostatic_interactions.es_fock_matrix_contributions(env, driver)
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
                                                                                      classical_subsystem=env,
-                                                                                     integral_drv=driver)
+                                                                                     integral_driver=driver)
     assert e_nuc_es == pytest.approx(ref_energy, 1e-9)
     assert f_el_es == pytest.approx(es_fock_contr, 1e-9)
     core, env = wat_wat
     driver = dummy_integral_driver_factory(wat_wat_es_fock_contr)
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
                                                                                      classical_subsystem=env,
-                                                                                     integral_drv=driver)
+                                                                                     integral_driver=driver)
     D = wat_wat_density
     e_el_es = np.einsum("ab, ab", D, f_el_es)
     assert e_nuc_es == pytest.approx(-0.08545956, abs=1.5e-8)

@@ -53,5 +53,5 @@ class Constants:
             self.initialized = True
 
 
-# TODO possible input of max order und t rank
+# TODO possible input of max order und t rank and also set qcelemental constants?
 values = Constants()

@@ -7,7 +7,7 @@ from pyframe.embedding import induction_interactions
 from pyframe.embedding.pert_tuple_cache import rspPert, rspPertTuple, rspCache
 
 
-def test_compute_induction_interaction(wat_wat,
+def test_ind_fock_matrix_contributions(wat_wat,
                                        wat_wat_h_ind,
                                        wat_wat_ind_dip,
                                        acrolein_wat,
@@ -15,20 +15,18 @@ def test_compute_induction_interaction(wat_wat,
                                        acrolein_wat_ind_dip,
                                        dummy_integral_driver_factory):
     env_wat = wat_wat[1]
-    induced_dipoles_wat = wat_wat_ind_dip
+    env_wat.induced_dipoles.induced_dipoles = wat_wat_ind_dip
     driver = dummy_integral_driver_factory(wat_wat_h_ind)
-    h_ind = induction_interactions.compute_induction_interaction(induced_dipoles=induced_dipoles_wat,
-                                                                 coordinates=env_wat.coordinates,
-                                                                 integral_drv=driver)
+    h_ind = induction_interactions.ind_fock_matrix_contributions(classical_subsystem=env_wat,
+                                                                 integral_driver=driver)
     assert h_ind.shape == (24, 24)
     assert np.allclose(h_ind, wat_wat_h_ind)
     assert isinstance(h_ind, np.ndarray)
     env_acrolein = acrolein_wat[1]
-    induced_dipoles_acrolein = acrolein_wat_ind_dip
+    env_acrolein.induced_dipoles.induced_dipoles = acrolein_wat_ind_dip
     driver = dummy_integral_driver_factory(acrolein_wat_h_ind)
-    h_ind = induction_interactions.compute_induction_interaction(induced_dipoles=induced_dipoles_acrolein,
-                                                                 coordinates=env_acrolein.coordinates,
-                                                                 integral_drv=driver)
+    h_ind = induction_interactions.ind_fock_matrix_contributions(classical_subsystem=env_acrolein,
+                                                                 integral_driver=driver)
     assert h_ind.shape == (24, 24)
     assert np.allclose(h_ind, acrolein_wat_h_ind)
     assert isinstance(h_ind, np.ndarray)

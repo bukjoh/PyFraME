@@ -170,15 +170,14 @@ class QuantumSubsystem(Subsystem):
         """Calculate the electric field from the electron density at the given coordinates.
 
         Args:
-            coordinates: Array of coordinates at which the field is calculated.
-            density_matrix:
-            integral_driver: Integral driver that calculates the electric fields at a set of coordinates given a density
-             matrix.
+            coordinates: Coordinates on which the fields are to be evaluated.
+            density_matrix: Density Matrix that is the source of the electronic field.
+            integral_driver: Integral driver that calculates the electronic fields on coordinates.
 
         Returns:
-            Array of electric fields in the same ordering as the input coordinates.
+            Electronic fields. Shape: (number of atoms, 3)
         """
-        return integral_driver.electric_fields(coordinates=coordinates, density=density_matrix)
+        return integral_driver.electronic_fields(coordinates=coordinates, density_matrix=density_matrix)
 
 
 class ClassicalSubsystem(Subsystem):
