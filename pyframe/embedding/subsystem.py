@@ -146,6 +146,7 @@ class QuantumSubsystem(Subsystem):
 
         Returns:
             Array of nuclear field gradients in the same ordering as the input coordinates.
+                Shape: (number of nuclei, number of atoms, 6)
         """
         engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
         if self.comm is not None:
@@ -178,6 +179,25 @@ class QuantumSubsystem(Subsystem):
             Electronic fields. Shape: (number of atoms, 3)
         """
         return integral_driver.electronic_fields(coordinates=coordinates, density_matrix=density_matrix)
+
+    def compute_electronic_field_gradients(self,
+                                           coordinates: np.ndarray,
+                                           density_matrix: np.ndarray,
+                                           integral_driver: Any
+                                           ) -> np.ndarray:
+        """Calculate the electric field gradients from the electron density at the given coordinates.
+
+        Args:
+            coordinates: Coordinates on which the fields are to be evaluated.
+            density_matrix: Density Matrix that is the source of the electronic field.
+            integral_driver: Integral driver that calculates the electronic fields on coordinates.
+
+        Returns:
+            Electronic field gradients.
+                Shape: (number of nuclei, number of atoms, 6)
+        """
+        return integral_driver.electronic_field_gradient(coordinates=coordinates,
+                                                         density_matrix=density_matrix)
 
 
 class ClassicalSubsystem(Subsystem):

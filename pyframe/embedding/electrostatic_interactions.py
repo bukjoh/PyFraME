@@ -4,11 +4,10 @@ import numpy as np
 
 from pyframe.embedding import polytensor, particle, fragment, subsystem, engine
 from typing import Union, Any, Tuple
-from mpi4py import MPI
 
 
 def compute_particle_interactions(particle_1: particle, particle_2: particle):
-    """Calculates the electrostatic interaction between two Particles.
+    """Calculate the electrostatic interaction between two Particles.
 
     Args:
         particle_1: Particle 1.
@@ -38,7 +37,7 @@ def compute_particle_interactions(particle_1: particle, particle_2: particle):
 def compute_fragment_interactions(c_fragment_1: fragment.ClassicalFragment,
                                   c_fragment_2: fragment.ClassicalFragment
                                   ) -> float:
-    """Calculates the electrostatic interaction between two Classical fragments.
+    """Calculate the electrostatic interaction between two Classical fragments.
 
     Args:
         c_fragment_1: Classical fragment 1.
@@ -61,7 +60,7 @@ def compute_fragment_interactions(c_fragment_1: fragment.ClassicalFragment,
 def compute_fragment_particle_interactions(c_particle: particle,
                                            c_fragment: fragment.ClassicalFragment
                                            ) -> float:
-    """Calculates the electrostatic interaction between a Classical fragment and a Particle.
+    """Calculate the electrostatic interaction between a Classical fragment and a Particle.
 
     Returns:
         Electrostatic interaction energy between a Classical fragment and a particle from the perspective of particle.
@@ -82,7 +81,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
                                       classical_subsystem: Union[subsystem.ClassicalSubsystem, list],
                                       integral_driver: Any
                                       ) -> Tuple[float, np.ndarray]:
-    """Calculates the electrostatic interaction between a Quantum subsystem and one or several Classical subsystems.
+    """Calculate the electrostatic interaction between a Quantum subsystem and one or several Classical subsystems.
 
     Returns:
         Electrostatic nuclear interaction energy and the electrostatic Fock matrix contribution.
@@ -165,12 +164,41 @@ def compute_electrostatic_nuclear_energy(quantum_subsystem: subsystem.QuantumSub
     return nuclear_energy
 
 
-# TODO write e_nuc_es gradient
+def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.QuantumSubsystem,
+                                            classical_subsystem: subsystem.ClassicalSubsystem):
+    """Calculate gradient of electrostatic nuclear interaction between a QuantumSubsystem and a ClassicalSubsystem.
+
+    Returns:
+        Electrostatic nuclear gradients.
+            Shape: (Number of Nuclei, 3)
+            Dtype: np.float64
+    """
+    if classical_subsystem.comm is None:
+        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        nuclear_gradients = engine.e_nuc_es_gradients(
+            np.array([0, len(classical_subsystem.coordinates)], dtype=np.int64))
+    else:
+        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.size)
+        counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.size)]
+        start = sum(counts[:classical_subsystem.rank])
+        end = sum(counts[:classical_subsystem.rank + 1])
+        nuclear_gradients = engine.e_nuc_es_gradients(np.array([start, end], dtype=np.int64))
+    return nuclear_gradients
+
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
                                  integral_driver: Any
                                  ) -> np.ndarray:
-    """Calculates the electrostatic Fock matrix contributions h_es (M*t) from a Classical subsystem and the one-electron
+    """Calculate the electrostatic Fock matrix contributions h_es (M*t) from a Classical subsystem and the one-electron
     integrals.
 
     Returns:
@@ -180,6 +208,21 @@ def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsyst
                                                          multipole_orders=classical_subsystem.multipole_orders,
                                                          multipoles=classical_subsystem.
                                                          degenerate_multipoles_with_taylor_coefficients)
+
+
+def es_fock_matrix_gradient_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
+                                          integral_driver: Any
+                                          ) -> np.ndarray:
+    """Calculate the gradient of the electrostatic Fock matrix contributions h_es (M*t) from a Classical subsystem and
+    the one-electron integrals.
+
+    Returns:
+        Gradient of electrostatic Fock matrix contribution.
+    """
+    return integral_driver.multipole_potential_gradient_integrals(multipole_coordinates=classical_subsystem.coordinates,
+                                                                  multipole_orders=classical_subsystem.multipole_orders,
+                                                                  multipoles=classical_subsystem.
+                                                                  degenerate_multipoles_with_taylor_coefficients)
 
 
 def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,

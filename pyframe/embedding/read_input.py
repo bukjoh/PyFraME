@@ -37,7 +37,8 @@ def json_to_dict(filepath: Path | str
 
 def reader(input_data: dict | Path | str,
            comm: MPI.Comm | None = None
-           ) -> tuple[QuantumSubsystem | ClassicalSubsystem]:
+           ) -> (tuple[QuantumSubsystem, ...] | tuple[ClassicalSubsystem, ...] |
+                 tuple[QuantumSubsystem, ..., ClassicalSubsystem, ...]):
     """Read in a JSON file or Python dictionary and create instances of a QuantumSubsystem, ClassicalSubsystem(s) or
      both.
 

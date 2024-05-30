@@ -264,7 +264,7 @@ double e_nuc_es(int start, int end) {
     return e_nuc_es;
 }
 
-// Computes the energy between all atoms and the nuclei.
+// Computes the perturbed energy between all atoms and a nucleus.
 // Parallelized with OpenMP.
 double e_nuc_es_perturbed(int start, int end, int nuc_idx, const Eigen::Matrix<int, 2, 3> &perturbation_tuple) {
     double e_nuc_es = 0.0;
@@ -286,6 +286,54 @@ double e_nuc_es_perturbed(int start, int end, int nuc_idx, const Eigen::Matrix<i
         }
     }
     return e_nuc_es;
+}
+
+// Computes the energy gradient between all atoms and all nuclei.
+// Parallelized with OpenMP.
+std::vector<Eigen::Vector3d> e_nuc_es_gradients(int start, int end) {
+    int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
+    std::vector<Eigen::Vector3d> e_nuc_es_gradients(no_nuclei , Eigen::Vector3d::Zero());
+    #pragma omp parallel
+    {
+        std::vector<Eigen::Vector3d> thread_gradients(no_nuclei, Eigen::Vector3d::Zero());
+        const Eigen::Matrix<int, 2, 3> x_grad((Eigen::Matrix<int, 2, 3>() << 0, 0, 0, 1, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> y_grad((Eigen::Matrix<int, 2, 3>() << 0, 0, 0, 0, 1, 0).finished());
+        const Eigen::Matrix<int, 2, 3> z_grad((Eigen::Matrix<int, 2, 3>() << 0, 0, 0, 0, 0, 1).finished());
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            for(int i = 0; i < no_nuclei; i++) {
+                double energy_contr_x = 0.0;
+                double energy_contr_y = 0.0;
+                double energy_contr_z = 0.0;
+                Eigen::Vector3d r_ab = global::nuclei_coordinates[i] - global::coordinates[j];
+                Eigen::MatrixXd x_grad_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                          global::tensor_template_interaction,
+                                                          x_grad,
+                                                          global::multipole_orders[j], 0, 0, 0);
+                Eigen::MatrixXd y_grad_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                          global::tensor_template_interaction,
+                                                          y_grad,
+                                                          global::multipole_orders[j], 0, 0, 0);
+                Eigen::MatrixXd z_grad_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                          global::tensor_template_interaction,
+                                                          z_grad,
+                                                          global::multipole_orders[j], 0, 0, 0);
+                energy_contr_x += (global::multipoles[j].transpose() * x_grad_t_tensor * global::nuclei_charges[i])[0];
+                energy_contr_y += (global::multipoles[j].transpose() * y_grad_t_tensor * global::nuclei_charges[i])[0];
+                energy_contr_z += (global::multipoles[j].transpose() * z_grad_t_tensor * global::nuclei_charges[i])[0];
+                thread_gradients[i][0] += energy_contr_x;
+                thread_gradients[i][1] += energy_contr_y;
+                thread_gradients[i][2] += energy_contr_z;
+            }
+        }
+        #pragma omp critical
+        {
+            for(int i = 0; i < no_nuclei; ++i) {
+                e_nuc_es_gradients[i] += thread_gradients[i];
+            }
+        }
+    }
+    return e_nuc_es_gradients;
 }
 
 // Uses the Lorentz-Berthelot combination rules for non-bonded VdW interactions.

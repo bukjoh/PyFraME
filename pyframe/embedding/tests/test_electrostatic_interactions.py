@@ -190,8 +190,21 @@ def test_compute_electrostatic_interaction(
     assert e_el_es == pytest.approx(0.00987780, abs=1.5e-8)
 
 
-def test_compute_perturbed_electrostatic_interaction(two_oxygen,
-                                                     neon):
+def test_compute_electrostatic_nuclear_gradients(neon, wat_wat):
+    core_ne, env_ne = neon
+
+    ref_energy = [2.3142853266046646, 0.0, 0.0]
+    gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_ne,
+                                                                                  classical_subsystem=env_ne)
+    assert np.allclose(ref_energy, gradient)
+    #TODO write more tests
+    core_wat, env_wat = wat_wat
+    gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_wat,
+                                                                                  classical_subsystem=env_wat)
+
+
+
+def test_compute_perturbed_electrostatic_interaction(neon):
     core_ne, env_ne = neon
     ref_energy = [2.3142853266046646, 0.0, 0.0]
     for i in range(3):

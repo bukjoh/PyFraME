@@ -27,6 +27,28 @@
 #include "computation.h"
 #include "global.h"  
 
+// Function to convert std::vector<Eigen::Vector3d> to NumPy array
+PyObject* std_vec_of_eigen_vec3d_to_numpy(const std::vector<Eigen::Vector3d>& vec) {
+    int rows = vec.size();
+    int cols = 3; // Eigen::Vector3d has 3 elements
+
+    // Create a NumPy array
+    npy_intp dims[2] = {rows, cols};
+    PyObject* numpyArray = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+
+    // Get pointer to data
+    double* dataPtr = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
+
+    // Copy data from vector to NumPy array
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            dataPtr[i * cols + j] = vec[i](j);
+        }
+    }
+
+    return numpyArray;
+}
+
 // Reads a multiindex into an Eigen::Matrix.
 // multiindex_obj: Points to a List of two np.ndarrays of length 3
 Eigen::Matrix<int, 2, 3> read_multiindex(PyObject *multiindex_obj)
@@ -625,9 +647,21 @@ static PyObject* e_nuc_es(PyObject* self, PyObject* args) {
     return PyFloat_FromDouble(computation::e_nuc_es(start, end));
 }
 
+//Calculates the gradient of the electrostatic interaction energy between the nuclei and the ClassicalSystem
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* e_nuc_es_gradients(PyObject* self, PyObject* args) {
+    PyObject *start_end_nuc_idx_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_nuc_idx_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_nuc_idx_obj)(0);
+    int end = (int)read_vector(start_end_nuc_idx_obj)(1);
+    return std_vec_of_eigen_vec3d_to_numpy(computation::e_nuc_es_gradients(start, end));
+}
+
 
 //Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem
-//args: [start, end] (numpy.ndarray with start and end as entries)
+//args: np.array([start, end]), [np.array([0,0,0]), np.array([perturbation multi index])]
 static PyObject* e_nuc_es_perturbed(PyObject* self, PyObject* args) {
     PyObject *start_end_nuc_idx_obj;
     PyObject *perturbation_obj;
@@ -726,28 +760,6 @@ static PyObject* unperturbed_lj_dispersion(PyObject* self, PyObject* args) {
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
     return PyFloat_FromDouble(computation::compute_unperturbed_lj_dispersion(start, end, global::combination_rule));
-}
-
-// Function to convert std::vector<Eigen::Vector3d> to NumPy array
-PyObject* std_vec_of_eigen_vec3d_to_numpy(const std::vector<Eigen::Vector3d>& vec) {
-    int rows = vec.size();
-    int cols = 3; // Eigen::Vector3d has 3 elements
-
-    // Create a NumPy array
-    npy_intp dims[2] = {rows, cols};
-    PyObject* numpyArray = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
-
-    // Get pointer to data
-    double* dataPtr = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
-
-    // Copy data from vector to NumPy array
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            dataPtr[i * cols + j] = vec[i](j);
-        }
-    }
-
-    return numpyArray;
 }
 
 // Computes the LJ repulsion gradients of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
@@ -896,8 +908,10 @@ static PyMethodDef module_methods[] = {
      "Calculates the self energy of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
      {"e_nuc_es", e_nuc_es, METH_VARARGS,
      "Calculates the electrostatic energy between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},
+     {"e_nuc_es_gradients", e_nuc_es_gradients, METH_VARARGS,
+     "Calculates the gradient of the electrostatic interaction energy between the nuclei and the ClassicalSystem."},
      {"e_nuc_es_perturbed", e_nuc_es_perturbed, METH_VARARGS,
-     "Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem"},
+     "Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem."},
      {"set_atoms_nuclei_coordinates_lj_sigma_epsilon", set_atoms_nuclei_coordinates_lj_sigma_epsilon, METH_VARARGS,
      "Sets the LJ 6-12 parameters of a ClassicalSubsystem and a QuantumSubsystem."},
      {"set_factorials", set_factorials, METH_VARARGS,

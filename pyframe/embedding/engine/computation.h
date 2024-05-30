@@ -63,9 +63,13 @@ Eigen::MatrixXd multipole_field(int i);
 // Parallelized with OpenMP.
 double environment_energy(Eigen::MatrixXi idx_list);
 
-// Computes the energy between all atoms and the nuclei.
+// Computes the energy between all atoms and a nucleus.
 // Parallelized with OpenMP.
 double e_nuc_es(int start, int end);
+
+// Computes the energy between all atoms and all nuclei.
+// Parallelized with OpenMP.
+std::vector<Eigen::Vector3d> e_nuc_es_gradients(int start, int end);
 
 // Uses the Lorentz-Berthelot combination rules for non-bonded VdW interactions.
 std::tuple<double, double> LB_combination(double sigma_i, double sigma_j, double epsilon_i, double epsilon_j);
