@@ -36,6 +36,14 @@ def compute_induction_energy(induced_dipoles: np.ndarray,
     return -0.5 * np.einsum('ij, ij', total_fields, induced_dipoles)
 
 
+def ind_fock_matrix_gradient_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
+                                           integral_driver: Any
+                                           ) -> np.ndarray:
+    return integral_driver.ind_fock_matrix_contributions_gradient(coordinates=classical_subsystem.coordinates,
+                                                                  induced_dipoles=classical_subsystem.induced_dipoles.
+                                                                  induced_dipoles)
+
+
 def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
                                       total_field_gradients: np.ndarray) -> np.ndarray:
     """Calculates the induction energy contribution.
@@ -51,7 +59,6 @@ def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
     energy_gradient = np.zeros([len(total_field_gradients), 3], dtype=np.float64)
     for i, field_gradient in enumerate(total_field_gradients):
         for j in range(len(induced_dipoles)):
-            # Move * -1 into -=
             energy_gradient[i, 0] -= (induced_dipoles[j, 0] * field_gradient[j, 0] +
                                       induced_dipoles[j, 1] * field_gradient[j, 1] +
                                       induced_dipoles[j, 2] * field_gradient[j, 2])

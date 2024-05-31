@@ -35,7 +35,7 @@ class IntegralDriverTemplate(ABC):
         Args:
             multipole_coordinates: Coordinates of the Multipoles.
                 Shape: (number of atoms, 3)
-                Dtype: np.float64.
+                Dtype: np.float64
             multipole_orders: Multipole orders of all multipoles.
                 Shape: (number of atoms)
                 Dtype: np.int64
@@ -61,7 +61,7 @@ class IntegralDriverTemplate(ABC):
         Args:
             multipole_coordinates: Coordinates of the Multipoles.
                 Shape: (number of atoms, 3)
-                Dtype: np.float64.
+                Dtype: np.float64
             multipole_orders: Multipole orders of all multipoles.
                 Shape: (number of atoms)
                 Dtype: np.int64
@@ -111,6 +111,52 @@ class IntegralDriverTemplate(ABC):
         Returns:
             Product of the electronic potential integrals and the induced dipoles.
                 Shape: (number of ao functions, number of ao functions)
+                Dtype: np.float64
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def ind_fock_matrix_contributions_gradient(self,
+                                               multipole_coordinates: np.ndarray,
+                                               induced_dipoles: np.ndarray) -> np.ndarray:
+        """Calculate the gradient of the induced Fock-matrix contributions.
+
+        Args:
+            multipole_coordinates: Coordinates of the Multipoles.
+                Shape: (number of atoms, 3)
+                Dtype: np.float64
+            induced_dipoles: Induced dipoles on the Multipoles.
+                Shape: (number of atoms, 3)
+                Dtype: np.float64
+
+        Returns:
+            Gradient of induced Fock-matrix contributions.
+                Shape: (number of nuclei, number of ao functions, number of ao functions)
+                Dtype: np.float64
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def multipole_potential_gradient_integrals(self,
+                                               multipole_coordinates: np.ndarray,
+                                               multipole_orders: np.ndarray,
+                                               multipoles: list[np.ndarray]) -> np.ndarray:
+        """Calculate the gradient of the electronic potential integrals and multiply with the multipoles.
+
+        Args:
+            multipole_coordinates: Coordinates of the Multipoles.
+                Shape: (number of atoms, 3)
+                Dtype: np.float64.
+            multipole_orders: Multipole orders of all multipoles.
+                Shape: (number of atoms)
+                Dtype: np.int64
+            multipoles: Multipoles multiplied with degeneracy coefficients and taylor coefficients.
+                Shape: (number of atoms, number of multipole elements)
+                Dtype: np.float64
+
+        Returns:
+            Product of gradient of electronic potential integrals and multipoles.
+                Shape: (number of nuclei, number of ao functions, number of ao functions)
                 Dtype: np.float64
         """
         raise NotImplementedError
