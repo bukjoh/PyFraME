@@ -116,9 +116,9 @@ class IntegralDriverTemplate(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def ind_fock_matrix_contributions_gradient(self,
-                                               multipole_coordinates: np.ndarray,
-                                               induced_dipoles: np.ndarray) -> np.ndarray:
+    def induced_fock_matrix_contributions_gradient(self,
+                                                   multipole_coordinates: np.ndarray,
+                                                   induced_dipoles: np.ndarray) -> np.ndarray:
         """Calculate the gradient of the induced Fock-matrix contributions.
 
         Args:

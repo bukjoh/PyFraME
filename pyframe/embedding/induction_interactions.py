@@ -36,12 +36,12 @@ def compute_induction_energy(induced_dipoles: np.ndarray,
     return -0.5 * np.einsum('ij, ij', total_fields, induced_dipoles)
 
 
-def ind_fock_matrix_gradient_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
+def ind_fock_matrix_contributions_gradient(classical_subsystem: subsystem.ClassicalSubsystem,
                                            integral_driver: Any
                                            ) -> np.ndarray:
-    return integral_driver.ind_fock_matrix_contributions_gradient(coordinates=classical_subsystem.coordinates,
-                                                                  induced_dipoles=classical_subsystem.induced_dipoles.
-                                                                  induced_dipoles)
+    return integral_driver.induced_fock_matrix_contributions_gradient(coordinates=classical_subsystem.coordinates,
+                                                                      induced_dipoles=classical_subsystem.
+                                                                      induced_dipoles.induced_dipoles)
 
 
 def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
