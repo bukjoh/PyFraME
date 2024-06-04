@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 from typing import Optional
-from pyframe.embedding import particle, density_matrix
+from pyframe.embedding import particle
 
 
 class Fragment:
@@ -76,14 +76,12 @@ class QuantumFragment(Fragment):
         index: Index of the fragment.
         nuclei: List of dictionaries of all the particles in the fragment. Each dictionary must contain the type
         of particle and all the **kwargs, respectively.
-        e_density_matrix: Electron density of the fragment.
         name: Name of the fragment.
     """
 
     def __init__(self,
                  index: int,
                  nuclei: list,
-                 e_density_matrix: np.ndarray | list,
                  name: Optional[str] = None
                  ) -> None:
         Fragment.__init__(self, index=index, name=name)
@@ -92,4 +90,3 @@ class QuantumFragment(Fragment):
             n['coordinate'] = np.array(n['coordinate'])
             self.nuclei.append(particle.Nucleus(**n))
         self.num_nuclei = len(nuclei)
-        self.e_density_matrix = density_matrix.DensityMatrix(e_density_matrix)

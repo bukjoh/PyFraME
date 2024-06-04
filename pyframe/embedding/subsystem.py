@@ -7,7 +7,6 @@ from typing import Any
 
 from pyframe.embedding import engine
 from .polytensor import FirstDegreePolytensor
-from .density_matrix import DensityMatrix
 from .tensor_tools import uncompress_symmetric_matrix
 from .solvers import induced_dipoles_jacobi
 from .particle import Nucleus
@@ -32,7 +31,6 @@ class QuantumSubsystem(Subsystem):
 
     Args:
         nuclei: List of Nuclei.
-        density_matrix: Density Matrix.
         quantum_fragments: Fragments of the QuantumSubsystem.
         name: Name of the QuantumSubsystem.
         comm: The MPI communicator.
@@ -40,7 +38,6 @@ class QuantumSubsystem(Subsystem):
 
     def __init__(self,
                  nuclei: list[Nucleus] | None = None,
-                 density_matrix: DensityMatrix | None = None,
                  quantum_fragments: list[QuantumFragment] | None = None,
                  name: str | None = None,
                  comm: MPI.Comm | None = None
@@ -50,10 +47,6 @@ class QuantumSubsystem(Subsystem):
             self.nuclei = []
         else:
             self.nuclei = nuclei
-        if density_matrix is None:
-            self.density_matrix = DensityMatrix(np.zeros(1))
-        else:
-            self.density_matrix = density_matrix
         self.num_nuclei = len(self.nuclei)
         self.quantum_fragments = quantum_fragments
         self._rep_lj_sigma = None
@@ -153,6 +146,7 @@ class QuantumSubsystem(Subsystem):
 
         Returns:
             Array of nuclear field gradients in the same ordering as the input coordinates.
+                Shape: (number of nuclei, number of atoms, 6)
         """
         engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
         if self.comm is not None:
@@ -171,29 +165,39 @@ class QuantumSubsystem(Subsystem):
 
     def compute_electronic_fields(self,
                                   coordinates: np.ndarray,
+                                  density_matrix: np.ndarray,
                                   integral_driver: Any
                                   ) -> np.ndarray:
         """Calculate the electric field from the electron density at the given coordinates.
 
         Args:
-            coordinates: Array of coordinates at which the field is calculated.
-            integral_driver: Integral driver that calculates the electric fields at a set of coordinates given a density
-             matrix.
+            coordinates: Coordinates on which the fields are to be evaluated.
+            density_matrix: Density Matrix that is the source of the electronic field.
+            integral_driver: Integral driver that calculates the electronic fields on coordinates.
 
         Returns:
-            Array of electric fields in the same ordering as the input coordinates.
+            Electronic fields. Shape: (number of atoms, 3)
         """
-        return integral_driver.electric_fields(coordinates=coordinates, density=self.density_matrix.density)
+        return integral_driver.electronic_fields(coordinates=coordinates, density_matrix=density_matrix)
 
-    def update_density_matrix(self,
-                              density_matrix: np.ndarray
-                              ) -> None:
-        """Updates the current density matrix with a new density matrix.
+    def compute_electronic_field_gradients(self,
+                                           coordinates: np.ndarray,
+                                           density_matrix: np.ndarray,
+                                           integral_driver: Any
+                                           ) -> np.ndarray:
+        """Calculate the electric field gradients from the electron density at the given coordinates.
 
         Args:
-            density_matrix: The new density matrix to update with.
+            coordinates: Coordinates on which the fields are to be evaluated.
+            density_matrix: Density Matrix that is the source of the electronic field.
+            integral_driver: Integral driver that calculates the electronic fields on coordinates.
+
+        Returns:
+            Electronic field gradients.
+                Shape: (number of nuclei, number of atoms, 6)
         """
-        self.density_matrix.density = density_matrix
+        return integral_driver.electronic_field_gradient(coordinates=coordinates,
+                                                         density_matrix=density_matrix)
 
 
 class ClassicalSubsystem(Subsystem):
@@ -229,7 +233,7 @@ class ClassicalSubsystem(Subsystem):
         self._disp_lj_sigma = None
         self._disp_lj_epsilon = None
         self._multipole_fields = None
-        self._self_energy = None
+        self._environment_energy = None
         self.induced_dipoles = InducedDipoles(induced_dipoles=np.zeros([self.num_atoms, 3]),
                                               external_fields=np.zeros([self.num_atoms, 3]),
                                               number_of_iterations=0,
@@ -398,14 +402,14 @@ class ClassicalSubsystem(Subsystem):
                 self._multipole_fields[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
 
     @property
-    def self_energy(self
-                    ) -> float:
+    def environment_energy(self
+                           ) -> float:
         """Calculate the internal electrostatic interaction energy between all multipoles.
 
         Returns:
             Self energy of the ClassicalSubsystem.
         """
-        if self._self_energy is None:
+        if self._environment_energy is None:
             engine.set_multipoles_multipoles_order(self.degenerate_multipoles_with_taylor_coefficients,
                                                    self.multipole_orders)
             engine.set_coords_idcs_exlcs(self.coordinates,
@@ -413,7 +417,7 @@ class ClassicalSubsystem(Subsystem):
                                          self.exclusions)
             total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
             if self.comm is None:
-                self._self_energy = engine.self_energy(np.array([0, total_iterations], dtype=np.int64))
+                self._environment_energy = engine.environment_energy(np.array([0, total_iterations], dtype=np.int64))
             else:
                 rank = self.comm.Get_rank()
                 size = self.comm.Get_size()
@@ -423,11 +427,11 @@ class ClassicalSubsystem(Subsystem):
                 # Calculate the start and end indices for this process
                 start_index = rank * iterations_per_process + min(rank, remainder)
                 end_index = start_index + iterations_per_process + (1 if rank < remainder else 0)
-                local_energy = engine.self_energy(np.array([start_index, end_index], dtype=np.int64))
+                local_energy = engine.environment_energy(np.array([start_index, end_index], dtype=np.int64))
                 global_energy = self.comm.reduce(local_energy, op=MPI.SUM, root=0)
                 global_energy = self.comm.bcast(global_energy, root=0)
-                self._self_energy = global_energy
-        return self._self_energy
+                self._environment_energy = global_energy
+        return self._environment_energy
 
     def solve_induced_dipoles(self,
                               threshold: float = 1e-8,

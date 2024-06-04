@@ -8,23 +8,18 @@ from pyframe.embedding import subsystem
 from pyframe.embedding.pert_tuple_cache import rspCache, rspPert, rspPertTuple
 
 
-def compute_induction_interaction(induced_dipoles: np.ndarray,
-                                  coordinates: np.ndarray,
-                                  integral_drv: Any
+def ind_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
+                                  integral_driver: Any
                                   ) -> np.ndarray:
-    """Calculates the induction fock matrix contribution.
-
-    Args:
-        induced_dipoles: Induced dipoles in the environment.
-        coordinates: 2D-array (N_{atom}x3) of coordinates of all particle.Atom objects in the classical subsystem/s.
-        integral_drv: Integral driver to calculate the field of the density contracted with the multipoles.
+    """Calculates the induced Fock matrix contributions h_es (M*t) from a ClassicalSubsystem and the one-electron
+    integrals.
 
     Returns:
-        Induction fock matrix contribution.
+        Induced Fock matrix contribution.
     """
-    fock_matrix = integral_drv.multipole_field_integrals(dipoles=induced_dipoles,
-                                                         coordinates=coordinates)
-    return fock_matrix
+    return integral_driver.induced_dipoles_potential_integrals(
+        induced_dipoles=classical_subsystem.induced_dipoles.induced_dipoles,
+        coordinates=classical_subsystem.coordinates)
 
 
 def compute_induction_energy(induced_dipoles: np.ndarray,
@@ -38,8 +33,16 @@ def compute_induction_energy(induced_dipoles: np.ndarray,
     Returns:
         Induction energy
     """
-    # TODO move into c++ layer?
     return -0.5 * np.einsum('ij, ij', total_fields, induced_dipoles)
+
+
+def induced_fock_matrix_contributions_gradient(classical_subsystem: subsystem.ClassicalSubsystem,
+                                               integral_driver: Any
+                                               ) -> np.ndarray:
+    return integral_driver.induced_fock_matrix_contributions_gradient(multipole_coordinates=classical_subsystem.
+                                                                      coordinates,
+                                                                      induced_dipoles=classical_subsystem.
+                                                                      induced_dipoles.induced_dipoles)
 
 
 def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
@@ -57,7 +60,6 @@ def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
     energy_gradient = np.zeros([len(total_field_gradients), 3], dtype=np.float64)
     for i, field_gradient in enumerate(total_field_gradients):
         for j in range(len(induced_dipoles)):
-            # Move * -1 into -=
             energy_gradient[i, 0] -= (induced_dipoles[j, 0] * field_gradient[j, 0] +
                                       induced_dipoles[j, 1] * field_gradient[j, 1] +
                                       induced_dipoles[j, 2] * field_gradient[j, 2])

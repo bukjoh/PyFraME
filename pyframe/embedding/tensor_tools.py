@@ -1,5 +1,9 @@
 import numpy as np
-import numba as nb
+
+try:
+    import numba as nb
+except ImportError:
+    nb = None
 
 from typing import List, Tuple
 

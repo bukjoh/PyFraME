@@ -100,12 +100,8 @@ class TestQuantumFragment:
                             water_density,
                             hydrogen_nucleus_in_nuclei_list
                             ):
-        test_fragment2 = fragment.QuantumFragment(index=1, nuclei=hydrogen_nucleus_in_nuclei_list, name="H2O",
-                                                  e_density_matrix=water_density)
+        test_fragment2 = fragment.QuantumFragment(index=1, nuclei=hydrogen_nucleus_in_nuclei_list, name="H2O")
         assert self.test_fragment.num_nuclei == 2
         assert test_fragment2._name == "H2O"
         assert len(test_fragment2.nuclei) == 1
         assert isinstance(test_fragment2.nuclei[0], particle.Nucleus)
-
-    def test_density_matrix(self):
-        assert np.array_equal(self.test_fragment.e_density_matrix.density, self.e_density_matrix)

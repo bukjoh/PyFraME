@@ -17,6 +17,23 @@ def induced_dipoles_jacobi(coordinates: np.ndarray,
                            max_iterations: Optional[int] = 100,
                            comm: Optional[MPI.Comm] = None
                            ) -> Tuple[np.ndarray, int]:
+    """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
+
+        Args:
+            coordinates: Array of coordinates for all Atoms.
+            polarizabilities: Array of polarizabilities for all Atoms.
+            exclusions: List of exclusions for all Atoms.
+            indices: Array of indices of the Atoms.
+            fields: Array of static fields on all Atoms.
+            starting_guess: Array of induced dipoles used as the starting guess.
+            threshold: Convergence threshold for the residue norm between the (k+1)th and (k)th set of induced dipoles.
+            max_iterations: Maximum number of iterations.
+
+        Returns:
+            ind_dipoles: Array of induced dipoles.
+            new_fields: Array of fields originating from the induced dipoles.
+            iteration: Number of iterations it took to converge the induced dipoles to the threshold.
+    """
     if not isinstance(coordinates, np.ndarray) or not isinstance(polarizabilities, np.ndarray) or \
             not isinstance(exclusions, list) or not isinstance(indices, np.ndarray) or \
             not isinstance(fields, np.ndarray) or not isinstance(starting_guess, np.ndarray):
@@ -45,11 +62,7 @@ def induced_dipoles_jacobi_serial(polarizabilities: np.ndarray,
                                   ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
-    Args:
-        coordinates: Array of coordinates for all Atoms.
         polarizabilities: Array of polarizabilities for all Atoms.
-        exclusions: List of exclusions for all Atoms.
-        indices: Array of indices of the Atoms.
         fields: Array of static fields on all Atoms.
         starting_guess: Array of induced dipoles used as the starting guess.
         threshold: Convergence threshold for the residue norm between the (k+1)th and (k)th set of induced dipoles.
@@ -91,10 +104,7 @@ def induced_dipoles_jacobi_parallel(polarizabilities: np.ndarray,
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method.
 
     Args:
-        coordinates: Array of coordinates for all Atoms.
         polarizabilities: Array of polarizabilities for all Atoms.
-        exclusions: List of exclusions for all Atoms.
-        indices: Array of indices of the Atoms.
         fields: Array of static fields on all Atoms.
         starting_guess: Array of induced dipoles used as the starting guess.
         threshold: Convergence threshold for the residue norm between the (k+1)th and (k)th set of induced dipoles.
