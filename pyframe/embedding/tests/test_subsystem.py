@@ -84,11 +84,21 @@ class TestQuantumSubsystem:
 
 class TestClassicalSubsystem:
     @pytest.fixture(autouse=True)
-    def setup(self, act_wat):
-        self.core, self.env = act_wat
+    def setup(self,
+              act_wat,
+              wat_wat,
+              acrolein_wat,
+              act_wat_big,
+              butadiene_water
+              ):
+        self.core_act_t, self.env_act_t = act_wat
+        self.core_act, self.env_act = act_wat_big
+        self.core_wat, self.env_wat = wat_wat
+        self.core_ac, self.env_ac = acrolein_wat
+        self.core_but, self.env_but = butadiene_water
 
     def test_init_with_valid_arguments(self):
-        fragments = self.env.classical_fragments
+        fragments = self.env_act_t.classical_fragments
         name = "TestSubsystem"
         c_subsystem = subsystem.ClassicalSubsystem(classical_fragments=fragments, name=name)
         assert c_subsystem.name == name
@@ -109,19 +119,42 @@ class TestClassicalSubsystem:
                                 wat_wat,
                                 acrolein_wat,
                                 act_wat_big,
-                                act_wat
+                                act_wat,
+                                butadiene_water
                                 ):
-        assert self.env.environment_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
-        core_wat, env_wat = wat_wat
-        assert env_wat.environment_energy == pytest.approx(-0.00718198734326498, abs=1e-12)
+        assert self.env_act_t.environment_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
+        assert self.env_wat.environment_energy == pytest.approx(-0.00718198734326498, abs=1e-12)
         # value tested against dalton with pelib
-        core_ac, env_ac = acrolein_wat
-        assert pytest.approx(0.001012591928, abs=1e-9) == env_ac.environment_energy
+        assert pytest.approx(0.001012591928, abs=1e-9) == self.env_ac.environment_energy
         # value tested against dalton with pelib
-        core_act, env_act = act_wat_big
-        assert pytest.approx(-5.200360556757, abs=1e-8) == env_act.environment_energy
-        core_act_t, env_act_t = act_wat
-        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == env_act_t.environment_energy
+        assert pytest.approx(-5.200360556757, abs=1e-8) == self.env_act.environment_energy
+        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == self.env_act_t.environment_energy
+        assert pytest.approx(-0.0184325879671965, abs=1e-12) == self.env_but.environment_energy
+
+    def test_compute_multipole_fields(self):
+        ref_fields = np.array([[-6.88526592e-03, 8.61243977e-03, -3.98239429e-03],
+                               [-2.31127305e-02, 3.00417481e-02, -2.51125273e-02],
+                               [-1.68499637e-03, 5.00369550e-03, -4.44046917e-03],
+                               [-2.46855201e-03, 1.15151596e-02, -1.88504755e-02],
+                               [4.51744687e-03, 1.03509735e-03, -9.02918842e-03],
+                               [-3.23334755e-03, 1.82938297e-03, -7.10269295e-03],
+                               [2.72946110e-04, -4.63074208e-04, -1.84476866e-04],
+                               [3.14770478e-04, -5.85885190e-04, -4.73097572e-04],
+                               [1.98420210e-04, -6.15280152e-04, -5.16664149e-05]])
+        assert np.allclose(self.env_but.multipole_fields, ref_fields)
+        ref_fields = np.array([[-6.43939331e-03, -1.75558132e-03, 7.58932558e-04],
+                               [-3.49230589e-03, 1.20406697e-03, 5.97577089e-04],
+                               [-4.45114544e-03, -1.97804776e-03, 1.43844660e-03],
+                               [-1.03355900e-03, 1.32524544e-03, -3.79201566e-03],
+                               [-3.04085251e-05, 1.36646363e-03, -2.09178543e-03],
+                               [-4.20853287e-03, 1.37263607e-03, -5.81682184e-03],
+                               [1.33413235e-03, 1.82510027e-03, 1.62329284e-03],
+                               [2.46763060e-03, 4.93517001e-04, 1.69756037e-03],
+                               [1.40764452e-03, 1.28334739e-03, 1.36600708e-04],
+                               [-3.11205363e-03, -2.15161862e-03, 3.36398086e-03],
+                               [-6.70973218e-03, -3.99943622e-03, 3.89476831e-03],
+                               [-3.48489739e-03, -1.25625556e-03, 4.05203538e-03]])
+        assert np.allclose(self.env_wat.multipole_fields, ref_fields)
 
     def test_solve_induced_dipoles(self,
                                    act_wat_electric_fields,
@@ -129,39 +162,41 @@ class TestClassicalSubsystem:
                                    dummy_integral_driver_factory
                                    ):
         int_driver = dummy_integral_driver_factory(act_wat_electric_fields)
-        electric_field = self.core.compute_electronic_fields(coordinates=self.env.coordinates,
-                                                             density_matrix=act_wat_density_matrix,
-                                                             integral_driver=int_driver)
-        nuclear_field = self.core.compute_nuclear_fields(coordinates=self.env.coordinates)
-        self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)
+        electric_field = self.core_act_t.compute_electronic_fields(coordinates=self.env_act_t.coordinates,
+                                                                   density_matrix=act_wat_density_matrix,
+                                                                   integral_driver=int_driver)
+        nuclear_field = self.core_act_t.compute_nuclear_fields(coordinates=self.env_act_t.coordinates)
+        self.env_act_t.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)
         ref_dipoles = np.array([[-0.05130705, -0.25165223, -0.4511121],
                                 [0.00465468, -0.27383291, -0.18815435],
                                 [-0.09539097, 0.03976932, -0.19509574],
                                 [-1.17424447, 0.51284179, 0.50156209],
                                 [-0.14716566, -0.03273562, 0.12889495],
                                 [-0.44555632, 0.00482074, -0.09598545]])
-        assert np.allclose(self.env.induced_dipoles.induced_dipoles, ref_dipoles)
-        assert self.env.induced_dipoles.number_of_iterations == 4
+        assert np.allclose(self.env_act_t.induced_dipoles.induced_dipoles, ref_dipoles)
+        assert self.env_act_t.induced_dipoles.number_of_iterations == 4
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)
+        self.env_act_t.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)
         sys.stdout = sys.__stdout__
         assert ("Residue norm between new and old external fields is 0, induced dipoles will not be recalculated.\n" ==
                 captured_output.getvalue())
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field + np.full(electric_field.shape,
-                                                                                                 1e-10)),
-                                       threshold=1e-10)
+        self.env_act_t.solve_induced_dipoles(
+            external_fields=(nuclear_field + electric_field + np.full(electric_field.shape,
+                                                                      1e-10)),
+            threshold=1e-10)
         sys.stdout = sys.__stdout__
         assert ("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will be"
                 " used as a starting guess.\n" == captured_output.getvalue())
-        assert self.env.induced_dipoles.number_of_iterations == 2
+        assert self.env_act_t.induced_dipoles.number_of_iterations == 2
         captured_output = io.StringIO()
         sys.stdout = captured_output
-        self.env.solve_induced_dipoles(external_fields=(nuclear_field + electric_field + np.full(electric_field.shape,
-                                                                                                 0.1)),
-                                       threshold=1e-10)
+        self.env_act_t.solve_induced_dipoles(
+            external_fields=(nuclear_field + electric_field + np.full(electric_field.shape,
+                                                                      0.1)),
+            threshold=1e-10)
         sys.stdout = sys.__stdout__
         assert ("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
                 "not be used as a starting guess.\n" == captured_output.getvalue())

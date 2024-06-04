@@ -190,18 +190,34 @@ def test_compute_electrostatic_interaction(
     assert e_el_es == pytest.approx(0.00987780, abs=1.5e-8)
 
 
-def test_compute_electrostatic_nuclear_gradients(neon, wat_wat):
+def test_compute_electrostatic_nuclear_gradients(neon, wat_wat, butadiene_water):
     core_ne, env_ne = neon
 
     ref_energy = [2.3142853266046646, 0.0, 0.0]
     gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_ne,
                                                                                   classical_subsystem=env_ne)
     assert np.allclose(ref_energy, gradient)
-    #TODO write more tests
     core_wat, env_wat = wat_wat
+    ref_energy = np.array([[0.21247583, -0.03107111, -0.04910824],
+                           [0.02815794, 0.05766402, 0.02072039],
+                           [0.04120633, -0.03522868, -0.020967]])
     gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_wat,
                                                                                   classical_subsystem=env_wat)
-
+    assert np.allclose(ref_energy, gradient)
+    core_but, env_but = butadiene_water
+    ref_energy = np.array([[0.00719841, -0.01379588, 0.00045358],
+                           [0.01500085, 0.00583608, 0.00916102],
+                           [0.00756524, 0.0459053, 0.04311232],
+                           [-0.01163024, 0.04039575, 0.02034383],
+                           [0.00062134, -0.00199819, -0.00061198],
+                           [-0.0002471, -0.00215507, -0.00084395],
+                           [0.00072547, -0.00034058, -0.00118228],
+                           [0.00446107, 0.00829789, 0.00891585],
+                           [-0.00185617, 0.00390107, 0.00197242],
+                           [-0.00134642, 0.00484623, 0.00165279]])
+    gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_but,
+                                                                                  classical_subsystem=env_but)
+    assert np.allclose(ref_energy, gradient)
 
 
 def test_compute_perturbed_electrostatic_interaction(neon):

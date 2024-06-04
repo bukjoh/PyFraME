@@ -192,6 +192,7 @@ def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.Quantum
         start = sum(counts[:classical_subsystem.rank])
         end = sum(counts[:classical_subsystem.rank + 1])
         nuclear_gradients = engine.e_nuc_es_gradients(np.array([start, end], dtype=np.int64))
+        # TODO maybe sign change since its a gradient?
     return nuclear_gradients
 
 
