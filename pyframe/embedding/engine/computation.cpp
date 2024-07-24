@@ -59,7 +59,7 @@ Eigen::MatrixXd compute_t_tensor(
     for(int i = start_a; i < end_a; i++) {
         for(int j = start_b; j < end_b; j++) {
             double interaction_element = compute_interaction_tensor_element(
-                tensor_template(i, j), r_ab, global::tensor_coefficients) * std::pow(-1, tensor_template(i, j).row(0).sum());
+                tensor_template(i, j), r_ab, global::tensor_coefficients) * std::pow(-1, tensor_template(i, j).row(1).sum());
             interaction_tensor(i - start_a, j - start_b) = interaction_element;
         }
     }
@@ -85,7 +85,7 @@ Eigen::MatrixXd compute_perturbed_t_tensor(
     for(int i = start_a; i < end_a; i++) {
         for(int j = start_b; j < end_b; j++) {
             double interaction_element = compute_interaction_tensor_element(
-                (tensor_template(i, j) + perturbation_tuple), r_ab, global::tensor_coefficients) * std::pow(-1, (tensor_template(i, j) + perturbation_tuple).row(0).sum());
+                (tensor_template(i, j) + perturbation_tuple), r_ab, global::tensor_coefficients) * std::pow(-1, (tensor_template(i, j) + perturbation_tuple).row(1).sum());
             interaction_tensor(i - start_a, j - start_b) = interaction_element;
         }
     }
@@ -316,9 +316,9 @@ std::vector<Eigen::Vector3d> e_nuc_es_gradients(int start, int end) {
     #pragma omp parallel
     {
         std::vector<Eigen::Vector3d> thread_gradients(no_nuclei, Eigen::Vector3d::Zero());
-        const Eigen::Matrix<int, 2, 3> x_grad((Eigen::Matrix<int, 2, 3>() << 0, 0, 0, 1, 0, 0).finished());
-        const Eigen::Matrix<int, 2, 3> y_grad((Eigen::Matrix<int, 2, 3>() << 0, 0, 0, 0, 1, 0).finished());
-        const Eigen::Matrix<int, 2, 3> z_grad((Eigen::Matrix<int, 2, 3>() << 0, 0, 0, 0, 0, 1).finished());
+        const Eigen::Matrix<int, 2, 3> x_grad((Eigen::Matrix<int, 2, 3>() << 1, 0, 0, 0, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> y_grad((Eigen::Matrix<int, 2, 3>() << 0, 1, 0, 0, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> z_grad((Eigen::Matrix<int, 2, 3>() << 0, 0, 1, 0, 0, 0).finished());
         #pragma omp for
         for(int j = start; j < end; j++){
             for(int i = 0; i < no_nuclei; i++) {

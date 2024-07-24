@@ -170,8 +170,6 @@ def test_compute_electrostatic_interaction(
     core, env = act_wat
     driver = dummy_integral_driver_factory(act_wat_es_fock_contr)
     ref_energy = 0
-    #FIXME fragment particle interactions does not work anymore because of change to compute t tensor
-    #FIXME its probably ok just a different result because the t-tensor is different.
     for nucleus in core.nuclei:
         for fragments in env.classical_fragments:
             ref_energy += electrostatic_interactions.compute_fragment_particle_interactions(nucleus, fragments)
@@ -179,7 +177,7 @@ def test_compute_electrostatic_interaction(
     e_nuc_es, f_el_es = electrostatic_interactions.compute_electrostatic_interaction(quantum_subsystem=core,
                                                                                      classical_subsystem=env,
                                                                                      integral_driver=driver)
-    #assert e_nuc_es == pytest.approx(ref_energy, 1e-9)
+    assert e_nuc_es == pytest.approx(ref_energy, 1e-9)
     assert f_el_es == pytest.approx(es_fock_contr, 1e-9)
     core, env = wat_wat
     driver = dummy_integral_driver_factory(wat_wat_es_fock_contr)
@@ -206,26 +204,25 @@ def test_compute_electrostatic_nuclear_gradients(neon, wat_wat, butadiene_water)
     gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_wat,
                                                                                   classical_subsystem=env_wat)
     assert np.allclose(ref_energy, gradient)
-    # FIXME might have to retest and check for correct results. Not tested against dalton.
-    # core_but, env_but = butadiene_water
-    # ref_energy = np.array([[-0.00719841, 0.01379588, -0.00045358],
-    #                        [-0.01500085, -0.00583608, -0.00916102],
-    #                        [-0.00756524, -0.0459053, -0.04311232],
-    #                        [0.01163024, -0.04039575, -0.02034383],
-    #                        [-0.00062134, 0.00199819, 0.00061198],
-    #                        [0.0002471, 0.00215507, 0.00084395],
-    #                        [-0.00072547, 0.00034058, 0.00118228],
-    #                        [-0.00446107, -0.00829789, -0.00891585],
-    #                        [0.00185617, -0.00390107, -0.00197242],
-    #                        [0.00134642, -0.00484623, -0.00165279]])
-    # gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_but,
-    #                                                                               classical_subsystem=env_but)
-    # assert np.allclose(ref_energy, gradient)
+    core_but, env_but = butadiene_water
+    ref_energy = np.array([[-0.00719841, 0.01379588, -0.00045358],
+                           [-0.01500085, -0.00583608, -0.00916102],
+                           [-0.00756524, -0.0459053, -0.04311232],
+                           [0.01163024, -0.04039575, -0.02034383],
+                           [-0.00062134, 0.00199819, 0.00061198],
+                           [0.0002471, 0.00215507, 0.00084395],
+                           [-0.00072547, 0.00034058, 0.00118228],
+                           [-0.00446107, -0.00829789, -0.00891585],
+                           [0.00185617, -0.00390107, -0.00197242],
+                           [0.00134642, -0.00484623, -0.00165279]])
+    gradient = electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core_but,
+                                                                                  classical_subsystem=env_but)
+    assert np.allclose(ref_energy, gradient)
 
 
 def test_compute_perturbed_electrostatic_interaction(neon):
     core_ne, env_ne = neon
-    ref_energy = [2.3142853266046646, 0.0, 0.0]
+    ref_energy = [-2.3142853266046646, 0.0, 0.0]
     for i in range(3):
         perturbation = [0, 0, 0]
         perturbation[i] += 1
