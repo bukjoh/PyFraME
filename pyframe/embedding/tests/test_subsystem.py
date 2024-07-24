@@ -122,17 +122,15 @@ class TestClassicalSubsystem:
                                 act_wat,
                                 butadiene_water
                                 ):
-        # TODO add tests for environment energy
-        # assert self.env_act_t.environment_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
-        # assert self.env_wat.environment_energy == pytest.approx(-0.00718198734326498, abs=1e-12)
+        assert self.env_act_t.environment_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
+        assert self.env_wat.environment_energy == pytest.approx(-0.00718198734326498, abs=1e-12)
         # value tested against dalton with pelib
         assert pytest.approx(0.001012591928, abs=1e-9) == self.env_ac.environment_energy
         # value tested against dalton with pelib
         assert pytest.approx(-5.200360556757, abs=1e-8) == self.env_act.environment_energy
 
-        # assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == self.env_act_t.environment_energy
-        # assert pytest.approx(-0.0184325879671965, abs=1e-12) == self.env_but.environment_energy
-        print(self.env_but.environment_energy)
+        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == self.env_act_t.environment_energy
+        assert pytest.approx(-0.0184325879671965, abs=1e-12) == self.env_but.environment_energy
 
     def test_compute_multipole_fields(self):
         ref_fields = np.array([[-6.88526592e-03, 8.61243977e-03, -3.98239429e-03],
