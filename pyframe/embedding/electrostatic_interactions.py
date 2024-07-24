@@ -111,6 +111,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
                 start = sum(counts[:c_subsystem.rank])
                 end = sum(counts[:c_subsystem.rank + 1])
                 nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
+                # FIXME assemble mpi energy contr?
             # F_el_es
             fock_matrix = es_fock_matrix_contributions(classical_subsystem=c_subsystem,
                                                        integral_driver=integral_driver)
@@ -134,6 +135,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
             start = sum(counts[:classical_subsystem.rank])
             end = sum(counts[:classical_subsystem.rank + 1])
             nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
+            # FIXME assemble mpi energy contr?
 
         # F_el_es
         fock_matrix = es_fock_matrix_contributions(classical_subsystem=classical_subsystem,
@@ -161,6 +163,7 @@ def compute_electrostatic_nuclear_energy(quantum_subsystem: subsystem.QuantumSub
         start = sum(counts[:classical_subsystem.rank])
         end = sum(counts[:classical_subsystem.rank + 1])
         nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
+        # FIXME assemble mpi energy contr?
     return nuclear_energy
 
 
@@ -193,6 +196,7 @@ def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.Quantum
         end = sum(counts[:classical_subsystem.rank + 1])
         nuclear_gradients = engine.e_nuc_es_gradients(np.array([start, end], dtype=np.int64))
         # TODO maybe sign change since its a gradient?
+        # FIXME has to assemble the mpi split contributions?
     return nuclear_gradients
 
 
@@ -243,8 +247,8 @@ def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.Qua
                                              quantum_subsystem.coordinates)
         nuclear_energy = engine.e_nuc_es_perturbed(np.array([0, len(classical_subsystem.coordinates),
                                                              nucleus_idx], dtype=np.int64),
-                                                   [np.array([0, 0, 0], dtype=np.int64),
-                                                    np.array(perturbation_indices, dtype=np.int64)])
+                                                   [np.array(perturbation_indices, dtype=np.int64),
+                                                    np.array([0, 0, 0], dtype=np.int64)])
     else:
         engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                classical_subsystem.multipole_orders)
@@ -256,7 +260,7 @@ def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.Qua
         start = sum(counts[:classical_subsystem.rank])
         end = sum(counts[:classical_subsystem.rank + 1])
         nuclear_energy = engine.e_nuc_es_perturbed(np.array([start, end, nucleus_idx], dtype=np.int64),
-                                                   [np.array([0, 0, 0], dtype=np.int64),
-                                                    np.array(perturbation_indices, dtype=np.int64)])
+                                                   [np.array(perturbation_indices, dtype=np.int64),
+                                                    np.array([0, 0, 0], dtype=np.int64)])
     # FIXME the electric contributions are missing
     return nuclear_energy

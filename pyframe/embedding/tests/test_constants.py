@@ -110,7 +110,7 @@ def test_potential_tensor_values():
     assert np.allclose(constants.values.potential_tensor_template[0, 0],
                        [np.array([0, 0, 0]), np.array([0, 0, 0])])
     assert np.allclose(constants.values.potential_tensor_template[815, 815],
-                       [np.array([0, 0, 30]), np.array([0, 0, 0])])
+                       [np.array([0, 0, 0]), np.array([0, 0, 30])])
 
 
 def test_max_order():

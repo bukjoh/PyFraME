@@ -37,7 +37,7 @@ double compute_interaction_tensor_element(
         }
     }
     element /= std::pow(norm, i + j + k + 1);
-    element *= std::pow(-1, multiindex.row(1).sum());
+    // element *= std::pow(-1, multiindex.row(1).sum());
     return element;
 }
 
@@ -59,7 +59,7 @@ Eigen::MatrixXd compute_t_tensor(
     for(int i = start_a; i < end_a; i++) {
         for(int j = start_b; j < end_b; j++) {
             double interaction_element = compute_interaction_tensor_element(
-                tensor_template(i, j), r_ab, global::tensor_coefficients);
+                tensor_template(i, j), r_ab, global::tensor_coefficients) * std::pow(-1, tensor_template(i, j).row(0).sum());
             interaction_tensor(i - start_a, j - start_b) = interaction_element;
         }
     }
@@ -85,7 +85,7 @@ Eigen::MatrixXd compute_perturbed_t_tensor(
     for(int i = start_a; i < end_a; i++) {
         for(int j = start_b; j < end_b; j++) {
             double interaction_element = compute_interaction_tensor_element(
-                tensor_template(i, j) + perturbation_tuple, r_ab, global::tensor_coefficients);
+                (tensor_template(i, j) + perturbation_tuple), r_ab, global::tensor_coefficients) * std::pow(-1, (tensor_template(i, j) + perturbation_tuple).row(0).sum());
             interaction_tensor(i - start_a, j - start_b) = interaction_element;
         }
     }
