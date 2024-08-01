@@ -20,7 +20,7 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
     Args:
         quantum_subsystem: QuantumSubsystem
         classical_subsystem: ClassicalSubsystem
-        perturbed: Flag to indicate if contribution is for a geometric perturbations of the nuclei.
+        perturbed: Flag to indicate if contribution is for geometric perturbations of the nuclei.
         method: Flag to set the method to be used.
         combination_rule: Flag to set the combination rule to be used. Default is Lorentz-Berthelot.
         perturbation_cache: rspCache containing the perturbation tuple and components (perturbed has to be True).

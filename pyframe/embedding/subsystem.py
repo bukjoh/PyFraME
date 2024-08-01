@@ -11,6 +11,7 @@ from .tensor_tools import uncompress_symmetric_matrix
 from .solvers import induced_dipoles_jacobi
 from .particle import Nucleus
 from .fragment import QuantumFragment, ClassicalFragment
+from .logging_util import log_manager
 
 
 class Subsystem:
@@ -318,17 +319,6 @@ class ClassicalSubsystem(Subsystem):
         return self._dipole_dipole_polarizabilities
 
     @property
-    def charges(self) -> np.ndarray:
-        if self._charges is None:
-            self._charges = np.zeros([self.num_atoms], dtype=np.float64)
-            k = 0
-            for fragments in self.classical_fragments:
-                for atom in fragments.atoms:
-                    self._charges[k] = atom.multipoles.data[0]
-                    k += 1
-        return self._charges
-
-    @property
     def rep_lj_sigma(self) -> np.ndarray:
         if self._rep_lj_sigma is None:
             self._rep_lj_sigma = np.zeros([self.num_atoms], dtype=np.float64)
@@ -464,16 +454,19 @@ class ClassicalSubsystem(Subsystem):
             residue_norm = np.linalg.norm(external_fields - self.induced_dipoles.external_fields)
             max_residue_norm = np.max(np.abs(external_fields - self.induced_dipoles.external_fields))
             if residue_norm == 0 and max_residue_norm == 0:
-                print("Residue norm between new and old external fields is 0, induced dipoles will not be "
-                      "recalculated.")
+                log_manager.logger.debug(
+                    "Residue norm between new and old external fields is 0, induced dipoles will not be "
+                    "recalculated.")
                 return
             elif residue_norm < 1e-6 and max_residue_norm < 1e-6:
-                print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles "
-                      "will be used as a starting guess.")
+                log_manager.logger.debug(
+                    "Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles "
+                    "will be used as a starting guess.")
                 starting_guess = self.induced_dipoles.induced_dipoles
             else:
-                print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles "
-                      "will not be used as a starting guess.")
+                log_manager.logger.debug(
+                    "Residue norm between new and old external fields is larger than 1e-6, old induced dipoles "
+                    "will not be used as a starting guess.")
                 starting_guess = np.zeros([self.num_atoms, 3])
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.dipole_dipole_polarizabilities[i], field)

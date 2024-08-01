@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import numpy as np
+from .logging_util import log_manager
 
 try:
     from pyframe.embedding import engine
-    print('Using cpp engine.')
+
+    log_manager.logger.debug('Using cpp engine.')
     cpp_tool = True
 except ImportError:
-    print('Unable to import cpp engine. Please compile engine. Using Python'
-          ' version instead.')
+    log_manager.logger.debug('Unable to import cpp engine. Please compile engine. Using Python'
+                             ' version instead.')
     from pyframe.embedding import tensor_tools
+
     cpp_tool = False
 from pyframe.embedding import polytensor, constants
 from typing import Optional

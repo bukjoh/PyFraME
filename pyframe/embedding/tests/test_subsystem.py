@@ -1,10 +1,9 @@
 """Tests PyFraME.embedding.subsystem.py"""
-import sys
-import io
 import pytest
 import numpy as np
 
 from pyframe.embedding import subsystem
+from pyframe.embedding.logging_util import log_manager
 
 
 class TestQuantumSubsystem:
@@ -176,31 +175,25 @@ class TestClassicalSubsystem:
                                 [-0.44555632, 0.00482074, -0.09598545]])
         assert np.allclose(self.env_act_t.induced_dipoles.induced_dipoles, ref_dipoles)
         assert self.env_act_t.induced_dipoles.number_of_iterations == 4
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
+        log_manager.set_level(10)
         self.env_act_t.solve_induced_dipoles(external_fields=(nuclear_field + electric_field), threshold=1e-10)
-        sys.stdout = sys.__stdout__
-        assert ("Residue norm between new and old external fields is 0, induced dipoles will not be recalculated.\n" ==
-                captured_output.getvalue())
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
+        assert ("Residue norm between new and old external fields is 0, induced dipoles will not be recalculated."
+                in log_manager.get_logs())
+        log_manager.reset()
         self.env_act_t.solve_induced_dipoles(
             external_fields=(nuclear_field + electric_field + np.full(electric_field.shape,
                                                                       1e-10)),
             threshold=1e-10)
-        sys.stdout = sys.__stdout__
         assert ("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will be"
-                " used as a starting guess.\n" == captured_output.getvalue())
+                " used as a starting guess." in log_manager.get_logs())
         assert self.env_act_t.induced_dipoles.number_of_iterations == 2
-        captured_output = io.StringIO()
-        sys.stdout = captured_output
+        log_manager.reset()
         self.env_act_t.solve_induced_dipoles(
             external_fields=(nuclear_field + electric_field + np.full(electric_field.shape,
                                                                       0.1)),
             threshold=1e-10)
-        sys.stdout = sys.__stdout__
         assert ("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
-                "not be used as a starting guess.\n" == captured_output.getvalue())
+                "not be used as a starting guess." in log_manager.get_logs())
 
     def test_induced_dipoles_dataclass(self):
         induced_dipoles = np.full((3, 3), 1)

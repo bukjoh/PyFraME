@@ -1,10 +1,5 @@
 import numpy as np
 
-try:
-    import numba as nb
-except ImportError:
-    nb = None
-
 from typing import List, Tuple
 
 
@@ -166,7 +161,6 @@ def convert_tensor_index(tensor_index: int, tensor_rank: int) -> Tuple[int, int,
                 i += 1
 
 
-@nb.njit(fastmath=True)
 def vec_norm(vec: np.ndarray) -> float:
     """Calculates the Euclidean norm of a vector.
 
@@ -186,7 +180,6 @@ def vec_norm(vec: np.ndarray) -> float:
     return s ** 0.5
 
 
-@nb.njit(fastmath=True)
 def calculate_tensor_element(i: int,
                              j: int,
                              k: int,
@@ -195,7 +188,7 @@ def calculate_tensor_element(i: int,
                              norm: float,
                              index_sum: int
                              ) -> float:
-    """Numba accelerates function for compute_interaction_tensor_element.
+    """Calculate the tensor element for compute_interaction_tensor_element.
 
     Args:
         i: Sum of Multi-indices for order of derivative wrt x Cartesian components of the
