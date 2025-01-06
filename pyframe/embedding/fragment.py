@@ -18,7 +18,7 @@ class Fragment:
                  name: Optional[str] = None
                  ) -> None:
         self._index = index
-        self._name = name
+        self.name = name
 
 
 class ClassicalFragment(Fragment):

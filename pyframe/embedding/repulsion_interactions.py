@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pyframe.embedding import subsystem, engine, pert_tuple_cache, perturbation_tools, constants
+from pyframe.embedding import subsystem, engine, pert_tuple_cache, perturbation_tools, polytensor
 from typing import Optional
 from mpi4py import MPI
 
@@ -55,7 +55,7 @@ def compute_repulsion_interactions(quantum_subsystem: subsystem.QuantumSubsystem
                     return global_contr
             else:
                 # Set global factorials
-                engine.set_factorials(constants.values.factorials)
+                engine.set_factorials(polytensor.statics.factorials)
                 if comm is None:
                     start = 0
                     end = len(classical_subsystem.coordinates)

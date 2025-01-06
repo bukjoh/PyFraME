@@ -8,7 +8,7 @@ from pyframe.embedding import fragment, particle
 def test_init_fragment():
     test_fragment = fragment.Fragment(index=1, name="H2O")
     assert test_fragment._index == 1
-    assert test_fragment._name == "H2O"
+    assert test_fragment.name == "H2O"
 
 
 class TestClassicalFragment:
@@ -25,7 +25,7 @@ class TestClassicalFragment:
                             ):
         assert self.test_fragment.num_atoms == 2
         test_fragment2 = fragment.ClassicalFragment(index=1, atoms=oxygen_atom_in_atoms_list, name="H2O")
-        assert test_fragment2._name == "H2O"
+        assert test_fragment2.name == "H2O"
         assert len(test_fragment2.atoms) == 1
         assert isinstance(test_fragment2.atoms[0], particle.Atom)
 
@@ -102,6 +102,6 @@ class TestQuantumFragment:
                             ):
         test_fragment2 = fragment.QuantumFragment(index=1, nuclei=hydrogen_nucleus_in_nuclei_list, name="H2O")
         assert self.test_fragment.num_nuclei == 2
-        assert test_fragment2._name == "H2O"
+        assert test_fragment2.name == "H2O"
         assert len(test_fragment2.nuclei) == 1
         assert isinstance(test_fragment2.nuclei[0], particle.Nucleus)

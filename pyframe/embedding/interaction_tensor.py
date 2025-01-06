@@ -14,7 +14,7 @@ except ImportError:
     from pyframe.embedding import tensor_tools
 
     cpp_tool = False
-from pyframe.embedding import polytensor, constants
+from pyframe.embedding import polytensor
 from typing import Optional
 
 

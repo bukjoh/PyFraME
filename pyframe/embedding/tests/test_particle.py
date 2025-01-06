@@ -4,7 +4,7 @@ import qcelemental
 import copy
 import numpy as np
 
-from pyframe.embedding import particle, tensor_tools, constants, polytensor
+from pyframe.embedding import particle, tensor_tools, polytensor, polytensor
 
 
 class TestParticle:
@@ -18,7 +18,6 @@ class TestParticle:
         assert particle_inst.index == index
         assert particle_inst.coordinate is coordinate
         assert particle_inst._mass == mass
-        assert particle_inst.particle_variables is constants.values
 
 
 class TestAtom:
@@ -148,9 +147,9 @@ class TestAtom:
         ref_multipole_tensor = np.array([0., 0., 0., 0., -3.9516312016, -0.0561791973, 0.0008348984, -4.5778807726,
                                          0.0000430036, -5.0206878337])
         ref_multipole_tensor[4:10] = tensor_tools.detrace(ref_multipole_tensor[4:10],
-                                                          oxygen_atom2.particle_variables.factorials,
-                                                          oxygen_atom2.particle_variables.double_factorials,
-                                                          oxygen_atom2.particle_variables.trinomials)
+                                                          polytensor.statics.factorials,
+                                                          polytensor.statics.double_factorials,
+                                                          polytensor.statics.trinomials)
         ref_multipole_tensor_with_degeneracy = np.multiply(ref_multipole_tensor, ref_degeneracy_tensor)
 
         # Test multipole_with_degeneracy

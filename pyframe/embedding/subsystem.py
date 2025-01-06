@@ -312,7 +312,8 @@ class ClassicalSubsystem(Subsystem):
             for fragments in self.classical_fragments:
                 for atom in fragments.atoms:
                     # FIXME or set polarizability always to zeros when its not used? -> in the WRITE JSON is needs to
-                    #  be 0's until the max polarizability order.
+                    #  be 0's until the max polarizability order. -> polarizability should actually be a second degree polytensor created in atom class
+                    # TODO change in atom class polarizability format to a second degree polytensor.
                     self._dipole_dipole_polarizabilities[k, :, :] = uncompress_symmetric_matrix(atom.
                                                                                                 polarizability[4:10])
                     k += 1

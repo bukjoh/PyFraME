@@ -1,7 +1,7 @@
 """Tests PyFraME.embedding.interaction_tensor.py"""
 import numpy as np
 
-from pyframe.embedding import interaction_tensor, constants, polytensor
+from pyframe.embedding import interaction_tensor, polytensor
 
 
 def test_compute_t_tensor(

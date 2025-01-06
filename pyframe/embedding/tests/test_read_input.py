@@ -96,9 +96,9 @@ def test_reader(sample_json):
     assert quantum_subsystem.nuclei[0].name == "nucleus1"
     assert quantum_subsystem.nuclei[0].index == 1
     assert quantum_subsystem.nuclei[0].charge == 1.0
-    assert quantum_subsystem.quantum_fragments[0]._name == "fragment1"
+    assert quantum_subsystem.quantum_fragments[0].name == "fragment1"
     assert classical_subsystem.name == "classical"
-    assert classical_subsystem.classical_fragments[0]._name == "classical_fragment1"
+    assert classical_subsystem.classical_fragments[0].name == "classical_fragment1"
     assert classical_subsystem.classical_fragments[0]._index == 6
 
 

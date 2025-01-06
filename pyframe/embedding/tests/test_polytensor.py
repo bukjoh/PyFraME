@@ -322,3 +322,142 @@ def test_multiply_second_degree_first_degree():
     polytensor_2_obj = polytensor.SecondDegreePolytensor(rank_1=5, rank_2=4, tensor_data=tensor_2_data)
     assert np.allclose(polytensor_2_obj.multiply_second_degree_first_degree(polytensor_1_obj).data,
                        polytensor_2_obj.data @ polytensor_1_obj.data)
+
+@pytest.fixture
+def initialized_statics():
+    # Ensure constants are initialized before each test
+    polytensor.statics = polytensor.PolytensorStatics()
+    return polytensor.statics
+
+
+def test_initialized_constants(initialized_statics):
+    # Test that constants are initialized
+    assert initialized_statics.initialized is True
+
+
+def test_max_order_default_value():
+    # Test default value of max_order
+    values = polytensor.PolytensorStatics()
+    assert values.max_order == 42
+
+
+def test_max_order_custom_value():
+    # Test custom value of max_order
+    custom_max_order = 30
+    values = polytensor.PolytensorStatics(max_order=custom_max_order)
+    assert values.max_order == custom_max_order
+
+
+def test_invalid_max_order():
+    # Test when an invalid value is passed for max_order
+    with pytest.raises(ValueError):
+        polytensor.PolytensorStatics(max_order=-1)
+
+
+def test_invalid_t_rank():
+    # Test when an invalid value is passed for t_rank
+    with pytest.raises(ValueError):
+        polytensor.PolytensorStatics(t_rank=-1)
+
+
+def test_interaction_tensor_non_empty(initialized_statics):
+    # Test that interaction tensor is not empty
+    assert initialized_statics.interaction_tensor_template.size > 0
+
+
+def test_potential_tensor_non_empty(initialized_statics):
+    # Test that potential tensor is not empty
+    assert initialized_statics.potential_tensor_template.size > 0
+
+
+def test_degeneracies_non_empty(initialized_statics):
+    # Test that degeneracies data is not empty
+    assert len(initialized_statics.degeneracies.data) > 0
+
+
+def test_tensor_coefficients_non_empty(initialized_statics):
+    # Test that tensor coefficients are not empty
+    assert len(initialized_statics.tensor_coefficients) > 0
+
+
+def test_factorials_non_empty(initialized_statics):
+    # Test that factorials are not empty
+    assert len(initialized_statics.factorials) > 0
+
+
+def test_double_factorials_non_empty(initialized_statics):
+    # Test that double factorials are not empty
+    assert len(initialized_statics.double_factorials) > 0
+
+
+def test_binomials_non_empty(initialized_statics):
+    # Test that binomials are not empty
+    assert initialized_statics.binomials.size > 0
+
+
+def test_trinomials_non_empty(initialized_statics):
+    # Test that trinomials are not empty
+    assert initialized_statics.trinomials.size > 0
+
+
+def test_trinomials_symmetry(initialized_statics):
+    # Test symmetry of trinomial coefficients
+    assert np.allclose(initialized_statics.trinomials, initialized_statics.trinomials.swapaxes(1, 2))
+
+
+def test_statics_initialization():
+    assert polytensor.statics.initialized is True
+
+
+def test_interaction_tensor_shape():
+    assert polytensor.statics.interaction_tensor_template.shape == (816, 816)
+
+
+def test_potential_tensor_shape():
+    assert polytensor.statics.potential_tensor_template.shape == (816, 816)
+
+
+def test_interaction_tensor_values():
+    assert np.allclose(polytensor.statics.interaction_tensor_template[0, 0],
+                       [np.array([0, 0, 0]), np.array([0, 0, 0])])
+    assert np.allclose(polytensor.statics.interaction_tensor_template[815, 815],
+                       [np.array([0, 0, 15]), np.array([0, 0, 15])])
+
+
+def test_potential_tensor_values():
+    assert np.allclose(polytensor.statics.potential_tensor_template[0, 0],
+                       [np.array([0, 0, 0]), np.array([0, 0, 0])])
+    assert np.allclose(polytensor.statics.potential_tensor_template[815, 815],
+                       [np.array([0, 0, 30]), np.array([0, 0, 0])])
+
+def test_max_order():
+    assert polytensor.statics.max_order == 42
+
+
+def test_degeneracies_shape():
+    assert len(polytensor.statics.degeneracies.data) == 14190
+    assert polytensor.statics.degeneracies.data.shape == (14190,)
+
+
+def test_tensor_coefficients_length():
+    assert len(polytensor.statics.tensor_coefficients) == 43
+
+
+def test_factorials_shape():
+    assert polytensor.statics.factorials.shape == (43,)
+    assert len(polytensor.statics.factorials) == 43
+
+
+def test_double_factorials_shape():
+    assert polytensor.statics.double_factorials.shape == (44,)
+    assert len(polytensor.statics.double_factorials) == 44
+
+
+def test_binomials_shape():
+    assert polytensor.statics.binomials.shape == (127, 127)
+    assert len(polytensor.statics.binomials) == 127
+
+
+def test_trinomials_shape():
+    assert polytensor.statics.trinomials.shape == (43, 43, 43)
+    assert len(polytensor.statics.trinomials) == 43

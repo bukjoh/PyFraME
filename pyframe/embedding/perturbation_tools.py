@@ -4,7 +4,7 @@ import numpy as np
 import copy
 
 from typing import Optional, Dict, List, Any
-from pyframe.embedding import subsystem, tensor_tools, constants
+from pyframe.embedding import subsystem, tensor_tools, polytensor
 from pyframe.embedding.pert_tuple_cache import rspPertTuple, rspCache
 
 
@@ -558,16 +558,16 @@ def calc_nuclei_fields(unique_f_cache,
                 r_ab = coord - nuc_coords
                 nuc_field[i, 0] += tensor_tools.compute_interaction_tensor_element(distance_vector=r_ab,
                                                                                    multi_index=multi_index_x,
-                                                                                   tensor_coefficients=constants.
-                                                                                   values.tensor_coefficients)
+                                                                                   tensor_coefficients=polytensor.
+                                                                                   statics.tensor_coefficients)
                 nuc_field[i, 1] += tensor_tools.compute_interaction_tensor_element(distance_vector=r_ab,
                                                                                    multi_index=multi_index_y,
-                                                                                   tensor_coefficients=constants.
-                                                                                   values.tensor_coefficients)
+                                                                                   tensor_coefficients=polytensor.
+                                                                                   statics.tensor_coefficients)
                 nuc_field[i, 2] += tensor_tools.compute_interaction_tensor_element(distance_vector=r_ab,
                                                                                    multi_index=multi_index_z,
-                                                                                   tensor_coefficients=constants.
-                                                                                   values.tensor_coefficients)
+                                                                                   tensor_coefficients=polytensor.
+                                                                                   statics.tensor_coefficients)
             unique_f_cache[key].vals[comp] += nuc_field * nuc_charge
             contr_added = True
         # Set values_are_set to True if any contribution was added

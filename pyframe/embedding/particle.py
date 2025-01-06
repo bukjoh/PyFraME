@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import qcelemental
 from typing import Optional
-from pyframe.embedding import polytensor, tensor_tools, constants, interaction_tensor
+from pyframe.embedding import polytensor, tensor_tools, interaction_tensor
 from scipy.optimize import root
 
 
@@ -26,7 +26,6 @@ class Particle:
         self.index = index
         self._mass = mass
         self.coordinate = coordinate
-        self.particle_variables = constants.values
 
 
 class Atom(Particle):
@@ -82,20 +81,20 @@ class Atom(Particle):
                 for n in range(2, self.multipole_order + 1):
                     i = (n + 1) * (n + 2) // 2
                     m_elements[counter:(i + counter)] = tensor_tools.detrace(m_elements[counter:(i + counter)],
-                                                                             self.particle_variables.factorials,
-                                                                             self.particle_variables.double_factorials,
-                                                                             self.particle_variables.trinomials)
+                                                                             polytensor.statics.factorials,
+                                                                             polytensor.statics.double_factorials,
+                                                                             polytensor.statics.trinomials)
                     counter += i
             self.multipoles = polytensor.FirstDegreePolytensor(self.multipole_order,
                                                                tensor_data=m_elements,
                                                                data_type=np.float64)
-            self.degeneracy_tensor = self.particle_variables.degeneracies.truncate_tensor(order=self.multipole_order)
+            self.degeneracy_tensor = polytensor.statics.degeneracies.truncate_tensor(order=self.multipole_order)
             self.multipoles_with_degeneracy = polytensor.FirstDegreePolytensor. \
                 multiply_elementwise(self.multipoles, self.degeneracy_tensor)
             self.taylor_coefficients = polytensor.FirstDegreePolytensor(self.multipole_order)
             for i in range(self.multipole_order + 1):
                 self.taylor_coefficients.write_to_data_block_wise(np.full((i + 1) * (i + 2) // 2, (-1) ** i
-                                                                          / self.particle_variables.factorials[i]))
+                                                                          / polytensor.statics.factorials[i]))
         if polarizabilities is not None:
             p_elements = np.array(polarizabilities.get('elements', None))
             self.polarizability = p_elements
@@ -131,12 +130,12 @@ class Atom(Particle):
                                                        r_b=coordinate,
                                                        rank_a=self.multipole_order,
                                                        rank_b=pot_derivative_order
-                                                       + origin_derivative_order
-                                                       + coord_multipole_order,
+                                                              + origin_derivative_order
+                                                              + coord_multipole_order,
                                                        is_potential=is_potential,
                                                        start_rank_a=0,
                                                        start_rank_b=pot_derivative_order
-                                                       + origin_derivative_order)
+                                                                    + origin_derivative_order)
         t_tensor.data = t_tensor.data * (-1) ** origin_derivative_order
         return polytensor.FirstDegreePolytensor. \
             multiply_elementwise(self.multipoles_with_degeneracy, self.taylor_coefficients). \
@@ -243,12 +242,12 @@ class Nucleus(Particle):
                                                        r_b=coordinate,
                                                        rank_a=0,
                                                        rank_b=pot_derivative_order
-                                                       + origin_derivative_order
-                                                       + coord_multipole_order,
+                                                              + origin_derivative_order
+                                                              + coord_multipole_order,
                                                        is_potential=is_potential,
                                                        start_rank_a=0,
                                                        start_rank_b=pot_derivative_order
-                                                       + origin_derivative_order)
+                                                                    + origin_derivative_order)
         t_tensor.data = t_tensor.data * (-1) ** origin_derivative_order
         return polytensor.FirstDegreePolytensor(rank=0,
                                                 tensor_data=self.charge,

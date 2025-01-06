@@ -2,10 +2,12 @@ import logging
 from collections import defaultdict
 from typing import List, Optional, DefaultDict
 
+
 class CustomLogHandler(logging.Handler):
     """
     A custom log handler that stores log messages in a dictionary categorized by log levels.
     """
+
     def __init__(self) -> None:
         """
         Initialize the CustomLogHandler.
@@ -22,6 +24,7 @@ class CustomLogHandler(logging.Handler):
         """
         log_entry = self.format(record)
         self.log_messages[record.levelname].append(log_entry)
+
 
 class LogManager:
     """
@@ -134,6 +137,7 @@ class LogManager:
             LogManager: The singleton instance of LogManager.
         """
         return self._instance
+
 
 # Create a singleton instance with a specific logging level
 log_manager = LogManager(logging.INFO, log_to_console=False)
