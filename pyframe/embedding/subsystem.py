@@ -128,12 +128,9 @@ class QuantumSubsystem(Subsystem):
             counts = [avg + 1 if p < res else avg for p in range(self.size)]
             start = sum(counts[:self.rank])
             end = sum(counts[:self.rank + 1])
-            nuclear_fields_global = np.zeros([len(coordinates), 3])
-            nuclear_fields_local = engine.nuclei_fields(np.array([start, end], dtype=np.int64))
-            self.comm.Allreduce([nuclear_fields_local, MPI.DOUBLE],
-                                [nuclear_fields_global, MPI.DOUBLE],
-                                op=MPI.SUM)
-            return nuclear_fields_global
+            nuclear_fields = engine.nuclei_fields(np.array([start, end], dtype=np.int64))
+            nuclear_fields = self.comm.allreduce(nuclear_fields)
+            return nuclear_fields
         else:
             return engine.nuclei_fields(np.array([0, len(coordinates)], dtype=np.int64))
 

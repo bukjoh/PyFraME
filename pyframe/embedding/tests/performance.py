@@ -102,9 +102,20 @@ ref_dipoles_act_wat_mid = np.array(
 # Run in terminal to compile cpp
 # python .\setup.py build_ext --inplace
 
-core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json',
+core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json',
                               comm=comm)
+from pyframe.embedding import electrostatic_interactions
+print("Calculate")
+start_time = time.time()
 
-print(env.compute_repulsion_energy('Lorentz-Berthelot') - 0.000263150628931246)
+#print(electrostatic_interactions.compute_electrostatic_nuclear_energy(quantum_subsystem=core, classical_subsystem=env))
 
-print(env.compute_dispersion_energy('Lorentz-Berthelot') - -0.00131364768168478)
+#print(electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core, classical_subsystem=env))
+# print(env.coordinates[0:1])
+print(core.compute_nuclear_fields(env.coordinates[0:1]))
+# for i in range(10000):
+#     env.compute_repulsion_energy('Lorentz-Berthelot')
+
+# print(env.compute_dispersion_energy('Lorentz-Berthelot') - -0.00131364768168478)
+end_time = time.time()
+print("Execution time:", end_time - start_time)
