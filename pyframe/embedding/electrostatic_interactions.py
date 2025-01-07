@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 
 from pyframe.embedding import polytensor, particle, fragment, subsystem, engine
+from mpi4py import MPI
 from typing import Union, Any, Tuple
 
 
@@ -162,8 +163,11 @@ def compute_electrostatic_nuclear_energy(quantum_subsystem: subsystem.QuantumSub
         counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.size)]
         start = sum(counts[:classical_subsystem.rank])
         end = sum(counts[:classical_subsystem.rank + 1])
-        nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
-        # FIXME assemble mpi energy contr?
+        # nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
+        # TODO test this
+        nuclear_energy = 0
+        local_contr = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
+        classical_subsystem.comm.Allreduce(local_contr, nuclear_energy, op=MPI.SUM)
     return nuclear_energy
 
 
@@ -194,8 +198,15 @@ def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.Quantum
         counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.size)]
         start = sum(counts[:classical_subsystem.rank])
         end = sum(counts[:classical_subsystem.rank + 1])
-        nuclear_gradients = engine.e_nuc_es_gradients(np.array([start, end], dtype=np.int64))
-        # FIXME has to assemble the mpi split contributions?
+        # nuclear_gradients = engine.e_nuc_es_gradients(np.array([start, end], dtype=np.int64))
+        # TODO test this
+        nuclear_gradients_local = engine.e_nuc_es_gradients(np.array([start, end], dtype=np.int64))
+        nuclear_gradients = np.zeros_like(nuclear_gradients_local)
+
+        classical_subsystem.comm.Allreduce([nuclear_gradients_local, MPI.DOUBLE],
+                                           [nuclear_gradients, MPI.DOUBLE],
+                                           op=MPI.SUM)
+        # classical_subsystem.comm.Allreduce(nuclear_gradients_local, nuclear_gradients, op=MPI.SUM)
     return nuclear_gradients
 
 

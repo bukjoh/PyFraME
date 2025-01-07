@@ -440,11 +440,11 @@ static PyObject* set_coords_idcs_exlcs(PyObject* self, PyObject* args) {
         return NULL;
     }
     Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)coords_obj);
-    global::atom_coordinates = std::vector<Eigen::Vector3d>();
+    global::coordinates = std::vector<Eigen::Vector3d>();
     for(int i = 0; i < coords.rows(); i++) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
-        global::atom_coordinates.push_back(coord);
+        global::coordinates.push_back(coord);
     }
     global::indices = read_vector(indices_obj);
 
@@ -617,7 +617,7 @@ static PyObject* nuclei_field_gradients(PyObject* self, PyObject* args) {
 
 
 Eigen::MatrixXi generateIdxPairs(int start_index, int end_index) {
-    int num_atoms = static_cast<int>(global::atom_coordinates.size());
+    int num_atoms = static_cast<int>(global::coordinates.size());
     Eigen::MatrixXi idx_pairs(2, num_atoms * (num_atoms - 1) / 2);
     int k = 0;
     for (int i = 0; i < num_atoms; ++i) {
@@ -635,9 +635,9 @@ Eigen::MatrixXi generateIdxPairs(int start_index, int end_index) {
 }
 
 
-//Calculates self energy of ClassicalSystem for array of indexes
+//Calculates electrostatic interaction energy between atoms of ClassicalSubsystem for array of indexes
 //args: [start, end] (numpy.ndarray with start and end as entries)
-static PyObject* environment_energy(PyObject* self, PyObject* args) {
+static PyObject* electrostatic_environment_energy(PyObject* self, PyObject* args) {
     PyObject *start_end_obj;
     if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
         return NULL;
@@ -645,7 +645,33 @@ static PyObject* environment_energy(PyObject* self, PyObject* args) {
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
     Eigen::MatrixXi idx_arr = generateIdxPairs(start, end);
-    return PyFloat_FromDouble(computation::environment_energy(idx_arr));
+    return PyFloat_FromDouble(computation::electrostatic_environment_energy(idx_arr));
+}
+
+//Calculates nonelectrostatic repulsion energy between atoms of a ClassicalSubsystem for array of indexes using an LJ 12-6 potential
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* lj_repulsion_environment_energy(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    Eigen::MatrixXi idx_arr = generateIdxPairs(start, end);
+    return PyFloat_FromDouble(computation::lj_repulsion_environment_energy(idx_arr, global::combination_rule));
+}
+
+//Calculates dispersion repulsion energy between atoms of a ClassicalSubsystem for array of indexes using an LJ 12-6 potential
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* lj_dispersion_environment_energy(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    Eigen::MatrixXi idx_arr = generateIdxPairs(start, end);
+    return PyFloat_FromDouble(computation::lj_dispersion_environment_energy(idx_arr, global::combination_rule));
 }
 
 //Calculates electrostatic interaction energy between the nuclei and the ClassicalSystem
@@ -689,7 +715,7 @@ static PyObject* e_nuc_es_perturbed(PyObject* self, PyObject* args) {
 }
 
 // Sets the global LJ 6-12 parameters sigma and epsilon for a ClassicalSubsystem and QuantumSubsystem.
-// args: [classical_sigmas, classical_epsilons, quantum_sigmas, quantum_epsilons];
+// args: [classical_sigmas, classical_epsilons, classical_coordinates, quantum_sigmas, quantum_epsilons, nuc_coordinates];
 static PyObject* set_atoms_nuclei_coordinates_lj_sigma_epsilon(PyObject* self, PyObject* args) {
     PyObject *classical_sigmas_obj, *classical_epsilons_obj, *atom_coords_obj, *quantum_sigmas_obj, *quantum_epsilons_obj, *nuc_coords_obj;
     if (!PyArg_ParseTuple(args, "OOOOOO", &classical_sigmas_obj, &classical_epsilons_obj, &atom_coords_obj, &quantum_sigmas_obj, &quantum_epsilons_obj, &nuc_coords_obj)) {
@@ -713,6 +739,18 @@ static PyObject* set_atoms_nuclei_coordinates_lj_sigma_epsilon(PyObject* self, P
         coord << nuc_coords(i, 0), nuc_coords(i, 1), nuc_coords(i, 2);
         global::nuclei_coordinates.push_back(coord);
     }
+    Py_RETURN_NONE;
+}
+
+// Sets the global LJ 6-12 parameters sigma and epsilon for a ClassicalSubsystem.
+// args: [classical_sigmas, classical_epsilons];
+static PyObject* set_lj_classical_sigma_epsilon(PyObject* self, PyObject* args) {
+    PyObject *classical_sigmas_obj, *classical_epsilons_obj;
+    if (!PyArg_ParseTuple(args, "OO", &classical_sigmas_obj, &classical_epsilons_obj)) {
+        return NULL;
+    }
+    global::classical_sigmas = read_vector_d(classical_sigmas_obj);
+    global::classical_epsilons = read_vector_d(classical_epsilons_obj);
     Py_RETURN_NONE;
 }
 
@@ -919,16 +957,22 @@ static PyMethodDef module_methods[] = {
      "Sets multipoles with degeneracy and taylor coefficient and the multipole orders."},
      {"multipole_fields", multipole_fields, METH_VARARGS,
      "Calculates the field of the multipoles at atom i. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
-     {"environment_energy", environment_energy, METH_VARARGS,
-     "Calculates the self energy of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
+     {"electrostatic_environment_energy", electrostatic_environment_energy, METH_VARARGS,
+     "Calculates the electrostatic interaction energy between atoms of a ClassicalSubsystem. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},
+     {"lj_repulsion_environment_energy", lj_repulsion_environment_energy, METH_VARARGS,
+     "Calculates nonelectrostatic repulsion energy between atoms of a ClassicalSubsystem for array of indexes using an LJ 12-6 potential. Previously set coords, idxs, exclusions, multipoles, multipole_orders, and the combination rule."},
+     {"lj_dispersion_environment_energy", lj_dispersion_environment_energy, METH_VARARGS,
+     "Calculates nonelectrostatic repulsion energy between atoms of a ClassicalSubsystem for array of indexes using an LJ 12-6 potential. Previously set coords, idxs, exclusions, multipoles, multipole_orders, and the combination rule."},
      {"e_nuc_es", e_nuc_es, METH_VARARGS,
-     "Calculates the electrostatic energy between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},
+     "Calculates the electrostatic energy gradients between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},
      {"e_nuc_es_gradients", e_nuc_es_gradients, METH_VARARGS,
      "Calculates the gradient of the electrostatic interaction energy between the nuclei and the ClassicalSystem."},
      {"e_nuc_es_perturbed", e_nuc_es_perturbed, METH_VARARGS,
      "Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem."},
      {"set_atoms_nuclei_coordinates_lj_sigma_epsilon", set_atoms_nuclei_coordinates_lj_sigma_epsilon, METH_VARARGS,
      "Sets the LJ 6-12 parameters of a ClassicalSubsystem and a QuantumSubsystem."},
+     {"set_lj_classical_sigma_epsilon", set_lj_classical_sigma_epsilon, METH_VARARGS,
+     "Sets the global LJ 6-12 parameters sigma and epsilon for a ClassicalSubsystem."},
      {"set_factorials", set_factorials, METH_VARARGS,
      "Sets the global factorial parameter."},
      {"set_combination_rule", set_combination_rule, METH_VARARGS,

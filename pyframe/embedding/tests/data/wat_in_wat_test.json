@@ -10,7 +10,15 @@
                  0.0,
                  0.0 ,
                  0.0
-                ]
+                ],
+                "repulsion": {
+                "method": "LJ",
+                "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+                },
+                "dispersion": {
+                "method": "LJ",
+                "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+                }
       },
       {
                 "index": 2,
@@ -20,7 +28,15 @@
                  1.30228586,
                  1.5731422,
                  0.0
-                ]
+                ],
+                "repulsion": {
+                "method": "LJ",
+                "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+                },
+                "dispersion": {
+                "method": "LJ",
+                "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+                }
       },
             {
                 "index": 3,
@@ -30,7 +46,15 @@
                  1.3652024,
                  -1.6491432,
                  0.0
-                ]
+                ],
+                "repulsion": {
+                "method": "LJ",
+                "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+                },
+                "dispersion": {
+                "method": "LJ",
+                "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+                }
       }
     ]
   }],
@@ -63,7 +87,15 @@
                             4.0,
                             0.0,
                             4.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                    "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            }
       },
       {
         "index": 1,
@@ -88,7 +120,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                    "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
       },
       {
         "index": 2,
@@ -113,7 +153,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                    "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
     }
         ]
       },
@@ -144,7 +192,15 @@
                             4.0,
                             0.0,
                             4.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                    "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            }
       },
       {
         "index": 4,
@@ -169,7 +225,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                            "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
       },
       {
         "index": 5,
@@ -194,7 +258,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                            "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
     }
         ]
       },
@@ -225,7 +297,15 @@
                             4.0,
                             0.0,
                             4.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                    "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            }
       },
       {
         "index": 7,
@@ -250,7 +330,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                            "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
       },
       {
         "index": 8,
@@ -275,7 +363,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                            "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
     }
         ]
       },
@@ -306,7 +402,15 @@
                             4.0,
                             0.0,
                             4.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                    "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 5.88649688, "lj_epsilon": 0.0002723}
+            }
       },
       {
         "index": 10,
@@ -331,7 +435,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                            "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
       },
       {
         "index": 11,
@@ -356,7 +468,15 @@
                             0.1,
                             0.1,
                             1.0
-                        ], "order": [1, 1]}
+                        ], "order": [1, 1]},
+                            "repulsion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            },
+            "dispersion": {
+            "method": "LJ",
+            "parameters": {"lj_sigma": 1.2717856818731434, "lj_epsilon": 0.0000438}
+            }
       }
         ]
       }

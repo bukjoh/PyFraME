@@ -4,6 +4,14 @@
 
 namespace computation
 {
+
+// Uses the Lorentz-Berthelot combination rules for non-bonded VdW interactions.
+std::tuple<double, double> LB_combination(double sigma_i, double sigma_j, double epsilon_i, double epsilon_j) {
+    double comb_sigma = 0.5 * (sigma_i + sigma_j);
+    double comb_epsilon = std::sqrt(epsilon_i * epsilon_j);
+    return std::make_tuple(comb_sigma, comb_epsilon);
+}
+
 //Calculates the length of a polytensor given start_rank and end_rank in that dimension.
 int get_polytensor_length(int start_rank, int end_rank) {
     int length = 0;
@@ -96,7 +104,7 @@ Eigen::MatrixXd compute_perturbed_t_tensor(
 // Computes the field caused by induced dipoles at atom i.
 // Parallelized with OpenMP.
 Eigen::MatrixXd ind_dipoles_field(int start, int end) {
-    int no_atoms = static_cast<int>(global::atom_coordinates.size());
+    int no_atoms = static_cast<int>(global::coordinates.size());
     Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(no_atoms, 3);
     for(int i = start; i < end; i++) {
         #pragma omp parallel
@@ -106,7 +114,7 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end) {
                 if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
                     continue;
                 }
-                Eigen::Vector3d r_ab = global::atom_coordinates[i] - global::atom_coordinates[j];
+                Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
                 Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                             global::tensor_template_potential,
                                                             1, 1, 1, 1);
@@ -131,7 +139,7 @@ Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::
                 if(global::exclusions[targets[i]].find(global::indices[sources[j]]) != global::exclusions[targets[i]].end()) {
                     continue;
                 }
-                Eigen::Vector3d r_ab = global::atom_coordinates[targets[i]] - global::atom_coordinates[sources[j]];
+                Eigen::Vector3d r_ab = global::coordinates[targets[i]] - global::coordinates[sources[j]];
                 Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                             global::tensor_template_potential,
                                                             1, 1, 1, 1);
@@ -206,7 +214,7 @@ std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end) {
 // Parallelized with OpenMP.
 Eigen::MatrixXd multipole_field(int i) {
     Eigen::MatrixXd multipole_field = Eigen::MatrixXd::Zero(3, 1);
-    int no_atoms = static_cast<int>(global::atom_coordinates.size());
+    int no_atoms = static_cast<int>(global::coordinates.size());
     #pragma omp parallel
     {
         Eigen::MatrixXd field_part = Eigen::MatrixXd::Zero(3, 1);
@@ -215,7 +223,7 @@ Eigen::MatrixXd multipole_field(int i) {
             if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
                 continue;
             }
-            Eigen::Vector3d r_ab = global::atom_coordinates[i] - global::atom_coordinates[j];
+            Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
             Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                         global::tensor_template_potential,
                                                         global::multipole_orders[j], 1, 0, 1);
@@ -230,9 +238,9 @@ Eigen::MatrixXd multipole_field(int i) {
     return multipole_field;
 }
 
-// Computes the self energy of a ClassicalSubsystem for given array of indexes.
+// Computes electrostatic interaction energy for given array of indexes
 // Parallelized with OpenMP.
-double environment_energy(Eigen::MatrixXi idx_arr) {
+double electrostatic_environment_energy(Eigen::MatrixXi idx_arr) {
     double environment_energy = 0.0;
     #pragma omp parallel
     {
@@ -244,7 +252,7 @@ double environment_energy(Eigen::MatrixXi idx_arr) {
             if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
                 continue;
             }
-            Eigen::Vector3d r_ab = global::atom_coordinates[i] - global::atom_coordinates[j];
+            Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
             Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                         global::tensor_template_interaction,
                                                         global::multipole_orders[j], global::multipole_orders[i], 0, 0);
@@ -256,6 +264,83 @@ double environment_energy(Eigen::MatrixXi idx_arr) {
     }
     }
     return environment_energy;
+}
+
+// Computes nonelectrostatic interaction energy using an LJ 12-6 potential for given array of indexes
+// Parallelized with OpenMP.
+double lj_repulsion_environment_energy(Eigen::MatrixXi idx_arr, std::string combination_rule){
+    double environment_energy = 0.0;
+    std::tuple<double, double> (*combination_func)(double, double, double, double);
+    if (combination_rule == "Lorentz-Berthelot") {
+        combination_func = LB_combination;
+    }
+    if (combination_rule != "Lorentz-Berthelot") {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
+    }
+    #pragma omp parallel
+    {
+        double energy_contr = 0.0;
+        #pragma omp for
+        for(int k = 0; k < idx_arr.cols(); k++){
+            int i = idx_arr(0, k);
+            int j = idx_arr(1, k);
+            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                continue;
+            }
+            std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::classical_sigmas[i],
+                                                                                    global::classical_sigmas[j],
+                                                                                    global::classical_epsilons[i],
+                                                                                    global::classical_epsilons[j]);
+            double sigma = std::get<0>(combined_sigma_epsilon);
+            double epsilon = std::get<1>(combined_sigma_epsilon);
+            double recip_distance = compute_t_tensor((global::coordinates[i] - global::coordinates[j]),
+                                                     global::tensor_template_potential,
+                                                     0, 0, 0, 0)(0,0);
+            energy_contr += epsilon * std::pow(sigma, 12) * std::pow(recip_distance, 12);
+        }
+    #pragma omp critical
+    {
+    environment_energy += energy_contr;
+    }
+    }
+    return 4.0 * environment_energy;
+}
+
+// Computes dispersion interaction energy using an LJ 12-6 potential for given array of indexes
+// Parallelized with OpenMP.
+double lj_dispersion_environment_energy(Eigen::MatrixXi idx_arr, std::string combination_rule){
+    double environment_energy = 0.0;
+    std::tuple<double, double> (*combination_func)(double, double, double, double);
+    if (combination_rule == "Lorentz-Berthelot") {
+        combination_func = LB_combination;
+    }
+    #pragma omp parallel
+    {
+        double energy_contr = 0.0;
+        #pragma omp for
+        for(int k = 0; k < idx_arr.cols(); k++){
+            int i = idx_arr(0, k);
+            int j = idx_arr(1, k);
+            if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
+                continue;
+            }
+            std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::classical_sigmas[i],
+                                                                                    global::classical_sigmas[j],
+                                                                                    global::classical_epsilons[i],
+                                                                                    global::classical_epsilons[j]);
+            double sigma = std::get<0>(combined_sigma_epsilon);
+            double epsilon = std::get<1>(combined_sigma_epsilon);
+            double recip_distance = compute_t_tensor((global::coordinates[i] - global::coordinates[j]),
+                                                     global::tensor_template_potential,
+                                                     0, 0, 0, 0)(0,0);
+            energy_contr += epsilon * std::pow(sigma, 6) * std::pow(recip_distance, 6);
+        }
+    #pragma omp critical
+    {
+    environment_energy += energy_contr;
+    }
+    }
+    return (-1.0) * 4.0 * environment_energy;
 }
 
 // Computes the energy between all atoms and the nuclei.
@@ -355,14 +440,6 @@ std::vector<Eigen::Vector3d> e_nuc_es_gradients(int start, int end) {
     }
     return e_nuc_es_gradients;
 }
-
-// Uses the Lorentz-Berthelot combination rules for non-bonded VdW interactions.
-std::tuple<double, double> LB_combination(double sigma_i, double sigma_j, double epsilon_i, double epsilon_j) {
-    double comb_sigma = 0.5 * (sigma_i + sigma_j);
-    double comb_epsilon = std::sqrt(epsilon_i * epsilon_j);
-    return std::make_tuple(comb_sigma, comb_epsilon);
-}
-
 
 // Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem.
 // Parallelized with OpenMP.

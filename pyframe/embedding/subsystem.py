@@ -392,37 +392,98 @@ class ClassicalSubsystem(Subsystem):
             for i in range(len(self.coordinates)):
                 self._multipole_fields[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
 
-    @property
-    def environment_energy(self
+    def environment_energy(self,
+                           vdw_method: str = 'LJ',
+                           vdw_combination_rule: str = 'Lorentz-Berthelot'
                            ) -> float:
-        """Calculate the internal electrostatic interaction energy between all multipoles.
+        """Calculate the internal electrostatic, nonelectrostatic repulsion, and dispersion interaction energy between
+        all multipoles.
 
         Returns:
-            Self energy of the ClassicalSubsystem.
+            Environment energy.
         """
         if self._environment_energy is None:
-            engine.set_multipoles_multipoles_order(self.degenerate_multipoles_with_taylor_coefficients,
-                                                   self.multipole_orders)
-            engine.set_coords_idcs_exlcs(self.coordinates,
-                                         self.indices,
-                                         self.exclusions)
-            total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
-            if self.comm is None:
-                self._environment_energy = engine.environment_energy(np.array([0, total_iterations], dtype=np.int64))
+            self._environment_energy = self.compute_electrostatic_energy()
+            if vdw_method == 'LJ':
+                self._environment_energy += self.compute_repulsion_energy(vdw_combination_rule)
+                self._environment_energy += self.compute_dispersion_energy(vdw_combination_rule)
             else:
-                rank = self.comm.Get_rank()
-                size = self.comm.Get_size()
-                # Calculate the number of iterations per process
-                iterations_per_process = total_iterations // size
-                remainder = total_iterations % size
-                # Calculate the start and end indices for this process
-                start_index = rank * iterations_per_process + min(rank, remainder)
-                end_index = start_index + iterations_per_process + (1 if rank < remainder else 0)
-                local_energy = engine.environment_energy(np.array([start_index, end_index], dtype=np.int64))
-                global_energy = self.comm.reduce(local_energy, op=MPI.SUM, root=0)
-                global_energy = self.comm.bcast(global_energy, root=0)
-                self._environment_energy = global_energy
+                raise NotImplementedError("This method has not been implemented yet.")
         return self._environment_energy
+
+    def compute_electrostatic_energy(self) -> float:
+        """Compute the electrostatic energy."""
+        engine.set_multipoles_multipoles_order(self.degenerate_multipoles_with_taylor_coefficients,
+                                               self.multipole_orders)
+        engine.set_coords_idcs_exlcs(self.coordinates, self.indices, self.exclusions)
+        total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
+        return self._compute_environment_energy_distributed_or_serial(
+            lambda start, end: engine.electrostatic_environment_energy(np.array([start, end], dtype=np.int64)),
+            total_iterations
+        )
+
+    def compute_repulsion_energy(self, vdw_combination_rule) -> float:
+        """Compute the repulsion energy."""
+        if vdw_combination_rule == 'Lorentz-Berthelot':
+            engine.set_combination_rule(vdw_combination_rule)
+        else:
+            raise NotImplementedError("This combination rule has not been implemented yet.")
+        engine.set_lj_classical_sigma_epsilon(self.rep_lj_sigma, self.rep_lj_epsilon)
+        # heißen hier atom_coordinates
+        engine.set_coords_idcs_exlcs(self.coordinates, self.indices, self.exclusions)
+        total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
+        return self._compute_environment_energy_distributed_or_serial(
+            lambda start, end: engine.lj_repulsion_environment_energy(np.array([start, end], dtype=np.int64)),
+            total_iterations
+        )
+
+    def compute_dispersion_energy(self, vdw_combination_rule) -> float:
+        """Compute the dispersion energy."""
+        if vdw_combination_rule == 'Lorentz-Berthelot':
+            engine.set_combination_rule(vdw_combination_rule)
+        else:
+            raise NotImplementedError("This combination rule has not been implemented yet.")
+        engine.set_lj_classical_sigma_epsilon(self.disp_lj_sigma, self.disp_lj_epsilon)
+        engine.set_coords_idcs_exlcs(self.coordinates, self.indices, self.exclusions)
+        total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
+        return self._compute_environment_energy_distributed_or_serial(
+            lambda start, end: engine.lj_dispersion_environment_energy(np.array([start, end], dtype=np.int64)),
+            total_iterations
+        )
+
+    def _compute_environment_energy_distributed_or_serial(self, compute_fn, total_iterations: int) -> float:
+        """
+        Compute energy either in serial or in parallel using MPI.
+
+        Args:
+            compute_fn (function): A function that computes energy for a given range.
+            total_iterations (int): Total number of iterations.
+
+        Returns:
+            float: Computed energy.
+        """
+        if self.comm is None:
+            # Serial computation
+            print("I run serial!")
+            return compute_fn(0, total_iterations)
+        else:
+            # Parallel computation
+            rank = self.comm.Get_rank()
+            size = self.comm.Get_size()
+
+            iterations_per_process = total_iterations // size
+            remainder = total_iterations % size
+
+            # Calculate the start and end indices for this process
+            start_index = rank * iterations_per_process + min(rank, remainder)
+            end_index = start_index + iterations_per_process + (1 if rank < remainder else 0)
+
+            # Compute local energy
+            local_energy = compute_fn(start_index, end_index)
+
+            # Reduce energy across all processes
+            global_energy = self.comm.reduce(local_energy, op=MPI.SUM, root=0)
+            return self.comm.bcast(global_energy, root=0)
 
     def solve_induced_dipoles(self,
                               threshold: float = 1e-8,

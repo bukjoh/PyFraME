@@ -17,14 +17,14 @@ comm = MPI.COMM_WORLD
 # # cProfile.run('env.self_energy')
 #
 # # print(env.multipole_fields)
-print("Calculate induced dipoles without external fields.")
-start_time = time.time()
-# print(env.self_energy)
+# print("Calculate induced dipoles without external fields.")
+# start_time = time.time()
 # # print(env.self_energy)
-# env.solve_induced_dipoles()
-# nuc_fields = core.compute_nuclear_fields(env.coordinates)
-end_time = time.time()
-print("Execution time:", end_time - start_time)
+# # # print(env.self_energy)
+# # env.solve_induced_dipoles()
+# # nuc_fields = core.compute_nuclear_fields(env.coordinates)
+# end_time = time.time()
+# print("Execution time:", end_time - start_time)
 
 # print("Calculate induced dipoles without external fields.")
 # start_time = time.time()
@@ -101,3 +101,10 @@ ref_dipoles_act_wat_mid = np.array(
 # print(env_s.induced_dipoles.number_of_iterations)
 # Run in terminal to compile cpp
 # python .\setup.py build_ext --inplace
+
+core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json',
+                              comm=comm)
+
+print(env.compute_repulsion_energy('Lorentz-Berthelot') - 0.000263150628931246)
+
+print(env.compute_dispersion_energy('Lorentz-Berthelot') - -0.00131364768168478)

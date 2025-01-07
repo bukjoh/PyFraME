@@ -88,13 +88,15 @@ class TestClassicalSubsystem:
               wat_wat,
               acrolein_wat,
               act_wat_big,
-              butadiene_water
+              butadiene_water,
+              two_oxygen
               ):
         self.core_act_t, self.env_act_t = act_wat
         self.core_act, self.env_act = act_wat_big
         self.core_wat, self.env_wat = wat_wat
         self.core_ac, self.env_ac = acrolein_wat
         self.core_but, self.env_but = butadiene_water
+        self.core_two_ox, self.env_two_ox = two_oxygen
 
     def test_init_with_valid_arguments(self):
         fragments = self.env_act_t.classical_fragments
@@ -114,22 +116,24 @@ class TestClassicalSubsystem:
         with pytest.raises(ValueError, match="ClassicalSubsystem must have at least one ClassicalFragment"):
             subsystem.ClassicalSubsystem(classical_fragments=[])
 
-    def test_environment_energy(self,
-                                wat_wat,
-                                acrolein_wat,
-                                act_wat_big,
-                                act_wat,
-                                butadiene_water
-                                ):
-        assert self.env_act_t.environment_energy == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
-        assert self.env_wat.environment_energy == pytest.approx(-0.00718198734326498, abs=1e-12)
+    def test_environment_energy(self):
+        assert self.env_act_t.compute_electrostatic_energy() == pytest.approx(-2.2376361011309555e-05, abs=1e-12)
+        assert self.env_wat.compute_electrostatic_energy() == pytest.approx(-0.00718198734326498, abs=1e-12)
         # value tested against dalton with pelib
-        assert pytest.approx(0.001012591928, abs=1e-9) == self.env_ac.environment_energy
+        assert pytest.approx(0.001012591928, abs=1e-9) == self.env_ac.compute_electrostatic_energy()
         # value tested against dalton with pelib
-        assert pytest.approx(-5.200360556757, abs=1e-8) == self.env_act.environment_energy
+        assert pytest.approx(-5.200360556757, abs=1e-8) == self.env_act.compute_electrostatic_energy()
 
-        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == self.env_act_t.environment_energy
-        assert pytest.approx(-0.0184325879671965, abs=1e-12) == self.env_but.environment_energy
+        assert pytest.approx(-2.2376361011313024e-05, abs=1e-12) == self.env_act_t.compute_electrostatic_energy()
+        assert pytest.approx(-0.0184325879671965, abs=1e-12) == self.env_but.compute_electrostatic_energy()
+
+        assert self.env_two_ox.compute_repulsion_energy('Lorentz-Berthelot') == 0
+        assert self.env_two_ox.compute_repulsion_energy('Lorentz-Berthelot') == 0
+        assert self.env_two_ox.compute_dispersion_energy('Lorentz-Berthelot') == 0
+        assert self.env_wat.compute_repulsion_energy('Lorentz-Berthelot') == pytest.approx(0.000263150628931246,
+                                                                                           abs=1e-12)
+        assert self.env_wat.compute_dispersion_energy('Lorentz-Berthelot') == pytest.approx(-0.00131364768168478,
+                                                                                            abs=1e-8)
 
     def test_compute_multipole_fields(self):
         ref_fields = np.array([[-6.88526592e-03, 8.61243977e-03, -3.98239429e-03],

@@ -63,9 +63,13 @@ std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end);
 // Parallelized with OpenMP.
 Eigen::MatrixXd multipole_field(int i);
 
-// Computes self energy for given array of indexes
+// Computes electrostatic interaction energy for given array of indexes
 // Parallelized with OpenMP.
-double environment_energy(Eigen::MatrixXi idx_list);
+double electrostatic_environment_energy(Eigen::MatrixXi idx_list);
+// Computes dispersion interaction energy using an LJ 12-6 potential for given array of indexes
+double lj_dispersion_environment_energy(Eigen::MatrixXi idx_arr, std::string combination_rule);
+// Computes nonelectrostatic interaction energy using an LJ 12-6 potential for given array of indexes
+double lj_repulsion_environment_energy(Eigen::MatrixXi idx_arr, std::string combination_rule);
 
 // Computes the energy between all atoms and a nucleus.
 // Parallelized with OpenMP.
