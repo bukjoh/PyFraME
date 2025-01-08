@@ -44,9 +44,9 @@ def compute_t_tensor_py(r_a: np.ndarray,
         (See Jon Applequist J. Math. Phys. 24, 736 (1983) for details on Polytensors.)
     """
     if is_potential:
-        tensor_template = constants.values.potential_tensor_template
+        tensor_template = polytensor.statics.potential_tensor_template
     else:
-        tensor_template = constants.values.interaction_tensor_template
+        tensor_template = polytensor.statics.interaction_tensor_template
 
     r_ab = r_b - r_a
     if r_a[0] == r_b[0] and r_a[1] == r_b[1] and r_a[2] == r_b[2]:
@@ -68,8 +68,8 @@ def compute_t_tensor_py(r_a: np.ndarray,
             for j in range(start_b, end_b):
                 interaction_element = tensor_tools.compute_interaction_tensor_element(distance_vector=r_ab,
                                                                                       multi_index=tensor_template[i, j],
-                                                                                      tensor_coefficients=constants.
-                                                                                      values.tensor_coefficients)
+                                                                                      tensor_coefficients=polytensor
+                                                                                      .statics.tensor_coefficients)
                 interaction_tensor.write_to_data(i=i - start_a, j=j - start_b, new_data=interaction_element)
     return interaction_tensor
 

@@ -77,7 +77,6 @@ class Atom(Particle):
             else:
                 self.multipole_order = multipoles.get('order', None)
             if self.multipole_order > 1:
-                # FIXME only detraces dipole-dipole polarizabilities
                 counter = 4
                 for n in range(2, self.multipole_order + 1):
                     i = (n + 1) * (n + 2) // 2

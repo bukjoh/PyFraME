@@ -426,7 +426,6 @@ class ClassicalSubsystem(Subsystem):
         else:
             raise NotImplementedError("This combination rule has not been implemented yet.")
         engine.set_lj_classical_sigma_epsilon(self.rep_lj_sigma, self.rep_lj_epsilon)
-        # heißen hier atom_coordinates
         engine.set_coords_idcs_exlcs(self.coordinates, self.indices, self.exclusions)
         total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
         return self._compute_environment_energy_distributed_or_serial(

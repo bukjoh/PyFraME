@@ -111,8 +111,9 @@ start_time = time.time()
 #print(electrostatic_interactions.compute_electrostatic_nuclear_energy(quantum_subsystem=core, classical_subsystem=env))
 
 #print(electrostatic_interactions.compute_electrostatic_nuclear_gradients(quantum_subsystem=core, classical_subsystem=env))
+print(env.compute_electrostatic_energy())
 # print(env.coordinates[0:1])
-print(core.compute_nuclear_fields(env.coordinates[0:1]))
+#print(core.compute_nuclear_fields(env.coordinates[0:1]))
 # for i in range(10000):
 #     env.compute_repulsion_energy('Lorentz-Berthelot')
 
