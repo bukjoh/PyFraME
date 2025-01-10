@@ -112,7 +112,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
                 start = sum(counts[:c_subsystem.rank])
                 end = sum(counts[:c_subsystem.rank + 1])
                 nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
-                # FIXME assemble mpi energy contr?
+                nuclear_energy = c_subsystem.comm.allreduce(nuclear_energy)
             # F_el_es
             fock_matrix = es_fock_matrix_contributions(classical_subsystem=c_subsystem,
                                                        integral_driver=integral_driver)
@@ -136,7 +136,7 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
             start = sum(counts[:classical_subsystem.rank])
             end = sum(counts[:classical_subsystem.rank + 1])
             nuclear_energy = engine.e_nuc_es(np.array([start, end], dtype=np.int64))
-            # FIXME assemble mpi energy contr?
+            nuclear_energy = classical_subsystem.comm.allreduce(nuclear_energy)
 
         # F_el_es
         fock_matrix = es_fock_matrix_contributions(classical_subsystem=classical_subsystem,

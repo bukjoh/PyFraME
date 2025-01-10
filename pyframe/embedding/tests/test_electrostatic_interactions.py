@@ -190,15 +190,22 @@ def test_compute_electrostatic_interaction(
     assert e_el_es == pytest.approx(0.00987780, abs=1.5e-8)
 
 
-def test_compute_electrostatic_nuclear_energy(two_atom):
-    # TODO write test.
-    core_h2, env_h2 = two_atom
-    # print(electrostatic_interactions.compute_electrostatic_nuclear_energy(quantum_subsystem=core_h2,
-    #                                                                       classical_subsystem=env_h2))
+def test_compute_electrostatic_nuclear_energy(wat_wat,
+                                              butadiene_water,
+                                              two_oxygen):
+    core_wat_wat, env_wat_wat = wat_wat
+    e_nuc_es = electrostatic_interactions.compute_electrostatic_nuclear_energy(quantum_subsystem=core_wat_wat,
+                                                                               classical_subsystem=env_wat_wat)
+    assert e_nuc_es == pytest.approx(-0.08545956, abs=1.5e-8)
 
-    print(core_h2.compute_nuclear_fields(env_h2.coordinates))
-    print(env_h2.multipole_fields)
-
+    core_but_wat, env_but_wat = butadiene_water
+    e_nuc_es = electrostatic_interactions.compute_electrostatic_nuclear_energy(quantum_subsystem=core_but_wat,
+                                                                               classical_subsystem=env_but_wat)
+    assert e_nuc_es == pytest.approx(0.16763472778701938, abs=1.5e-8)
+    core_ox, env_ox = two_oxygen
+    e_nuc_es = electrostatic_interactions.compute_electrostatic_nuclear_energy(quantum_subsystem=core_ox,
+                                                                               classical_subsystem=env_ox)
+    assert e_nuc_es == pytest.approx(-0.5418862937289033, abs=1.5e-8)
 
 
 def test_compute_electrostatic_nuclear_gradients(neon, wat_wat, butadiene_water):
