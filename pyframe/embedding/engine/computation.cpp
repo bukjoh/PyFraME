@@ -176,8 +176,7 @@ Eigen::MatrixXd nuclei_fields(int start, int end) {
             nuclei_fields += field_part;
         }
     }
-    // times -1.0 because its - deriv of the potential
-    return -1.0 * nuclei_fields;
+    return nuclei_fields;
 }
 
 // Computes the field of the nuclei on all atoms
@@ -197,8 +196,7 @@ std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end) {
                 Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                             global::tensor_template_potential,
                                                             0, 2, 0, 2);
-                // times -1.0 because its - deriv of the potential
-                local_nucleus_field_gradients[j].row(i) +=  -1.0 * t_tensor * global::nuclei_charges(j);
+                local_nucleus_field_gradients[j].row(i) +=  t_tensor * global::nuclei_charges(j);
             }
         }
         #pragma omp critical
@@ -236,8 +234,7 @@ Eigen::MatrixXd multipole_field(int i) {
             multipole_field += field_part;
         }
     }
-    // times -1.0 because its - deriv of the potential
-    return -1.0 * multipole_field;
+    return multipole_field;
 }
 
 // Computes electrostatic interaction energy for given array of indexes

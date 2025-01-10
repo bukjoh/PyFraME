@@ -176,7 +176,7 @@ class QuantumSubsystem(Subsystem):
         Returns:
             Electronic fields. Shape: (number of atoms, 3)
         """
-        return integral_driver.electronic_fields(coordinates=coordinates, density_matrix=density_matrix)
+        return -1.0 * integral_driver.electronic_fields(coordinates=coordinates, density_matrix=density_matrix)
 
     def compute_electronic_field_gradients(self,
                                            coordinates: np.ndarray,
@@ -194,7 +194,7 @@ class QuantumSubsystem(Subsystem):
             Electronic field gradients.
                 Shape: (number of nuclei, number of atoms, 6)
         """
-        return integral_driver.electronic_field_gradient(coordinates=coordinates,
+        return -1.0 * integral_driver.electronic_field_gradient(coordinates=coordinates,
                                                          density_matrix=density_matrix)
 
 
