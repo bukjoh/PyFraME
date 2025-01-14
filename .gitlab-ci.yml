@@ -59,4 +59,4 @@ codecov:
     - bash <(curl -s https://codecov.io/bash) -t 5c2b4cbc-5626-4d17-877d-b29bf16032b3 -Z -f coverage.xml
 
 before_script:
-  - apt-get update && apt-get install -y libmpich-dev
+  - apt-get update && apt-get install -y libmpich-dev libeigen3-dev
