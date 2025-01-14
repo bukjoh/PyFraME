@@ -60,3 +60,4 @@ codecov:
 
 before_script:
   - apt-get update && apt-get install -y libmpich-dev libeigen3-dev
+  - export EIGEN_INCLUDE_DIR="/usr/include/eigen3"
