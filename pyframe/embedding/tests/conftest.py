@@ -1,3 +1,4 @@
+from typing import List
 import pytest
 import numpy as np
 import qcelemental
@@ -1793,7 +1794,7 @@ class DummyIntegralDriver:
     def multipole_potential_integrals(self,
                                       multipole_coordinates: np.ndarray,
                                       multipole_orders: np.ndarray,
-                                      multipoles: list[np.ndarray]) -> np.ndarray:
+                                      multipoles: List[np.ndarray]) -> np.ndarray:
         self.multipole_coordinates = multipole_coordinates
         self.multipole_orders = multipole_orders
         self.multipoles = multipoles
