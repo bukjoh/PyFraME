@@ -26,6 +26,7 @@ import h5py
 from .fragments import FragmentDict, Fragment
 from .atoms import AtomList, Atom
 from .potentials import PotentialDict, Potential
+from .simulation_box import SimulationBox
 from .utils import BOHR2AA, AA2BOHR, elements, amino_acid_names
 
 
@@ -118,11 +119,29 @@ class InputReaders(object):
         """Read PDB input file and return fragment objects in fragments dictionary"""
         with open(filename, 'r') as input_file:
             fragments = fragment_dict()
+            simulation_box = SimulationBox()
             atom_number = 1
             line = input_file.readline()
             unique = 0
             while line:
                 if str(line[0:6]).strip() not in ['ATOM', 'HETATM']:
+                    # Read box dimensions for CRYST1 type pdb
+                    if str(line[0:6]).strip() in ['CRYST1']:
+                        for i in range(0, 3):
+                            try:
+                                simulation_box.lengths[i] = float(line[6+9*i:6+9*(i+1)])
+                            except:
+                                simulation_box.lengths = np.zeros(3)
+                                simulation_box.angles = np.zeros(3)
+                                warnings.warn('Invalid box dimensions, setting to zeros.')
+                                break
+                            try:
+                                simulation_box.angles[i] = float(line[33+7*i:33+7*(i+1)])
+                            except:
+                                simulation_box.lengths = np.zeros(3)
+                                simulation_box.angles = np.zeros(3)
+                                warnings.warn('Invalid box dimensions, setting to zeros.')
+                                break
                     line = input_file.readline()
                     continue
                 atom_type = str(line[0:6]).strip()
@@ -211,17 +230,35 @@ class InputReaders(object):
                         raise PDBError('name', line)
                 fragment.atoms = atoms
                 fragments[fragment.identifier] = fragment
-        return fragments
+        return fragments, simulation_box
 
     @staticmethod
     def pqr(filename, fragment_dict, fragment_class, atom_list, atom_class):
         """Read PQR input file and return fragment objects in fragments dictionary"""
         with open(filename, 'r') as input_file:
+            simulation_box = SimulationBox()
             fragments = fragment_dict()
             atom_number = 1
             line = input_file.readline()
             while line:
                 if str(line[0:6]).strip() not in ['ATOM', 'HETATM']:
+                    # Read box dimensions for CRYST1 type pdb
+                    if str(line[0:6]).strip() in ['CRYST1']:
+                        for i in range(0, 3):
+                            try:
+                                simulation_box.lengths[i] = float(line[6+9*i:6+9*(i+1)])
+                            except:
+                                simulation_box.lengths = np.zeros(3)
+                                simulation_box.angles = np.zeros(3)
+                                warnings.warn('Invalid box dimensions, setting to zeros.')
+                                break
+                            try:
+                                simulation_box.angles[i] = float(line[33+7*i:33+7*(i+1)])
+                            except:
+                                simulation_box.lengths = np.zeros(3)
+                                simulation_box.angles = np.zeros(3)
+                                warnings.warn('Invalid box dimensions, setting to zeros.')
+                                break
                     line = input_file.readline()
                     continue
                 atom_type = str(line[0:6]).strip()
@@ -299,7 +336,7 @@ class InputReaders(object):
                         raise PDBError('name', line)
                 fragment.atoms = atoms
                 fragments[fragment.identifier] = fragment
-        return fragments
+        return fragments, simulation_box
 
 
 class OutputReaders(object):

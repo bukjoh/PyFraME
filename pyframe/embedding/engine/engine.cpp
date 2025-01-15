@@ -405,6 +405,43 @@ static PyObject* compute_t_tensor(PyObject* self, PyObject* args) {
     return eigen_matrix_to_numpy(t_tensor);
 }
 
+
+static PyObject* compute_cluster_t_tensor(PyObject* self, PyObject* args) {
+    PyObject *index_a_obj, *index_b_obj;
+    PyObject* ranks_obj;
+    PyObject* mic_obj;
+
+    if (!PyArg_ParseTuple(args, "OOOO", &index_a_obj, &index_b_obj, &ranks_obj,
+                          &mic_obj))
+    {
+        return NULL;
+    }
+    Eigen::VectorXi ranks = read_vector(ranks_obj);
+    int rank_a = ranks(0);
+    int rank_b = ranks(1);
+    int start_rank_a = ranks(2);
+    int start_rank_b = ranks(3);
+    bool is_potential = (bool)ranks(4);
+
+    int index_a = PyLong_AsLong(index_a_obj);
+    int index_b = PyLong_AsLong(index_b_obj);
+    bool mic = PyObject_IsTrue(mic_obj);
+    Eigen::Vector3d (*dist_func)(int, int);
+    if (mic) {
+        dist_func = computation::atom_dist_mic;
+    } else {
+        dist_func = computation::atom_dist;
+    }
+    Eigen::Vector3d r_ab = dist_func(index_a, index_b);
+
+    Eigen::MatrixXd t_tensor = computation::compute_t_tensor(r_ab,
+                                is_potential ? global::tensor_template_potential : global::tensor_template_interaction,
+                                (int)rank_a, (int)rank_b, (int)start_rank_a, (int)start_rank_b);
+
+    return eigen_matrix_to_numpy(t_tensor);
+}
+
+
 // Sets the global tensor coefficients and templates
 // args: [tensor_coefficients, tensor_template_interaction, tensor_template_potential, rank, max_order]
 static PyObject* set_tensor_coefficients(PyObject* self, PyObject* args) {
@@ -477,6 +514,57 @@ static PyObject* set_coords_idcs_exlcs(PyObject* self, PyObject* args) {
     Py_RETURN_NONE;
 }
 
+
+// Sets the global coordinates, indices and exclusions.
+// args: [coords, indices, exclusions];
+static PyObject* set_mic_coords_idcs_exlcs(PyObject* self, PyObject* args) {
+    PyObject *coords_obj, *indices_obj, *exclusions_obj, *box_obj;
+
+    if (!PyArg_ParseTuple(args, "OOOO", &coords_obj, &indices_obj, &exclusions_obj, &box_obj)) {
+        return NULL;
+    }
+    Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)coords_obj);
+    global::box = read_matrix_d((PyArrayObject *)box_obj);
+    Eigen::MatrixXd inv_box = global::box.inverse();
+    global::coordinates_scaled = std::vector<Eigen::Vector3d>();
+    for(int i = 0; i < coords.rows(); i++) {
+        Eigen::Vector3d coord;
+        coord << coords(i, 0), coords(i, 1), coords(i, 2);
+        coord = coord * inv_box;
+        global::coordinates_scaled.push_back(coord);
+    }
+    global::indices = read_vector(indices_obj);
+
+    if (!PyList_Check(exclusions_obj)) {
+        PyErr_SetString(PyExc_TypeError, "Input must be a Python list");
+        return NULL;
+    }
+    Py_ssize_t outerSize = PyList_Size(exclusions_obj);
+    std::vector<std::unordered_set<int>> exclusions;
+    for (Py_ssize_t i = 0; i < outerSize; ++i) {
+        PyObject* inner_tuple = PyList_GetItem(exclusions_obj, i);
+        if (!PyTuple_Check(inner_tuple)) {
+            PyErr_SetString(PyExc_TypeError, "Inner items must be Python tuples");
+            return NULL;
+        }
+        std::unordered_set<int> inner_set;
+        Py_ssize_t inner_size = PyTuple_Size(inner_tuple);
+        for (Py_ssize_t j = 0; j < inner_size; ++j) {
+            PyObject* item = PyTuple_GetItem(inner_tuple, j);
+            if (!PyLong_Check(item)) {
+                PyErr_SetString(PyExc_TypeError, "Inner items must be Python integers");
+                return NULL;
+            }
+            int intValue = PyLong_AsLong(item);
+            inner_set.insert(intValue);
+        }
+        exclusions.push_back(inner_set);
+    }
+    global::exclusions = exclusions;
+    Py_RETURN_NONE;
+}
+
+
 // Sets the global atom coordinates,nuclei_coordinates and nuclei_charges.
 // args: [atom_coords, nuclei_charges, nuclei_coords];
 static PyObject* set_coords_nuc_coords_charges(PyObject* self, PyObject* args) {
@@ -539,7 +627,8 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     }
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
-    return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(start, end));
+    bool mic = (bool)read_vector(start_end_obj)(2);
+    return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(start, end, mic));
 }
 
 //Calculates the induced dipoles for all targets from all sources
@@ -547,12 +636,17 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
 static PyObject* target_source_ind_dipoles_fields(PyObject* self, PyObject* args) {
     PyObject *target_obj;
     PyObject *source_obj;
-    if (!PyArg_ParseTuple(args, "OO", &target_obj, &source_obj)) {
+    PyObject *mic_obj;
+    // Correct the PyArg_ParseTuple format string to handle three objects and one boolean
+    if (!PyArg_ParseTuple(args, "OOO", &target_obj, &source_obj, &mic_obj)) {
         return NULL;
     }
+    // Read the vectors from the target and source objects
     Eigen::VectorXi targets = read_vector(target_obj);
     Eigen::VectorXi sources = read_vector(source_obj);
-    return (PyObject *)eigen_matrix_to_numpy(computation::target_source_ind_dipoles_field(targets, sources));
+    bool mic = PyObject_IsTrue(mic_obj);
+    // Call the computation function with the correct arguments
+    return (PyObject *)eigen_matrix_to_numpy(computation::target_source_ind_dipoles_field(targets, sources, mic));
 }
 
 //Calculates the multipole fields for atom at index i
@@ -937,10 +1031,14 @@ static PyMethodDef module_methods[] = {
      "Computes Interaction Tensor Element."},
     {"compute_t_tensor", compute_t_tensor, METH_VARARGS,
      "Computes t_tensor."},
+    {"compute_cluster_t_tensor", compute_cluster_t_tensor, METH_VARARGS,
+     "Computes cluster t_tensor."},
     {"set_tensor_coefficients", set_tensor_coefficients, METH_VARARGS,
      "Sets tensor coefficients and templates for interaction and potential tensors."},
     {"set_coords_idcs_exlcs", set_coords_idcs_exlcs, METH_VARARGS,
      "Sets coordinates, indices and exclusions for the inner loop of the solver."},
+    {"set_mic_coords_idcs_exlcs", set_mic_coords_idcs_exlcs, METH_VARARGS,
+     "Sets coordinates, indices and exclusions for the inner loop of the solver using the mic scheme."},
     {"set_old_ind_dipoles", set_old_ind_dipoles, METH_VARARGS,
      "Sets the old induced dipole fields for the calculation of the induced dipoles."},
     {"ind_dipoles_fields", ind_dipoles_fields, METH_VARARGS,

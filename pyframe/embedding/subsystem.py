@@ -8,7 +8,7 @@ from typing import Any
 from pyframe.embedding import engine
 from .polytensor import FirstDegreePolytensor
 from .tensor_tools import uncompress_symmetric_matrix
-from .solvers import induced_dipoles_jacobi
+from .solvers import induced_dipoles_jacobi, induced_dipoles_jidiis, induced_dipoles_dcji, induced_dipoles_dcjidiis
 from .particle import Nucleus
 from .fragment import QuantumFragment, ClassicalFragment
 from .logging_util import log_manager
@@ -484,7 +484,13 @@ class ClassicalSubsystem(Subsystem):
     def solve_induced_dipoles(self,
                               threshold: float = 1e-8,
                               max_iterations: int = 100,
+                              mic: bool = False,
+                              box: np.ndarray = np.array([]),
                               solver: str = 'jacobi',
+                              max_diis: int = 5,
+                              init_diis: int = 3,
+                              k_cluster: int = 5,
+                              cluster_size_range: int = -1,
                               exclude_static_internal_fields: bool = False,
                               external_fields: np.ndarray | None = None
                               ) -> None:
@@ -493,7 +499,14 @@ class ClassicalSubsystem(Subsystem):
         Args:
             threshold: Convergence threshold.
             max_iterations: Maximum number of iterations.
+            mic: Boolean indicating whether induced dipoles are calculated using mic scaled coordinates.
+            box: Dimensions of the simulation box described by vectors.
             solver: Type of solver used.
+            max_diis: Maximum number of previous iterations to consider in the DIIS method.
+            init_diis: Iteration number at which DIIS is initiated.
+            k_cluster: The number of clusters to form in K-means clustering, used for divide and conquer methods.
+            cluster_size_range: The range of cluster size deviations from the mean cluster size in number of atoms. -1
+            allows cluster deviations of any size.
             exclude_static_internal_fields: Exclude any static internal fields, e.g., from permanent multipoles.
             external_fields: External fields that are added to the internal permanent and induced fields.
         """
@@ -528,6 +541,9 @@ class ClassicalSubsystem(Subsystem):
                 starting_guess = np.zeros([self.num_atoms, 3])
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.dipole_dipole_polarizabilities[i], field)
+        if mic and np.shape(box) != (3, 3):
+            print("No simulation box dimensions, mic disabled.")
+            mic = False
         induced_dipoles, num_iter = None, None
         if solver == 'jacobi':
             induced_dipoles, num_iter = induced_dipoles_jacobi(coordinates=self.coordinates,
@@ -536,9 +552,55 @@ class ClassicalSubsystem(Subsystem):
                                                                indices=self.indices,
                                                                fields=static_fields,
                                                                starting_guess=starting_guess,
+                                                               mic=mic,
+                                                               box=box,
                                                                threshold=threshold,
                                                                max_iterations=max_iterations,
                                                                comm=self.comm)
+        elif solver == 'jidiis':
+            induced_dipoles, num_iter = induced_dipoles_jidiis(coordinates=self.coordinates,
+                                                               polarizabilities=self.dipole_dipole_polarizabilities,
+                                                               exclusions=self.exclusions,
+                                                               indices=self.indices,
+                                                               fields=static_fields,
+                                                               starting_guess=starting_guess,
+                                                               mic=mic,
+                                                               box=box,
+                                                               threshold=threshold,
+                                                               max_iterations=max_iterations,
+                                                               max_diis=max_diis,
+                                                               init_diis=init_diis,
+                                                               comm=self.comm)
+        elif solver == 'dcji':
+            induced_dipoles, num_iter = induced_dipoles_dcji(coordinates=self.coordinates,
+                                                             polarizabilities=self.dipole_dipole_polarizabilities,
+                                                             exclusions=self.exclusions,
+                                                             indices=self.indices,
+                                                             fields=static_fields,
+                                                             starting_guess=starting_guess,
+                                                             mic=mic,
+                                                             box=box,
+                                                             threshold=threshold,
+                                                             max_iterations=max_iterations,
+                                                             k_cluster=k_cluster,
+                                                             cluster_size_range=cluster_size_range,
+                                                             comm=self.comm)
+        elif solver == 'dcjidiis':
+            induced_dipoles, num_iter = induced_dipoles_dcjidiis(coordinates=self.coordinates,
+                                                                 polarizabilities=self.dipole_dipole_polarizabilities,
+                                                                 exclusions=self.exclusions,
+                                                                 indices=self.indices,
+                                                                 fields=static_fields,
+                                                                 starting_guess=starting_guess,
+                                                                 mic=mic,
+                                                                 box=box,
+                                                                 threshold=threshold,
+                                                                 max_iterations=max_iterations,
+                                                                 max_diis=max_diis,
+                                                                 init_diis=init_diis,
+                                                                 k_cluster=k_cluster,
+                                                                 cluster_size_range=cluster_size_range,
+                                                                 comm=self.comm)
         # TODO maybe remove this part?
         k = 0
         for fragment in self.classical_fragments:
@@ -554,7 +616,13 @@ class ClassicalSubsystem(Subsystem):
     def solve_perturbed_induced_dipoles(self,
                                         threshold: float = 1e-8,
                                         max_iterations: int = 100,
+                                        mic: bool = False,
+                                        box: np.ndarray = np.array([]),
                                         solver: str = 'jacobi',
+                                        max_diis: int = 5,
+                                        init_diis: int = 3,
+                                        k_cluster: int = 5,
+                                        cluster_size_range: int = -1,
                                         external_fields: np.ndarray | None = None
                                         ) -> np.ndarray:
         """Solve for perturbed induced dipoles.
@@ -562,7 +630,14 @@ class ClassicalSubsystem(Subsystem):
         Args:
             threshold: Convergence threshold.
             max_iterations: Maximum number of iterations.
+            mic: Boolean indicating whether induced dipoles are calculated using mic scaled coordinates.
+            box: Dimensions of the simulation box described by vectors.
             solver: Type of solver used.
+            max_diis: Maximum number of previous iterations to consider in the DIIS method.
+            init_diis: Iteration number at which DIIS is initiated.
+            k_cluster: The number of clusters to form in K-means clustering, used for divide and conquer methods.
+            cluster_size_range: The range of cluster size deviations from the mean cluster size in number of atoms. -1
+            allows cluster deviations of any size.
             external_fields: External fields that are added to the internal permanent and induced fields.
         """
         if external_fields is None:
@@ -592,6 +667,9 @@ class ClassicalSubsystem(Subsystem):
             starting_guess = np.zeros([self.num_atoms, 3])
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.dipole_dipole_polarizabilities[i], field)
+        if mic and np.shape(box) != (3, 3):
+            print("No simulation box dimensions, mic disabled.")
+            mic = False
         induced_dipoles, num_iter = None, None
         if solver == 'jacobi':
             induced_dipoles, num_iter = induced_dipoles_jacobi(coordinates=self.coordinates,
@@ -600,9 +678,55 @@ class ClassicalSubsystem(Subsystem):
                                                                indices=self.indices,
                                                                fields=static_fields,
                                                                starting_guess=starting_guess,
+                                                               mic=mic,
+                                                               box=box,
                                                                threshold=threshold,
                                                                max_iterations=max_iterations,
                                                                comm=self.comm)
+        elif solver == 'jidiis':
+            induced_dipoles, num_iter = induced_dipoles_jidiis(coordinates=self.coordinates,
+                                                               polarizabilities=self.dipole_dipole_polarizabilities,
+                                                               exclusions=self.exclusions,
+                                                               indices=self.indices,
+                                                               fields=static_fields,
+                                                               starting_guess=starting_guess,
+                                                               mic=mic,
+                                                               box=box,
+                                                               threshold=threshold,
+                                                               max_iterations=max_iterations,
+                                                               max_diis=max_diis,
+                                                               init_diis=init_diis,
+                                                               comm=self.comm)
+        elif solver == 'dcji':
+            induced_dipoles, num_iter = induced_dipoles_dcji(coordinates=self.coordinates,
+                                                             polarizabilities=self.dipole_dipole_polarizabilities,
+                                                             exclusions=self.exclusions,
+                                                             indices=self.indices,
+                                                             fields=static_fields,
+                                                             starting_guess=starting_guess,
+                                                             mic=mic,
+                                                             box=box,
+                                                             threshold=threshold,
+                                                             max_iterations=max_iterations,
+                                                             k_cluster=k_cluster,
+                                                             cluster_size_range=cluster_size_range,
+                                                             comm=self.comm)
+        elif solver == 'dcjidiis':
+            induced_dipoles, num_iter = induced_dipoles_dcjidiis(coordinates=self.coordinates,
+                                                                 polarizabilities=self.dipole_dipole_polarizabilities,
+                                                                 exclusions=self.exclusions,
+                                                                 indices=self.indices,
+                                                                 fields=static_fields,
+                                                                 starting_guess=starting_guess,
+                                                                 mic=mic,
+                                                                 box=box,
+                                                                 threshold=threshold,
+                                                                 max_iterations=max_iterations,
+                                                                 max_diis=max_diis,
+                                                                 init_diis=init_diis,
+                                                                 k_cluster=k_cluster,
+                                                                 cluster_size_range=cluster_size_range,
+                                                                 comm=self.comm)
 
         # FIXME Maybe this will cache too much if the property is of too high order?
         self.perturbed_induced_dipoles.append(InducedDipoles(induced_dipoles=induced_dipoles,

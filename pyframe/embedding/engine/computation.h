@@ -43,13 +43,19 @@ double e_nuc_es_perturbed(
        int nuc_idx,
        const Eigen::Matrix<int, 2, 3> &perturbation_tuple);
 
+// Computes the distance between two atoms i and j.
+Eigen::Vector3d atom_dist(int i, int j);
+
+// Computes the distance between atoms i and j based on the minimum-image convention.
+Eigen::Vector3d atom_dist_mic(int i, int j);
+
 // Computes the field caused by induced dipoles at atom with index start to end.
 // Parallelized with OpenMP.
-Eigen::MatrixXd ind_dipoles_field(int start, int end);
+Eigen::MatrixXd ind_dipoles_field(int start, int end, bool mic);
 
 // Computes the field caused by induced dipoles at the targets from the sources.
 // Parallelized with OpenMP.
-Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources);
+Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources, bool mic);
 
 // Computes the field of the nuclei on all atoms
 // Parallelized with OpenMP.

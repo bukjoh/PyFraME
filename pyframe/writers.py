@@ -21,6 +21,7 @@ import json
 import h5py
 import numpy as np
 
+from .simulation_box import SimulationBox
 from .utils import element2charge, AA2BOHR, get_version_string
 
 __all__ = ['InputWriters', 'ScriptWriters']
@@ -418,6 +419,19 @@ class InputWriters(object):
         if filename is None:
             filename = system.name
         sys_dict = {}
+        if np.sum(system.simulation_box.lengths) > 0:
+            # write simulation box dimensions to system
+            sys_dict['system'] = [{'simulation_box': []}]
+            if incoming_unit == "Angstrom":
+                from qcelemental import PhysicalConstantsContext
+                constants = PhysicalConstantsContext('CODATA2018')
+                box = {'lengths': [x / constants.bohr2angstroms for x in system.simulation_box.lengths.tolist()],
+                       'angles': system.simulation_box.angles.tolist()}
+                sys_dict["system"][0]["simulation_box"].append(box)
+            elif incoming_unit == "Bohr":
+                box = {'lengths': system.simulation_box.lengths.tolist(),
+                       'angles': system.simulation_box.angles.tolist()}
+                sys_dict["system"][0]["simulation_box"].append(box)
         # fill quantum_subsystem with nuclei
         if system.core_region is not None:
             sys_dict['quantum_subsystems'] = [{"name": "core region",

@@ -8,6 +8,7 @@ from mpi4py import MPI
 from .fragment import QuantumFragment, ClassicalFragment
 from .particle import Nucleus
 from .subsystem import QuantumSubsystem, ClassicalSubsystem
+from pyframe.simulation_box import SimulationBox
 
 __all__ = 'reader'
 
@@ -38,7 +39,7 @@ def json_to_dict(filepath: Path | str
 def reader(input_data: dict | Path | str,
            comm: MPI.Comm | None = None
            ) -> (tuple[QuantumSubsystem, ...] | tuple[ClassicalSubsystem, ...] |
-                 tuple[QuantumSubsystem, ..., ClassicalSubsystem, ...]):
+                 tuple[QuantumSubsystem, ..., ClassicalSubsystem, ..., SimulationBox]):
     """Read in a JSON file or Python dictionary and create instances of a QuantumSubsystem, ClassicalSubsystem(s) or
      both.
 
@@ -65,6 +66,17 @@ def reader(input_data: dict | Path | str,
     quantum_fragments = None
     quantum_subsystem_name = None
     classical_subsystem_name = None
+    # system data
+    if subsystems_data.get('system', None) is not None:
+        system_data = subsystems_data.get('system', None)
+        # Assuming system_data is a list, get the first dictionary element
+        if isinstance(system_data, list) and len(system_data) > 0:
+            box = system_data[0].get('simulation_box', [{}])[0]
+            # Extract dimensions and angles
+            lengths = box.get('lengths', [])
+            angles = box.get('angles', [])
+            system.append(SimulationBox(lengths=lengths,
+                                        angles=angles))
     # Quantum Subsystems
     if subsystems_data.get('quantum_subsystems', None) is not None:
         quantum_subsystems = subsystems_data.get('quantum_subsystems', None)

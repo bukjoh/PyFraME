@@ -20,6 +20,7 @@
 
 import os.path
 import re
+import numpy as np
 from typing import List, Union, Optional
 
 from .atoms import AtomList
@@ -41,6 +42,7 @@ class MolecularSystem(object):
         assert isinstance(input_file, str), 'Input file must be given as a string'
         assert os.path.isfile(input_file)
         self._fragments = FragmentDict()
+        self._simulation_box = None
         self._potential = PotentialDict()
         self._core_region = None
         self._regions = RegionDict()
@@ -55,11 +57,11 @@ class MolecularSystem(object):
         if bond_threshold:
             self._bond_threshold = bond_threshold
         if input_reader:
-            self._fragments = read_input_file(input_file, input_reader)
+            self._fragments, self._simulation_box = read_input_file(input_file, input_reader)
         else:
             reader = '{0}'.format(file_ext.strip('.'))
             if hasattr(InputReaders, reader):
-                self._fragments = read_input_file(input_file, getattr(InputReaders, reader))
+                self._fragments, self._simulation_box = read_input_file(input_file, getattr(InputReaders, reader))
             else:
                 # TODO replace with exception
                 exit('ERROR: no input reader found for this input format')
@@ -92,6 +94,10 @@ class MolecularSystem(object):
     @property
     def fragments(self):
         return self._fragments
+
+    @property
+    def simulation_box(self):
+        return self._simulation_box
 
     @property
     def potential(self):

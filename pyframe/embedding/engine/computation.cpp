@@ -101,11 +101,29 @@ Eigen::MatrixXd compute_perturbed_t_tensor(
 }
 
 
+Eigen::Vector3d atom_dist(int i, int j) {
+    Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
+    return r_ab;
+}
+
+Eigen::Vector3d atom_dist_mic(int i, int j) {
+    Eigen::Vector3d r_ij = global::coordinates_scaled[j] - global::coordinates_scaled[i];
+    Eigen::Vector3d r_ab = global::box * (r_ij - r_ij.unaryExpr([](double val) { return std::round(val); }));
+    return r_ab;
+}
+
+
 // Computes the field caused by induced dipoles at atom i.
 // Parallelized with OpenMP.
-Eigen::MatrixXd ind_dipoles_field(int start, int end) {
+Eigen::MatrixXd ind_dipoles_field(int start, int end, bool mic) {
     int no_atoms = static_cast<int>(global::coordinates.size());
     Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(no_atoms, 3);
+    Eigen::Vector3d (*dist_func)(int, int);
+    if (mic) {
+        dist_func = atom_dist_mic;
+    } else {
+        dist_func = atom_dist;
+    }
     for(int i = start; i < end; i++) {
         #pragma omp parallel
         {
@@ -114,7 +132,8 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end) {
                 if(global::exclusions[i].find(global::indices[j]) != global::exclusions[i].end()) {
                     continue;
                 }
-                Eigen::Vector3d r_ab = global::coordinates[i] - global::coordinates[j];
+
+                Eigen::Vector3d r_ab = dist_func(i, j);
                 Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                             global::tensor_template_potential,
                                                             1, 1, 1, 1);
@@ -129,8 +148,14 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end) {
 
 // Computes the field caused by induced dipoles at atom i.
 // Parallelized with OpenMP.
-Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources) {
+Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources, bool mic) {
     Eigen::MatrixXd ind_dipoles_field = Eigen::MatrixXd::Zero(targets.size(), 3);
+    Eigen::Vector3d (*dist_func)(int, int);
+    if (mic) {
+        dist_func = atom_dist_mic;
+    } else {
+        dist_func = atom_dist;
+    }
     for (int i = 0; i < targets.size(); i++) {
         #pragma omp parallel
         {
@@ -139,7 +164,7 @@ Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::
                 if(global::exclusions[targets[i]].find(global::indices[sources[j]]) != global::exclusions[targets[i]].end()) {
                     continue;
                 }
-                Eigen::Vector3d r_ab = global::coordinates[targets[i]] - global::coordinates[sources[j]];
+                Eigen::Vector3d r_ab = dist_func(targets[i], sources[j]);
                 Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                             global::tensor_template_potential,
                                                             1, 1, 1, 1);
@@ -196,7 +221,7 @@ std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end) {
                 Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
                                                             global::tensor_template_potential,
                                                             0, 2, 0, 2);
-                local_nucleus_field_gradients[j].row(i) +=  t_tensor * global::nuclei_charges(j);
+                local_nucleus_field_gradients[j].row(i) += t_tensor * global::nuclei_charges(j);
             }
         }
         #pragma omp critical

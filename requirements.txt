@@ -7,3 +7,4 @@ pytest-cov
 scipy
 mpi4py
 qcelemental
+scikit-learn
