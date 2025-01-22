@@ -195,7 +195,7 @@ class QuantumSubsystem(Subsystem):
                 Shape: (number of nuclei, number of atoms, 6)
         """
         return -1.0 * integral_driver.electronic_field_gradient(coordinates=coordinates,
-                                                         density_matrix=density_matrix)
+                                                                density_matrix=density_matrix)
 
 
 class ClassicalSubsystem(Subsystem):
@@ -542,7 +542,9 @@ class ClassicalSubsystem(Subsystem):
                 for i, field in enumerate(static_fields):
                     starting_guess[i, :] = np.einsum('ij, j', self.dipole_dipole_polarizabilities[i], field)
         if mic and np.shape(box) != (3, 3):
-            print("No simulation box dimensions, mic disabled.")
+            log_manager.logger.debug(
+                print("No simulation box dimensions, mic disabled.")
+            )
             mic = False
         induced_dipoles, num_iter = None, None
         if solver == 'jacobi':
@@ -668,7 +670,9 @@ class ClassicalSubsystem(Subsystem):
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.dipole_dipole_polarizabilities[i], field)
         if mic and np.shape(box) != (3, 3):
-            print("No simulation box dimensions, mic disabled.")
+            log_manager.logger.debug(
+                print("No simulation box dimensions, mic disabled.")
+            )
             mic = False
         induced_dipoles, num_iter = None, None
         if solver == 'jacobi':
