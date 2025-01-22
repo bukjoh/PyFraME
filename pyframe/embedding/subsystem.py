@@ -486,7 +486,7 @@ class ClassicalSubsystem(Subsystem):
                               max_iterations: int = 100,
                               mic: bool = False,
                               box: np.ndarray = np.array([]),
-                              solver: str = 'jacobi',
+                              solver: str = 'jidiis',
                               max_diis: int = 5,
                               init_diis: int = 3,
                               k_cluster: int = 5,
