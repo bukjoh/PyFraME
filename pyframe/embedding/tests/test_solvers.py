@@ -109,21 +109,21 @@ def test_induced_dipoles_jacobi_stability():
 def test_induced_dipoles_jacobi_large_inputs():
     # Test number of iterations against tighter thresholds
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(threshold=1e-8)
+    env.solve_induced_dipoles(threshold=1e-8, solver='jacobi')
     assert env.induced_dipoles.number_of_iterations == 16
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(threshold=1e-10)
+    env.solve_induced_dipoles(threshold=1e-10, solver='jacobi')
     assert env.induced_dipoles.number_of_iterations == 20
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(threshold=1e-15)
+    env.solve_induced_dipoles(threshold=1e-15, solver='jacobi')
     assert env.induced_dipoles.number_of_iterations == 30
     # Test error is raised when past the max number of iterations
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     with pytest.raises(RuntimeError, match="Did not converge after the maximum number of iterations."):
-        env.solve_induced_dipoles(threshold=1e-1000)
+        env.solve_induced_dipoles(threshold=1e-1000, solver='jacobi')
     # Test induced dipoles
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(threshold=1e-8)
+    env.solve_induced_dipoles(threshold=1e-8, solver='jacobi')
     ref_ind_dip = np.array([[-5.33083758e-03, 1.80899242e-02, -4.67124873e-02],
                             [-6.25853096e-03, 7.25840460e-03, -1.03916985e-02],
                             [-2.48028626e-02, 2.09508571e-02, -5.74245555e-02],
@@ -167,6 +167,7 @@ def test_induced_dipoles_jacobi_large_inputs():
                             [1.23204937e-03, -2.97407616e-02, 2.68551812e-03],
                             [-3.37210637e-04, -1.45256899e-02, -3.48008725e-03]])
     assert np.allclose(ref_ind_dip, env.induced_dipoles.induced_dipoles)
+
 
 def test_induced_dipoles_jidiis(
         act_wat,
@@ -214,7 +215,7 @@ def test_induced_dipoles_jidiis(
 
     # Test DIIS with initialization at the first iteration
     ind_dipoles, iteration = induced_dipoles_dcjidiis(coordinates, polarizabilities, exclusions, indices,
-                                                  fields, starting_guess, mic, box, threshold, init_diis=1)
+                                                      fields, starting_guess, mic, box, threshold, init_diis=1)
     assert np.allclose(ind_dipoles, ref_dipoles)
 
 
@@ -276,21 +277,21 @@ def test_induced_dipoles_jidiis_stability():
 def test_induced_dipoles_jidiis_large_inputs():
     # Test number of iterations against tighter thresholds
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='jidiis',threshold=1e-8)
+    env.solve_induced_dipoles(solver='jidiis', threshold=1e-8)
     assert env.induced_dipoles.number_of_iterations <= 16
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='jidiis',threshold=1e-10)
+    env.solve_induced_dipoles(solver='jidiis', threshold=1e-10)
     assert env.induced_dipoles.number_of_iterations <= 20
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='jidiis',threshold=1e-15)
+    env.solve_induced_dipoles(solver='jidiis', threshold=1e-15)
     assert env.induced_dipoles.number_of_iterations <= 30
     # Test error is raised when past the max number of iterations
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     with pytest.raises(RuntimeError, match="Did not converge after the maximum number of iterations."):
-        env.solve_induced_dipoles(solver='jidiis',threshold=1e-1000)
+        env.solve_induced_dipoles(solver='jidiis', threshold=1e-1000)
     # Test induced dipoles
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='jidiis',threshold=1e-8)
+    env.solve_induced_dipoles(solver='jidiis', threshold=1e-8)
     ref_ind_dip = np.array([[-5.33083758e-03, 1.80899242e-02, -4.67124873e-02],
                             [-6.25853096e-03, 7.25840460e-03, -1.03916985e-02],
                             [-2.48028626e-02, 2.09508571e-02, -5.74245555e-02],
@@ -362,7 +363,7 @@ def test_induced_dipoles_dcji(
         starting_guess[i, :] = np.einsum('ij, j', polarizabilities[i], field)
     threshold = 1e-10
     ind_dipoles, iteration = induced_dipoles_dcji(coordinates, polarizabilities, exclusions, indices,
-                                                    fields, starting_guess, mic, box, threshold)
+                                                  fields, starting_guess, mic, box, threshold)
     # Test if output has the correct dipoles
     assert np.allclose(ind_dipoles, ref_dipoles)
     # Test if the output has the correct shape
@@ -373,52 +374,54 @@ def test_induced_dipoles_dcji(
     thresholds = [1e-10, 1e-12, 1e-15]
     for threshold in thresholds:
         _, iteration = induced_dipoles_dcji(coordinates, polarizabilities, exclusions, indices,
-                                              fields, starting_guess, mic, box, threshold)
+                                            fields, starting_guess, mic, box, threshold)
         assert iteration < 500  # arbitrary upper limit for iteration
     # Test clusters with a single atom
     ind_dipoles, iteration = induced_dipoles_dcji(coordinates, polarizabilities, exclusions, indices,
                                                   fields, starting_guess, mic, box, threshold, k_cluster=6)
     assert np.allclose(ind_dipoles, ref_dipoles)
     # Test with all atoms in a single cluster
-    with pytest.raises(ValueError, match="k_cluster must be larger than 1 and smaller than or equal to the number of atoms."):
+    with pytest.raises(ValueError,
+                       match="k_cluster must be larger than 1 and smaller than or equal to the number of atoms."):
         induced_dipoles_dcji(coordinates, polarizabilities, exclusions, indices,
-                                                  fields, starting_guess, mic, box, threshold, k_cluster=1)
+                             fields, starting_guess, mic, box, threshold, k_cluster=1)
+
 
 def test_induced_dipoles_dcji_invalid_inputs():
     # Test with invalid inputs
     with pytest.raises(ValueError, match="Wrong input format."):
         induced_dipoles_dcji(None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None)
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None,
+                             None)
 
 
 def test_induced_dipoles_dcji_large_inputs():
     # Test number of iterations against tighter thresholds
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcji',threshold=1e-8)
+    env.solve_induced_dipoles(solver='dcji', threshold=1e-8)
     assert env.induced_dipoles.number_of_iterations <= 16
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcji',threshold=1e-10)
+    env.solve_induced_dipoles(solver='dcji', threshold=1e-10)
     assert env.induced_dipoles.number_of_iterations <= 20
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcji',threshold=1e-15)
+    env.solve_induced_dipoles(solver='dcji', threshold=1e-15)
     assert env.induced_dipoles.number_of_iterations <= 30
     # Test error is raised when past the max number of iterations
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     with pytest.raises(RuntimeError, match="Did not converge after the maximum number of iterations."):
-        env.solve_induced_dipoles(solver='dcji',threshold=1e-1000)
+        env.solve_induced_dipoles(solver='dcji', threshold=1e-1000)
     # Test induced dipoles
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcji',threshold=1e-8)
+    env.solve_induced_dipoles(solver='dcji', threshold=1e-8)
     ref_ind_dip = np.array([[-5.33083758e-03, 1.80899242e-02, -4.67124873e-02],
                             [-6.25853096e-03, 7.25840460e-03, -1.03916985e-02],
                             [-2.48028626e-02, 2.09508571e-02, -5.74245555e-02],
@@ -490,7 +493,7 @@ def test_induced_dipoles_dcjidiis(
         starting_guess[i, :] = np.einsum('ij, j', polarizabilities[i], field)
     threshold = 1e-10
     ind_dipoles, iteration = induced_dipoles_dcjidiis(coordinates, polarizabilities, exclusions, indices,
-                                                    fields, starting_guess, mic, box, threshold)
+                                                      fields, starting_guess, mic, box, threshold)
     # Test if output has the correct dipoles
     assert np.allclose(ind_dipoles, ref_dipoles)
     # Test if the output has the correct shape
@@ -501,59 +504,60 @@ def test_induced_dipoles_dcjidiis(
     thresholds = [1e-10, 1e-12, 1e-15]
     for threshold in thresholds:
         _, iteration = induced_dipoles_dcjidiis(coordinates, polarizabilities, exclusions, indices,
-                                              fields, starting_guess, mic, box, threshold)
+                                                fields, starting_guess, mic, box, threshold)
         assert iteration < 500  # arbitrary upper limit for iteration
     # Test clusters with a single atom
     ind_dipoles, iteration = induced_dipoles_dcjidiis(coordinates, polarizabilities, exclusions, indices,
-                                                  fields, starting_guess, mic, box, threshold, k_cluster=6)
+                                                      fields, starting_guess, mic, box, threshold, k_cluster=6)
     assert np.allclose(ind_dipoles, ref_dipoles)
     # Test DIIS with initialization at the first iteration
     ind_dipoles, iteration = induced_dipoles_dcjidiis(coordinates, polarizabilities, exclusions, indices,
-                                                  fields, starting_guess, mic, box, threshold, init_diis=1)
+                                                      fields, starting_guess, mic, box, threshold, init_diis=1)
     assert np.allclose(ind_dipoles, ref_dipoles)
     # Test with all atoms in a single cluster
-    with pytest.raises(ValueError, match="k_cluster must be larger than 1 and smaller than or equal to the number of atoms."):
+    with pytest.raises(ValueError,
+                       match="k_cluster must be larger than 1 and smaller than or equal to the number of atoms."):
         induced_dipoles_dcjidiis(coordinates, polarizabilities, exclusions, indices,
-                                                  fields, starting_guess, mic, box, threshold, k_cluster=1)
+                                 fields, starting_guess, mic, box, threshold, k_cluster=1)
 
 
 def test_induced_dipoles_dcjidiis_invalid_inputs():
     # Test with invalid inputs
     with pytest.raises(ValueError, match="Wrong input format."):
         induced_dipoles_dcjidiis(None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None,
-                               None)
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None)
 
 
 def test_induced_dipoles_dcjidiis_large_inputs():
     # Test number of iterations against tighter thresholds
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcjidiis',threshold=1e-8)
+    env.solve_induced_dipoles(solver='dcjidiis', threshold=1e-8)
     assert env.induced_dipoles.number_of_iterations <= 16
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcjidiis',threshold=1e-10)
+    env.solve_induced_dipoles(solver='dcjidiis', threshold=1e-10)
     assert env.induced_dipoles.number_of_iterations <= 20
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcjidiis',threshold=1e-15)
+    env.solve_induced_dipoles(solver='dcjidiis', threshold=1e-15)
     assert env.induced_dipoles.number_of_iterations <= 30
     # Test error is raised when past the max number of iterations
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
     with pytest.raises(RuntimeError, match="Did not converge after the maximum number of iterations."):
-        env.solve_induced_dipoles(solver='dcjidiis',threshold=1e-1000)
+        env.solve_induced_dipoles(solver='dcjidiis', threshold=1e-1000)
     # Test induced dipoles
     core, env = read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_mid.json')
-    env.solve_induced_dipoles(solver='dcjidiis',threshold=1e-8)
+    env.solve_induced_dipoles(solver='dcjidiis', threshold=1e-8)
     ref_ind_dip = np.array([[-5.33083758e-03, 1.80899242e-02, -4.67124873e-02],
                             [-6.25853096e-03, 7.25840460e-03, -1.03916985e-02],
                             [-2.48028626e-02, 2.09508571e-02, -5.74245555e-02],
@@ -617,7 +621,7 @@ def test_induced_dipoles_jacobi_mpi_consistency():
                                   gathered_summed_arr2[i]), "Arrays are not equal across processes"
             assert np.array_equal(gathered_summed_arr3[0],
                                   gathered_summed_arr3[i]), "Arrays are not equal across processes"
-    #MPI.Finalize()
+    # MPI.Finalize()
 
 
 @pytest.mark.mpi()
@@ -638,7 +642,7 @@ def test_induced_dipoles_jidiis_mpi_consistency():
                                   gathered_summed_arr2[i]), "Arrays are not equal across processes"
             assert np.array_equal(gathered_summed_arr3[0],
                                   gathered_summed_arr3[i]), "Arrays are not equal across processes"
-    #MPI.Finalize()
+    # MPI.Finalize()
 
 
 @pytest.mark.mpi()
@@ -659,7 +663,7 @@ def test_induced_dipoles_dcji_mpi_consistency():
                                   gathered_summed_arr2[i]), "Arrays are not equal across processes"
             assert np.array_equal(gathered_summed_arr3[0],
                                   gathered_summed_arr3[i]), "Arrays are not equal across processes"
-    #MPI.Finalize()
+    # MPI.Finalize()
 
 
 @pytest.mark.mpi()
@@ -684,7 +688,7 @@ def test_induced_dipoles_dcjidiis_mpi_consistency():
 
 
 def test_diis_stability():
-    #test ind_dipoles matrix of 2 dimensions instead of 3 and singluar matrix
+    # test ind_dipoles matrix of 2 dimensions instead of 3 and singluar matrix
     ind_dipoles = np.array([[-0.05130705, -0.25165223, -0.4511121],
                             [0.00465468, -0.27383291, -0.18815435],
                             [-0.09539097, 0.03976932, -0.19509574],
@@ -703,8 +707,10 @@ def test_diis_stability():
 
 def test_kmeans_stability():
     coordinates = np.array([[0., 0., 0.], [1., 1., 1.], [2., 2., 2.]])
-    with pytest.raises(ValueError, match="k_cluster must be larger than 1 and smaller than or equal to the number of atoms."):
+    with pytest.raises(ValueError,
+                       match="k_cluster must be larger than 1 and smaller than or equal to the number of atoms."):
         kmeans_clustering(coordinates=coordinates, k_cluster=1, cluster_size_range=0)
+
 
 def test_divide_and_conquer_stability():
     coordinates = np.array([[0., 0., 0.], [1., 1., 1.], [2., 2., 2.]])

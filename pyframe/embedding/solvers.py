@@ -152,6 +152,7 @@ def induced_dipoles_jacobi_parallel(polarizabilities: np.ndarray,
         engine.set_old_ind_dipoles(old_ind_dipoles)
         if iteration > max_iterations:
             raise RuntimeError("Did not converge after the maximum number of iterations.")
+        # TODO optimize this parts parallelization + maybe general consideration to move this into the c++ layer?
         new_fields_local = engine.ind_dipoles_fields(np.array([start, end, mic], dtype=np.int64))
         comm.Allreduce(new_fields_local, new_fields_global, op=MPI.SUM)
         # Calculate total induced dipoles
@@ -260,8 +261,6 @@ def induced_dipoles_jidiis_serial(polarizabilities: np.ndarray,
     old_ind_dipoles = starting_guess
     ind_dipoles = starting_guess
     residue = np.array([0], dtype=np.float64)
-    residue_norm = sys.float_info.max
-    max_residue_norm = sys.float_info.max
     iteration = 0
     new_ind_dipoles = np.zeros([len(fields), 3], dtype=np.float64)
     error_matrix_full = np.ones((max_iterations + 1, max_iterations + 1), dtype=np.float64)
@@ -345,8 +344,6 @@ def induced_dipoles_jidiis_parallel(polarizabilities: np.ndarray,
     old_ind_dipoles = starting_guess
     ind_dipoles = starting_guess
     residue = np.array([0], dtype=np.float64)
-    residue_norm = sys.float_info.max
-    max_residue_norm = sys.float_info.max
     iteration = 0
     new_ind_dipoles = np.zeros([len(fields), 3], dtype=np.float64)
     new_fields_global = np.zeros([len(fields), 3], dtype=np.float64)

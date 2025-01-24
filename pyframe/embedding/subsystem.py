@@ -176,7 +176,18 @@ class QuantumSubsystem(Subsystem):
         Returns:
             Electronic fields. Shape: (number of atoms, 3)
         """
-        return -1.0 * integral_driver.electronic_fields(coordinates=coordinates, density_matrix=density_matrix)
+        if self.comm is not None:
+            avg, res = divmod(len(coordinates), self.size)
+            counts = [avg + 1 if p < res else avg for p in range(self.size)]
+            start = sum(counts[:self.rank])
+            end = sum(counts[:self.rank + 1])
+            electronic_fields = np.zeros([len(coordinates), 3])
+            electronic_fields[start:end] += -1.0 * integral_driver.electronic_fields(coordinates=coordinates[start:end],
+                                                                                     density_matrix=density_matrix)
+            electronic_fields = self.comm.allreduce(electronic_fields)
+            return electronic_fields
+        else:
+            return -1.0 * integral_driver.electronic_fields(coordinates=coordinates, density_matrix=density_matrix)
 
     def compute_electronic_field_gradients(self,
                                            coordinates: np.ndarray,
@@ -194,6 +205,7 @@ class QuantumSubsystem(Subsystem):
             Electronic field gradients.
                 Shape: (number of nuclei, number of atoms, 6)
         """
+        # TODO mpi parallelize
         return -1.0 * integral_driver.electronic_field_gradient(coordinates=coordinates,
                                                                 density_matrix=density_matrix)
 

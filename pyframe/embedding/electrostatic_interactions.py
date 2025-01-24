@@ -209,10 +209,24 @@ def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsyst
     Returns:
         Electrostatic Fock matrix contribution.
     """
-    return integral_driver.multipole_potential_integrals(multipole_coordinates=classical_subsystem.coordinates,
-                                                         multipole_orders=classical_subsystem.multipole_orders,
-                                                         multipoles=classical_subsystem.
-                                                         degenerate_multipoles_with_taylor_coefficients)
+    # TODO check if works
+    if classical_subsystem.comm is not None:
+        avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.comm.size)
+        counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.comm.size)]
+        start = sum(counts[:classical_subsystem.comm.rank])
+        end = sum(counts[:classical_subsystem.comm.rank + 1])
+        es_fock_matrix = integral_driver.multipole_potential_integrals(
+            multipole_coordinates=classical_subsystem.coordinates[start:end],
+            multipole_orders=classical_subsystem.multipole_orders[start:end],
+            multipoles=classical_subsystem.
+            degenerate_multipoles_with_taylor_coefficients[start:end])
+        es_fock_matrix = classical_subsystem.comm.allreduce(es_fock_matrix)
+        return es_fock_matrix
+    else:
+        return integral_driver.multipole_potential_integrals(multipole_coordinates=classical_subsystem.coordinates,
+                                                             multipole_orders=classical_subsystem.multipole_orders,
+                                                             multipoles=classical_subsystem.
+                                                             degenerate_multipoles_with_taylor_coefficients)
 
 
 def es_fock_matrix_gradient_contributions(classical_subsystem: subsystem.ClassicalSubsystem,

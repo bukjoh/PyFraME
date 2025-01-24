@@ -11,15 +11,27 @@ from pyframe.embedding.pert_tuple_cache import rspCache, rspPert, rspPertTuple
 def ind_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
                                   integral_driver: Any
                                   ) -> np.ndarray:
-    """Calculates the induced Fock matrix contributions h_es (M*t) from a ClassicalSubsystem and the one-electron
+    """Calculates the induced Fock matrix contributions f_ind (FB*t) from a ClassicalSubsystem and the one-electron
     integrals.
 
     Returns:
         Induced Fock matrix contribution.
     """
-    return integral_driver.induced_dipoles_potential_integrals(
-        induced_dipoles=classical_subsystem.induced_dipoles.induced_dipoles,
-        coordinates=classical_subsystem.coordinates)
+    # TODO check if works
+    if classical_subsystem.comm is not None:
+        avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.comm.size)
+        counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.comm.size)]
+        start = sum(counts[:classical_subsystem.comm.rank])
+        end = sum(counts[:classical_subsystem.comm.rank + 1])
+        ind_fock_matrix = integral_driver.induced_dipoles_potential_integrals(
+            induced_dipoles=classical_subsystem.induced_dipoles.induced_dipoles[start:end],
+            coordinates=classical_subsystem.coordinates[start:end])
+        ind_fock_matrix = classical_subsystem.comm.allreduce(ind_fock_matrix)
+        return ind_fock_matrix
+    else:
+        return integral_driver.induced_dipoles_potential_integrals(
+            induced_dipoles=classical_subsystem.induced_dipoles.induced_dipoles,
+            coordinates=classical_subsystem.coordinates)
 
 
 def compute_induction_energy(induced_dipoles: np.ndarray,
