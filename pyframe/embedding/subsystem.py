@@ -8,7 +8,8 @@ from typing import Any
 from pyframe.embedding import engine
 from .polytensor import FirstDegreePolytensor
 from .tensor_tools import uncompress_symmetric_matrix
-from .solvers import induced_dipoles_jacobi, induced_dipoles_jidiis, induced_dipoles_dcji, induced_dipoles_dcjidiis
+from .solvers import (induced_dipoles_jacobi, induced_dipoles_jidiis, induced_dipoles_dcji, induced_dipoles_dcjidiis,
+                      induced_dipoles_fmm)
 from .particle import Nucleus
 from .fragment import QuantumFragment, ClassicalFragment
 from .logging_util import log_manager
@@ -504,7 +505,10 @@ class ClassicalSubsystem(Subsystem):
                               k_cluster: int = 5,
                               cluster_size_range: int = -1,
                               exclude_static_internal_fields: bool = False,
-                              external_fields: np.ndarray | None = None
+                              external_fields: np.ndarray | None = None,
+                              tree_ncrit: int = 64,
+                              tree_expansion_order: int = 5,
+                              theta: float = 0.5
                               ) -> None:
         """Solve for induced dipoles.
 
@@ -521,6 +525,9 @@ class ClassicalSubsystem(Subsystem):
             allows cluster deviations of any size.
             exclude_static_internal_fields: Exclude any static internal fields, e.g., from permanent multipoles.
             external_fields: External fields that are added to the internal permanent and induced fields.
+            tree_ncrit: FMM parameter: Maximum number of particles per tree node.
+            tree_expansion_order: FMM parameter: Expansion order for tree-based summation schemes.
+            theta: FMM parameter: Opening angle for tree-based summation schemes.
         """
         if external_fields is None:
             static_fields = np.zeros([self.num_atoms, 3])
@@ -615,7 +622,22 @@ class ClassicalSubsystem(Subsystem):
                                                                  k_cluster=k_cluster,
                                                                  cluster_size_range=cluster_size_range,
                                                                  comm=self.comm)
-        # TODO maybe remove this part?
+        elif solver == 'fmm':
+            induced_dipoles, num_iter = induced_dipoles_fmm(coordinates=self.coordinates,
+                                                            polarizabilities=self.dipole_dipole_polarizabilities,
+                                                            exclusions=self.exclusions,
+                                                            indices=self.indices,
+                                                            fields=static_fields,
+                                                            starting_guess=starting_guess,
+                                                            mic=mic,
+                                                            box=box,
+                                                            threshold=threshold,
+                                                            max_iterations=max_iterations,
+                                                            tree_ncrit=tree_ncrit,
+                                                            tree_expansion_order=tree_expansion_order,
+                                                            theta=theta,
+                                                            comm=self.comm)
+        # TODO maybe remove this part? -> MPI parallelize it?
         k = 0
         for fragment in self.classical_fragments:
             for atom in fragment.atoms:

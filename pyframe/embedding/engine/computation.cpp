@@ -1,4 +1,5 @@
 #include "computation.h"
+#include "fmm/tree.hh"
 #include <iostream>
 
 
@@ -144,6 +145,31 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end, bool mic) {
     }
     return ind_dipoles_field;
 }
+
+Eigen::MatrixXd ind_dipoles_field_fmm(int n_crit, int order, double theta, double damping) {
+    // Validate global::coordinates
+    int nparticles = static_cast<int>(global::coordinates.size());
+    if (nparticles == 0) {
+        throw std::runtime_error("No particles found in global::coordinates.");
+    }
+
+    // Allocate storage for induced fields
+    std::vector<double> induced_fields_v(3 * nparticles);
+
+    // Build the FMM tree
+    std::shared_ptr<Tree<1, 3>> tree =
+        build_shared_tree<1, 3>(n_crit, order, theta, damping);
+
+    // Compute fields using FMM
+    tree->compute_field_fmm(induced_fields_v.data());
+
+    // Convert flat vector to Eigen::MatrixXd
+    Eigen::MatrixXd ind_dipoles_field =
+        Eigen::Map<Eigen::MatrixXd>(induced_fields_v.data(), nparticles, 3);
+
+    return ind_dipoles_field;
+}
+
 
 
 // Computes the field caused by induced dipoles at atom i.

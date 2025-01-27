@@ -9,6 +9,81 @@ from pyframe.embedding import engine
 from typing import Tuple, Optional
 
 
+def induced_dipoles_fmm(coordinates: np.ndarray,
+                        polarizabilities: np.ndarray,
+                        exclusions: list,
+                        indices: np.ndarray,
+                        fields: np.ndarray,
+                        starting_guess: np.ndarray,
+                        mic: bool,
+                        box: np.ndarray,
+                        threshold: float,
+                        max_iterations: Optional[int] = 100,
+                        tree_ncrit: int = 64,
+                        tree_expansion_order: int = 5,
+                        theta: float = 0.5,
+                        comm: Optional[MPI.Comm] = None
+                        ) -> Tuple[np.ndarray, int]:
+    """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method either
+    in a serial or a parallel computation scheme.
+
+    Args:
+        coordinates: Array of coordinates for all Atoms.
+        polarizabilities: Array of polarizabilities for all Atoms.
+        exclusions: List of exclusions for all Atoms.
+        indices: Array of atom indices.
+        fields: Array of static fields on all Atoms.
+        starting_guess: Array of induced dipoles used as the starting guess.
+        mic: Boolean indicating whether induced dipoles are calculated using mic scaled coordinates.
+        box: box dimensions as described by three vectors spanning the box.
+        threshold: Convergence threshold for the residue norm between the (k+1)th and (k)th set of induced dipoles.
+        max_iterations: Maximum number of iterations.
+        tree_ncrit: FMM parameter: Maximum number of particles per tree node.
+        tree_expansion_order: FMM parameter: Expansion order for tree-based summation schemes.
+        theta: FMM parameter: Opening angle for tree-based summation schemes.
+        comm: The MPI communicator.
+
+    Returns:
+        ind_dipoles: Array of induced dipoles.
+        new_fields: Array of fields originating from the induced dipoles.
+        iteration: Number of iterations it took to converge the induced dipoles to the threshold.
+    """
+    if not isinstance(coordinates, np.ndarray) or not isinstance(polarizabilities, np.ndarray) or \
+            not isinstance(exclusions, list) or not isinstance(indices, np.ndarray) or \
+            not isinstance(fields, np.ndarray) or not isinstance(starting_guess, np.ndarray):
+        raise ValueError("Wrong input format.")
+    # ignore mic for now?
+    if mic:
+        engine.set_mic_coords_idcs_exlcs(coordinates, indices, exclusions, box)
+    else:
+        engine.set_coords_idcs_exlcs(coordinates, indices, exclusions)
+
+    # -> If mic then global coordinates scaled instead of normal coordinates?
+
+    # Calculate induced dipoles from other induced dipoles
+    old_ind_dipoles = starting_guess
+    residue_norm = sys.float_info.max
+    max_residue_norm = sys.float_info.max
+    iteration = 0
+    ind_dipoles = np.zeros([len(fields), 3], dtype=np.float64)
+    while not (residue_norm < threshold and max_residue_norm < threshold):
+        iteration += 1
+        engine.set_old_ind_dipoles(old_ind_dipoles)
+        if iteration > max_iterations:
+            raise RuntimeError("Did not converge after the maximum number of iterations.")
+
+        damping = 0.0
+        new_fields = engine.ind_dipoles_fields_fmm(tree_ncrit, tree_expansion_order, theta, damping)
+
+        # Calculate total induced dipoles
+        for i, new_field in enumerate(new_fields):
+            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
+        residue_norm = np.linalg.norm(ind_dipoles - old_ind_dipoles)
+        max_residue_norm = np.max(np.abs(ind_dipoles - old_ind_dipoles))
+        old_ind_dipoles = copy.deepcopy(ind_dipoles)
+    return ind_dipoles, iteration
+
+
 def induced_dipoles_jacobi(coordinates: np.ndarray,
                            polarizabilities: np.ndarray,
                            exclusions: list,
@@ -528,7 +603,8 @@ def induced_dipoles_dcji_serial(coordinates: np.ndarray,
                                                                  np.array(source, dtype=np.int64), mic)
             # Calculate total induced dipoles
             new_ind_dipoles[cluster] = np.reshape(scipy.linalg.cho_solve(decomp[k],
-                                                  np.add(new_fields.ravel(), fields[cluster].ravel())),
+                                                                         np.add(new_fields.ravel(),
+                                                                                fields[cluster].ravel())),
                                                   (len(cluster), 3))
         new_residue = new_ind_dipoles - old_ind_dipoles
         residue_norm = np.linalg.norm(new_residue)
@@ -617,8 +693,9 @@ def induced_dipoles_dcji_parallel(coordinates: np.ndarray,
                                                                  np.array(source, dtype=np.int64), mic)
             # Calculate total induced dipoles
             new_ind_dipoles_local[cluster] = np.reshape(scipy.linalg.cho_solve(decomp[k],
-                                                  np.add(new_fields.ravel(), fields[cluster].ravel())),
-                                                  (len(cluster), 3))
+                                                                               np.add(new_fields.ravel(),
+                                                                                      fields[cluster].ravel())),
+                                                        (len(cluster), 3))
         comm.Allreduce(new_ind_dipoles_local, new_ind_dipoles, op=MPI.SUM)
         new_residue = new_ind_dipoles - old_ind_dipoles
         residue_norm = np.linalg.norm(new_residue)
@@ -793,8 +870,8 @@ def induced_dipoles_dcjidiis_serial(coordinates: np.ndarray,
             # Calculate total induced dipoles
             new_ind_dipoles[cluster] = np.reshape(scipy.linalg.cho_solve(decomp[k],
                                                                          np.add(new_fields.ravel(),
-                                                                         fields[cluster].ravel())),
-                                                                        (len(cluster), 3))
+                                                                                fields[cluster].ravel())),
+                                                  (len(cluster), 3))
         new_residue = new_ind_dipoles - old_ind_dipoles
         residue_norm = np.linalg.norm(new_residue)
         max_residue_norm = np.max(np.abs(new_residue))
@@ -909,8 +986,9 @@ def induced_dipoles_dcjidiis_parallel(coordinates: np.ndarray,
                                                                  np.array(source, dtype=np.int64), mic)
             # Calculate total induced dipoles
             new_ind_dipoles_local[cluster] = np.reshape(scipy.linalg.cho_solve(decomp[k],
-                                                  np.add(new_fields.ravel(), fields[cluster].ravel())),
-                                                  (len(cluster), 3))
+                                                                               np.add(new_fields.ravel(),
+                                                                                      fields[cluster].ravel())),
+                                                        (len(cluster), 3))
         comm.Allreduce(new_ind_dipoles_local, new_ind_dipoles, op=MPI.SUM)
         new_residue = new_ind_dipoles - old_ind_dipoles
         residue_norm = np.linalg.norm(new_residue)
@@ -1007,7 +1085,7 @@ def kmeans_clustering(coordinates: np.ndarray,
                            0.5 * (np.max(centroids[:, 2]) + np.min(centroids[:, 2]))], dtype=np.float64)
         # sort clusters by furthest to center
         sorted_indices = np.argsort(-((centroids[:, 0] - center[0]) ** 2 + (centroids[:, 1] - center[1]) ** 2 + (
-                    centroids[:, 2] - center[2]) ** 2))
+                centroids[:, 2] - center[2]) ** 2))
         cluster_mean = len(coordinates) / k_cluster
         for i in range(0, k_cluster):
             # if cluster is small - take atoms from nearby clusters
@@ -1020,10 +1098,12 @@ def kmeans_clustering(coordinates: np.ndarray,
                 max_dist = np.max(distances) + 1
                 distances[nearest_centroids == sorted_indices[i]] = max_dist
                 # check whether the nearest atom is in a cluster with atoms to spare
-                while np.count_nonzero(nearest_centroids == sorted_indices[i]) < np.floor(cluster_mean) - cluster_size_range:
+                while np.count_nonzero(nearest_centroids == sorted_indices[i]) < np.floor(
+                        cluster_mean) - cluster_size_range:
                     from_cluster = nearest_centroids[np.argmin(distances)]
-                    if (np.count_nonzero(nearest_centroids == from_cluster) > np.floor(cluster_mean) - cluster_size_range
-                        or np.where(sorted_indices == from_cluster)[0] > [i]):
+                    if (np.count_nonzero(nearest_centroids == from_cluster) > np.floor(
+                            cluster_mean) - cluster_size_range
+                            or np.where(sorted_indices == from_cluster)[0] > [i]):
                         # move atom to new cluster
                         nearest_centroids[np.argmin(distances)] = sorted_indices[i]
                     distances[np.argmin(distances)] = max_dist
@@ -1031,19 +1111,22 @@ def kmeans_clustering(coordinates: np.ndarray,
             if np.count_nonzero(nearest_centroids == sorted_indices[i]) > np.ceil(cluster_mean) + cluster_size_range:
                 cluster_atoms = np.where(nearest_centroids == sorted_indices[i])[0]
                 # calculate squared distances for atoms in the i'th cluster to all other clusters
-                distances = np.zeros([len(coordinates[nearest_centroids == sorted_indices[i]]), k_cluster], dtype=np.float64)
+                distances = np.zeros([len(coordinates[nearest_centroids == sorted_indices[i]]), k_cluster],
+                                     dtype=np.float64)
                 for j in range(0, 3):
                     for k in range(0, k_cluster):
-                        distances[:, k] += (coordinates[nearest_centroids == sorted_indices[i]][:, j] - centroids[k, j]) ** 2
+                        distances[:, k] += (coordinates[nearest_centroids == sorted_indices[i]][:, j] - centroids[
+                            k, j]) ** 2
                 max_dist = np.max(distances) + 1
                 distances[:, sorted_indices[i]] = max_dist
                 # check whether the new cluster has room to spare
-                while np.count_nonzero(nearest_centroids == sorted_indices[i]) > np.ceil(cluster_mean) + cluster_size_range:
+                while np.count_nonzero(nearest_centroids == sorted_indices[i]) > np.ceil(
+                        cluster_mean) + cluster_size_range:
                     min_index = np.argmin(distances)
                     to_atom = np.unravel_index(min_index, distances.shape)[0]
                     to_cluster = np.unravel_index(min_index, distances.shape)[1]
                     if (np.count_nonzero(nearest_centroids == to_cluster) < np.ceil(cluster_mean) + cluster_size_range
-                        or np.where(sorted_indices == to_cluster)[0] > [i]):
+                            or np.where(sorted_indices == to_cluster)[0] > [i]):
                         # move atom to new cluster
                         nearest_centroids[cluster_atoms[to_atom]] = to_cluster
                     distances[np.unravel_index(min_index, distances.shape)] = max_dist
@@ -1077,7 +1160,7 @@ def divide_and_conquer(coordinates: np.array,
         cluster = np.where(clusters == i)[0]
         cluster_exclusions = [exclusions[i] for i in cluster]
         cluster_coordinates = coordinates[cluster]
-        z = np.zeros((3*len(cluster_coordinates), 3*len(cluster_coordinates)), dtype=np.float64)
+        z = np.zeros((3 * len(cluster_coordinates), 3 * len(cluster_coordinates)), dtype=np.float64)
         for j in range(0, len(cluster_coordinates)):
             try:
                 z[3 * j:3 * j + 3, 3 * j:3 * j + 3] = np.linalg.inv(polarizabilities[cluster][j])
@@ -1089,7 +1172,7 @@ def divide_and_conquer(coordinates: np.array,
                 z[3 * j:3 * j + 3, 3 * k:3 * k + 3] = engine.compute_cluster_t_tensor(cluster[j],
                                                                                       cluster[k],
                                                                                       np.array([1, 1, 1, 1, False],
-                                                                                      dtype=np.int64),
+                                                                                               dtype=np.int64),
                                                                                       mic)
                 z[3 * k:3 * k + 3, 3 * j:3 * j + 3] = z[3 * j:3 * j + 3, 3 * k:3 * k + 3]
         decomp[i] = scipy.linalg.cho_factor(z, lower=False)

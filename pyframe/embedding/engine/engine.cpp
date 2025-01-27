@@ -25,7 +25,7 @@
 #include <unordered_set>
 
 #include "computation.h"
-#include "global.h"  
+#include "global.h"
 
 // Function to convert std::vector<Eigen::Vector3d> to NumPy array
 PyObject* std_vec_of_eigen_vec3d_to_numpy(const std::vector<Eigen::Vector3d>& vec) {
@@ -631,6 +631,45 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
     return (PyObject *)eigen_matrix_to_numpy(computation::ind_dipoles_field(start, end, mic));
 }
 
+// Calculates the induced dipoles fields with FMM
+static PyObject* ind_dipoles_fields_fmm(PyObject* self, PyObject* args) {
+    //TODO test this
+    // Declare variables for the input arguments
+    int n_crit;
+    int order;
+    double theta;
+    double damping;
+
+    // Parse the input arguments
+    if (!PyArg_ParseTuple(args, "iidd", &n_crit, &order, &theta, &damping)) {
+        PyErr_SetString(PyExc_ValueError, "Invalid arguments. Expected: int, int, double, double.");
+        return NULL;  // Return NULL on error
+    }
+
+    try {
+        // Call the computation function to calculate the fields
+        Eigen::MatrixXd result = computation::ind_dipoles_field_fmm(n_crit, order, theta, damping);
+
+        // Convert the Eigen matrix to a NumPy array
+        PyObject* numpy_result = eigen_matrix_to_numpy(result);
+        if (numpy_result == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to convert Eigen matrix to NumPy array.");
+            return NULL;
+        }
+
+        return numpy_result;  // Return the NumPy array to Python
+    } catch (const std::exception& e) {
+        // Catch any exceptions and set a Python error
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    } catch (...) {
+        // Catch all other errors
+        PyErr_SetString(PyExc_RuntimeError, "An unknown error occurred in ind_dipoles_fields.");
+        return NULL;
+    }
+}
+
+
 //Calculates the induced dipoles for all targets from all sources
 //args: [start, end] (numpy.ndarray with start and end as entries)
 static PyObject* target_source_ind_dipoles_fields(PyObject* self, PyObject* args) {
@@ -1043,6 +1082,8 @@ static PyMethodDef module_methods[] = {
      "Sets the old induced dipole fields for the calculation of the induced dipoles."},
     {"ind_dipoles_fields", ind_dipoles_fields, METH_VARARGS,
      "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions."},
+     {"ind_dipoles_fields_fmm", ind_dipoles_fields_fmm, METH_VARARGS,
+     "Calculates induced dipoles fields for all atoms from old induced dipoles and previously set coords, idxs and exclusions."},
      {"target_source_ind_dipoles_fields", target_source_ind_dipoles_fields, METH_VARARGS,
      "Calculates the induced dipoles for all targets from all sources"},
      {"set_coords_nuc_coords_charges", set_coords_nuc_coords_charges, METH_VARARGS,

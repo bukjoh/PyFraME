@@ -53,6 +53,9 @@ Eigen::Vector3d atom_dist_mic(int i, int j);
 // Parallelized with OpenMP.
 Eigen::MatrixXd ind_dipoles_field(int start, int end, bool mic);
 
+// Function to calculate induced dipoles fields using FMM
+Eigen::MatrixXd ind_dipoles_field_fmm(int n_crit, int order, double theta, double damping);
+
 // Computes the field caused by induced dipoles at the targets from the sources.
 // Parallelized with OpenMP.
 Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::VectorXi sources, bool mic);
