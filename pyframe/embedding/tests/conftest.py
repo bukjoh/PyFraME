@@ -1834,6 +1834,11 @@ def act_wat():
 
 
 @pytest.fixture(scope='session')
+def act_wat_2():
+    return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/act_wat_2.json')
+
+
+@pytest.fixture(scope='session')
 def acrolein_wat():
     return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/acrolein_wat_test.json')
 

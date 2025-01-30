@@ -599,9 +599,16 @@ static PyObject *set_old_ind_dipoles(PyObject *self, PyObject *args)
     {
         return NULL;
     }
-    global::old_ind_dipoles = read_matrix_d((PyArrayObject *)old_ind_dipoles_obj);
+
+    // Read the input matrix (assume it is row-major)
+    Eigen::MatrixXd temp_matrix = read_matrix_d((PyArrayObject *)old_ind_dipoles_obj);
+
+    // Transpose the matrix to make it column-major (Eigen's default)
+    global::old_ind_dipoles = temp_matrix.transpose();
+
     Py_RETURN_NONE;
 }
+
 
 // Sets the multipoles with degeneracy and taylor coefficients and multipole orders for the calculation of the multipole fields.
 // args: [multipoles, multipole_orders]

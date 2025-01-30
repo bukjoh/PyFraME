@@ -110,9 +110,9 @@
                 "name": "H2O",
                 "atoms": [
                     {
-                        "index": 0,
+                        "index": 1,
                         "element": "O",
-                        "exclusions": [0, 1, 2],
+                        "exclusions": [1, 2, 3],
                         "coordinate": [
                             29.514,
                             37.243,
@@ -145,9 +145,9 @@
                         "order": [1, 1]}
                     },
                     {
-                        "index": 1,
+                        "index": 2,
                         "element": "H",
-                        "exclusions": [0, 1, 2],
+                        "exclusions": [1, 2, 3],
                         "coordinate": [
                             29.502,
                             36.434,
@@ -179,9 +179,9 @@
                         ], "order": [1, 1]}
                     },
                     {
-                        "index": 2,
+                        "index": 3,
                         "element": "H",
-                        "exclusions": [0, 1, 2],
+                        "exclusions": [1, 2, 3],
                         "coordinate": [
                             29.965,
                             37.007,
@@ -219,9 +219,9 @@
                 "name": "H2O",
                 "atoms": [
                     {
-                        "index": 3,
+                        "index": 4,
                         "element": "O",
-                        "exclusions": [3, 4, 5],
+                        "exclusions": [4, 5, 6],
                         "coordinate": [
                             39.242,
                             25.949,
@@ -253,9 +253,9 @@
                         ], "order": [1, 1]}
                     },
                     {
-                        "index": 4,
+                        "index": 5,
                         "element": "H",
-                        "exclusions": [3, 4, 5],
+                        "exclusions": [4, 5, 6],
                         "coordinate": [
                             39.524,
                             26.764,
@@ -287,9 +287,9 @@
                         ], "order": [1, 1]}
                     },
                     {
-                        "index": 5,
+                        "index": 6,
                         "element": "H",
-                        "exclusions": [3, 4, 5],
+                        "exclusions": [4, 5, 6],
                         "coordinate": [
                             38.435,
                             25.714,

@@ -139,7 +139,7 @@ Eigen::MatrixXd ind_dipoles_field(int start, int end, bool mic) {
                                                             global::tensor_template_potential,
                                                             1, 1, 1, 1);
                 #pragma omp critical
-                ind_dipoles_field.row(i) += (t_tensor * global::old_ind_dipoles.row(j).transpose()).transpose();
+                ind_dipoles_field.row(i) += t_tensor * global::old_ind_dipoles.col(j);
             }
         }
     }
@@ -163,10 +163,9 @@ Eigen::MatrixXd ind_dipoles_field_fmm(int n_crit, int order, double theta, doubl
     // Compute fields using FMM
     tree->compute_field_fmm(induced_fields_v.data());
 
-    // Convert flat vector to Eigen::MatrixXd
-    Eigen::MatrixXd ind_dipoles_field =
-        Eigen::Map<Eigen::MatrixXd>(induced_fields_v.data(), nparticles, 3);
-
+    // Map the vector correctly with row-major storage
+        Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> ind_dipoles_field =
+            Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(induced_fields_v.data(), nparticles, 3);
     return ind_dipoles_field;
 }
 
@@ -195,7 +194,7 @@ Eigen::MatrixXd target_source_ind_dipoles_field(Eigen::VectorXi targets, Eigen::
                                                             global::tensor_template_potential,
                                                             1, 1, 1, 1);
                 #pragma omp critical
-                ind_dipoles_field.row(i) += (t_tensor * global::old_ind_dipoles.row(sources[j]).transpose()).transpose();
+                ind_dipoles_field.row(i) += (t_tensor * global::old_ind_dipoles.col(sources[j]));
             }
         }
     }

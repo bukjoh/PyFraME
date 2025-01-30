@@ -108,7 +108,7 @@ class TestClassicalSubsystem:
         assert c_subsystem.coordinates.shape == (c_subsystem.num_atoms, 3)
         assert c_subsystem.dipole_dipole_polarizabilities.shape == (c_subsystem.num_atoms, 3, 3)
         assert c_subsystem.indices.shape == (c_subsystem.num_atoms,)
-        assert c_subsystem.exclusions == [(0, 1, 2), (0, 1, 2), (0, 1, 2), (3, 4, 5), (3, 4, 5), (3, 4, 5)]
+        assert c_subsystem.exclusions == [(1, 2, 3), (1, 2, 3), (1, 2, 3), (4, 5, 6), (4, 5, 6), (4, 5, 6)]
         assert c_subsystem.induced_dipoles.induced_dipoles.shape == (c_subsystem.num_atoms, 3)
         assert c_subsystem.multipole_fields.shape == (c_subsystem.num_atoms, 3)
 

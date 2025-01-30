@@ -108,8 +108,6 @@ void add_child(std::vector<Cell>& cells, int octant, size_t p, size_t ncrit,
   cells[p].nchild        = (cells[p].nchild | (1 << octant));
 }
 
-// CPPE IS USED HERE
-
 void split_cell(std::vector<Cell>& cells, std::vector<Particle>& particles, size_t p,
                 size_t ncrit, size_t order) {
   size_t l, c;
@@ -133,8 +131,6 @@ void split_cell(std::vector<Cell>& cells, std::vector<Particle>& particles, size
   }
 }
 
-// CPPE IS USED HERE -> potentials *****************************************************
-
 template <int m_order, int osize>
 std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
       size_t ncrit, size_t order,
@@ -143,17 +139,18 @@ std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
   int nparticles = static_cast<int>(global::coordinates.size());
   std::vector<Particle> particles(nparticles);
   bool damping_enabled = damping > 0.0;
+
+std::vector<double> S(3 * nparticles);
+for (int i = 0; i < nparticles; ++i) {
+    S[i * 3 + 0] = global::old_ind_dipoles.col(i)(0);  // x-component global::old_ind_dipoles.row(i)
+    S[i * 3 + 1] = global::old_ind_dipoles.col(i)(1);  // y-component -> change back to .row
+    S[i * 3 + 2] = global::old_ind_dipoles.col(i)(2);  // z-component
+}
+
   for (auto i = 0; i < nparticles; i++) {
     particles[i].r = global::coordinates[i].data();
-    // not sure about this
-    particles[i].S = global::old_ind_dipoles.data()  + (sourcesize * i);
-    //    particles[i].S = global::old_ind_dipoles.data() + (3 * i);
-
+    particles[i].S = global::old_ind_dipoles.col(i).data();
     particles[i].exclusions = std::vector<int>(global::exclusions[i].begin(), global::exclusions[i].end());
-
-//    if (damping_enabled && potentials[i].is_polarizable()) {
-//      // particles[i].alpha = potentials[i].get_polarizability().get_isotropic_value();
-//    }
   }
 
   // Now create cells list
@@ -248,15 +245,15 @@ std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
 
 template <int m_order, int osize>
 std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
-      double* pos, double* S, size_t nparticles, size_t ncrit, size_t order, double theta,
+      size_t nparticles, size_t ncrit, size_t order, double theta,
       std::vector<std::vector<int>> exclusion_lists) {
   int sourcesize = (m_order + 1) * (m_order + 2) / 2;
   // Create particles list for convenience
   std::vector<Particle> particles(nparticles);
   for (auto i = 0; i < nparticles; i++) {
-    particles[i].r          = &pos[3 * i];
-    particles[i].S          = &S[sourcesize * i];
-    particles[i].exclusions = exclusion_lists[i];
+    particles[i].r = global::coordinates[i].data();
+    particles[i].S = global::old_ind_dipoles.col(i).data();
+    particles[i].exclusions = std::vector<int>(global::exclusions[i].begin(), global::exclusions[i].end());
   }
 
   // Now create cells list
@@ -407,13 +404,13 @@ template class Tree<0, 3>;
 template class Tree<1, 3>;
 template class Tree<2, 3>;
 template std::shared_ptr<Tree<0, 3>> build_shared_tree<0, 3>(
-      double* pos, double* S, size_t nparticles, size_t ncrit, size_t order, double theta,
+      size_t nparticles, size_t ncrit, size_t order, double theta,
       std::vector<std::vector<int>> exclusion_lists);
 template std::shared_ptr<Tree<1, 3>> build_shared_tree<1, 3>(
-      double* pos, double* S, size_t nparticles, size_t ncrit, size_t order, double theta,
+      size_t nparticles, size_t ncrit, size_t order, double theta,
       std::vector<std::vector<int>> exclusion_lists);
 template std::shared_ptr<Tree<2, 3>> build_shared_tree<2, 3>(
-      double* pos, double* S, size_t nparticles, size_t ncrit, size_t order, double theta,
+      size_t nparticles, size_t ncrit, size_t order, double theta,
       std::vector<std::vector<int>> exclusion_lists);
 
 template std::shared_ptr<Tree<0, 3>> build_shared_tree<0, 3>(

@@ -52,35 +52,36 @@ def induced_dipoles_fmm(coordinates: np.ndarray,
             not isinstance(exclusions, list) or not isinstance(indices, np.ndarray) or \
             not isinstance(fields, np.ndarray) or not isinstance(starting_guess, np.ndarray):
         raise ValueError("Wrong input format.")
-    # ignore mic for now?
+    shifted_exclusions = [
+        tuple(value - 1 for value in exclusion) for exclusion in exclusions
+    ]
     if mic:
-        engine.set_mic_coords_idcs_exlcs(coordinates, indices, exclusions, box)
+        engine.set_mic_coords_idcs_exlcs(coordinates, indices, shifted_exclusions, box)
     else:
-        engine.set_coords_idcs_exlcs(coordinates, indices, exclusions)
+        engine.set_coords_idcs_exlcs(coordinates, indices, shifted_exclusions)
 
-    # -> If mic then global coordinates scaled instead of normal coordinates?
-
+    # TODO enable MIC
     # Calculate induced dipoles from other induced dipoles
     old_ind_dipoles = starting_guess
     residue_norm = sys.float_info.max
     max_residue_norm = sys.float_info.max
     iteration = 0
     ind_dipoles = np.zeros([len(fields), 3], dtype=np.float64)
+
     while not (residue_norm < threshold and max_residue_norm < threshold):
         iteration += 1
         engine.set_old_ind_dipoles(old_ind_dipoles)
         if iteration > max_iterations:
             raise RuntimeError("Did not converge after the maximum number of iterations.")
-
+        # TODO remove damping.
         damping = 0.0
-        new_fields = engine.ind_dipoles_fields_fmm(tree_ncrit, tree_expansion_order, theta, damping)
-
-        # Calculate total induced dipoles
+        new_fields = -1 * engine.ind_dipoles_fields_fmm(tree_ncrit, tree_expansion_order, theta, damping)
         for i, new_field in enumerate(new_fields):
-            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
+            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], (new_field + fields[i]))
         residue_norm = np.linalg.norm(ind_dipoles - old_ind_dipoles)
         max_residue_norm = np.max(np.abs(ind_dipoles - old_ind_dipoles))
         old_ind_dipoles = copy.deepcopy(ind_dipoles)
+
     return ind_dipoles, iteration
 
 
@@ -178,7 +179,7 @@ def induced_dipoles_jacobi_serial(polarizabilities: np.ndarray,
         new_fields = engine.ind_dipoles_fields(np.array([0, len(fields), mic], dtype=np.int64))
         # Calculate total induced dipoles
         for i, new_field in enumerate(new_fields):
-            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
+            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], (new_field + fields[i]))
         residue_norm = np.linalg.norm(ind_dipoles - old_ind_dipoles)
         max_residue_norm = np.max(np.abs(ind_dipoles - old_ind_dipoles))
         old_ind_dipoles = copy.deepcopy(ind_dipoles)
