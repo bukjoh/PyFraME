@@ -22,6 +22,8 @@ def induced_dipoles_fmm(coordinates: np.ndarray,
                         tree_ncrit: int = 64,
                         tree_expansion_order: int = 5,
                         theta: float = 0.5,
+                        init_diis: Optional[int] = 3,
+                        max_diis: Optional[int] = 10,
                         comm: Optional[MPI.Comm] = None
                         ) -> Tuple[np.ndarray, int]:
     """Solves for dipoles that are induced in particle.Atoms with the element-based formula of the Jacobi method either
@@ -41,6 +43,8 @@ def induced_dipoles_fmm(coordinates: np.ndarray,
         tree_ncrit: FMM parameter: Maximum number of particles per tree node.
         tree_expansion_order: FMM parameter: Expansion order for tree-based summation schemes.
         theta: FMM parameter: Opening angle for tree-based summation schemes.
+        max_diis: Maximum number of previous iterations to consider in the DIIS method.
+        init_diis: Iteration number at which DIIS is initiated.
         comm: The MPI communicator.
 
     Returns:
@@ -59,30 +63,80 @@ def induced_dipoles_fmm(coordinates: np.ndarray,
         engine.set_mic_coords_idcs_exlcs(coordinates, indices, shifted_exclusions, box)
     else:
         engine.set_coords_idcs_exlcs(coordinates, indices, shifted_exclusions)
-
     # TODO enable MIC
     # Calculate induced dipoles from other induced dipoles
     old_ind_dipoles = starting_guess
-    residue_norm = sys.float_info.max
-    max_residue_norm = sys.float_info.max
+    ind_dipoles = starting_guess
+    residue = np.array([0], dtype=np.float64)
     iteration = 0
-    ind_dipoles = np.zeros([len(fields), 3], dtype=np.float64)
-
-    while not (residue_norm < threshold and max_residue_norm < threshold):
+    new_ind_dipoles = np.zeros([len(fields), 3], dtype=np.float64)
+    error_matrix_full = np.ones((max_iterations + 1, max_iterations + 1), dtype=np.float64)
+    error_matrix_full = -error_matrix_full
+    error_matrix_full = error_matrix_full + np.diag(np.ones(max_iterations + 1, dtype=np.float64))
+    while iteration <= max_iterations:
         iteration += 1
         engine.set_old_ind_dipoles(old_ind_dipoles)
-        if iteration > max_iterations:
-            raise RuntimeError("Did not converge after the maximum number of iterations.")
         # TODO remove damping.
         damping = 0.0
         new_fields = -1 * engine.ind_dipoles_fields_fmm(tree_ncrit, tree_expansion_order, theta, damping)
+        # Calculate total induced dipoles
         for i, new_field in enumerate(new_fields):
-            ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], (new_field + fields[i]))
-        residue_norm = np.linalg.norm(ind_dipoles - old_ind_dipoles)
-        max_residue_norm = np.max(np.abs(ind_dipoles - old_ind_dipoles))
-        old_ind_dipoles = copy.deepcopy(ind_dipoles)
+            new_ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], np.add(new_field, fields[i]))
+        new_residue = new_ind_dipoles - old_ind_dipoles
+        residue_norm = np.linalg.norm(new_residue)
+        max_residue_norm = np.max(np.abs(new_residue))
+        # Check convergence
+        if residue_norm < threshold and max_residue_norm < threshold:
+            break
+        # Save residue and dipoles
+        if iteration == 1:
+            residue = np.expand_dims(new_residue, axis=2)
+            ind_dipoles = np.expand_dims(ind_dipoles, axis=2)
+        else:
+            residue = np.concatenate((residue, np.expand_dims(new_residue, axis=2)), axis=2)
+        ind_dipoles = np.concatenate((ind_dipoles, np.expand_dims(new_ind_dipoles, axis=2)), axis=2)
+        # Add to error matrix
+        for i in range(0, iteration):
+            error = np.sum(residue[:, :, i] * residue[:, :, iteration - 1])
+            error_matrix_full[i, iteration - 1] = error
+            error_matrix_full[iteration - 1, i] = error
+        # Start diis at the assigned iteration
+        if iteration >= init_diis:
+            new_ind_dipoles = direct_inversion_iterative_subspace(ind_dipoles=ind_dipoles,
+                                                                  error_matrix_full=error_matrix_full,
+                                                                  max_diis=max_diis,
+                                                                  iteration=iteration)
+        old_ind_dipoles = copy.deepcopy(new_ind_dipoles)
+    # Check maximum convergence
+    if iteration > max_iterations:
+        raise RuntimeError("Did not converge after the maximum number of iterations.")
 
-    return ind_dipoles, iteration
+    return old_ind_dipoles, iteration
+
+
+    # # TODO enable MIC
+    # # Calculate induced dipoles from other induced dipoles
+    # old_ind_dipoles = starting_guess
+    # residue_norm = sys.float_info.max
+    # max_residue_norm = sys.float_info.max
+    # iteration = 0
+    # ind_dipoles = np.zeros([len(fields), 3], dtype=np.float64)
+    #
+    # while not (residue_norm < threshold and max_residue_norm < threshold):
+    #     iteration += 1
+    #     engine.set_old_ind_dipoles(old_ind_dipoles)
+    #     if iteration > max_iterations:
+    #         raise RuntimeError("Did not converge after the maximum number of iterations.")
+    #     # TODO remove damping.
+    #     damping = 0.0
+    #     new_fields = -1 * engine.ind_dipoles_fields_fmm(tree_ncrit, tree_expansion_order, theta, damping)
+    #     for i, new_field in enumerate(new_fields):
+    #         ind_dipoles[i, :] = np.einsum('ij, j', polarizabilities[i], (new_field + fields[i]))
+    #     residue_norm = np.linalg.norm(ind_dipoles - old_ind_dipoles)
+    #     max_residue_norm = np.max(np.abs(ind_dipoles - old_ind_dipoles))
+    #     old_ind_dipoles = copy.deepcopy(ind_dipoles)
+    #
+    # return ind_dipoles, iteration
 
 
 def induced_dipoles_jacobi(coordinates: np.ndarray,
