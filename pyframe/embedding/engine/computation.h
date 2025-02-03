@@ -123,6 +123,12 @@ double compute_perturbed_lj_dispersion(int start,
                                       std::string combination_rule,
                                       std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> k_partitions);
 
+
+Eigen::MatrixXd multipole_fields_fmm(int n_crit,
+                                     int order,
+                                     double theta,
+                                     double damping);
+
 }
 
 #endif

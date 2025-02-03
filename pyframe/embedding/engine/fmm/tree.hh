@@ -126,12 +126,5 @@ void split_cell(std::vector<Cell>& cells, std::vector<Particle>& particles, size
 
 template <int m_order, int osize>
 std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
-      double* pos, double* mu, size_t nparticles, size_t ncrit, size_t order,
-      double theta, std::vector<std::vector<int>> exclusion_lists);
-
-// CPPE is used here
-
-template <int m_order, int osize>
-std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
-      size_t ncrit, size_t order,
+      double* S, size_t ncrit, size_t order,
       double theta, double damping);

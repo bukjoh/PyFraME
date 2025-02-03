@@ -153,12 +153,18 @@ Eigen::MatrixXd ind_dipoles_field_fmm(int n_crit, int order, double theta, doubl
         throw std::runtime_error("No particles found in global::coordinates.");
     }
 
+    std::vector<double> S(3 * nparticles);
+    for (int i = 0; i < nparticles; ++i) {
+        S[i * 3 + 0] = global::old_ind_dipoles.col(i)(0);  // x-component global::old_ind_dipoles.row(i)
+        S[i * 3 + 1] = global::old_ind_dipoles.col(i)(1);  // y-component -> change back to .row
+        S[i * 3 + 2] = global::old_ind_dipoles.col(i)(2);  // z-component
+    }
     // Allocate storage for induced fields
     std::vector<double> induced_fields_v(3 * nparticles);
 
     // Build the FMM tree
     std::shared_ptr<Tree<1, 3>> tree =
-        build_shared_tree<1, 3>(n_crit, order, theta, damping);
+        build_shared_tree<1, 3>(S.data() ,n_crit, order, theta, damping);
 
     // Compute fields using FMM
     tree->compute_field_fmm(induced_fields_v.data());
@@ -169,7 +175,68 @@ Eigen::MatrixXd ind_dipoles_field_fmm(int n_crit, int order, double theta, doubl
     return ind_dipoles_field;
 }
 
+Eigen::MatrixXd multipole_fields_fmm(int n_crit, int order, double theta, double damping) {
 
+    int nparticles = static_cast<int>(global::coordinates.size());
+    std::vector<double> charges(nparticles, 0.0);
+    std::vector<double> dipoles(3 * nparticles, 0.0);
+    std::vector<double> quadrupoles(6 * nparticles, 0.0);
+    Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor> multipole_fields =
+        Eigen::MatrixXd::Zero(nparticles, 3);
+    int max_order = global::multipole_orders.maxCoeff();
+    // Validate global::coordinates
+    if (nparticles == 0) {
+        throw std::runtime_error("No particles found in global::coordinates.");
+    }
+    // Validate max_order not > 2
+    if (max_order > 2) {
+      throw std::runtime_error(
+            "multipole_fields_fmm only support up to quadrupoles (second order).");
+    }
+
+    for (int i = 0; i < nparticles; ++i) {
+        if (global::multipole_orders[i] >= 0 ) {
+            charges[i] = global::multipoles[i].coeff(0);
+        }
+        if (global::multipole_orders[i] >= 1 ) {
+            dipoles[i * 3 + 0] = global::multipoles[i].coeff(1);  // x-component
+            dipoles[i * 3 + 1] = global::multipoles[i].coeff(2);  // y-component
+            dipoles[i * 3 + 2] = global::multipoles[i].coeff(3);  // z-component
+        }
+        if (global::multipole_orders[i] >= 2 ) {
+          quadrupoles[i * 6 + 0] = global::multipoles[i].coeff(4);
+          quadrupoles[i * 6 + 1] = global::multipoles[i].coeff(5);
+          quadrupoles[i * 6 + 2] = global::multipoles[i].coeff(6);
+          quadrupoles[i * 6 + 3] = global::multipoles[i].coeff(7);
+          quadrupoles[i * 6 + 4] = global::multipoles[i].coeff(8);
+          quadrupoles[i * 6 + 5] = global::multipoles[i].coeff(9);
+        }
+    }
+    // field contributions from charges
+    std::vector<double> fields_v0(3 * nparticles);
+    std::shared_ptr<Tree<0, 3>> tree_c = build_shared_tree<0, 3>(
+    charges.data(), n_crit, order, theta, damping);
+    tree_c->compute_field_fmm(fields_v0.data());
+    multipole_fields += Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(fields_v0.data(), nparticles, 3);
+
+    // field contributions from dipoles
+    if (max_order > 0) {
+    std::vector<double> fields_v1(3 * nparticles);
+    std::shared_ptr<Tree<1, 3>> tree_d = build_shared_tree<1, 3>(
+    dipoles.data(), n_crit, order, theta, damping);
+    tree_d->compute_field_fmm(fields_v1.data());
+    multipole_fields += Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(fields_v1.data(), nparticles, 3);
+    }
+    // field contributions from quadrupoles
+    if (max_order > 1) {
+    std::vector<double> fields_v2(3 * nparticles);
+    std::shared_ptr<Tree<2, 3>> tree_q = build_shared_tree<2, 3>(
+    quadrupoles.data(), n_crit, order, theta, damping);
+    tree_q->compute_field_fmm(fields_v2.data());
+    multipole_fields += Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, 3, Eigen::RowMajor>>(fields_v2.data(), nparticles, 3);
+    }
+    return multipole_fields;
+}
 
 // Computes the field caused by induced dipoles at atom i.
 // Parallelized with OpenMP.
@@ -260,6 +327,7 @@ std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end) {
     return nuclei_field_gradients;
 }
 
+// TODO implement MIC here
 // Computes the field caused by all atoms at atom i.
 // Parallelized with OpenMP.
 Eigen::MatrixXd multipole_field(int i) {

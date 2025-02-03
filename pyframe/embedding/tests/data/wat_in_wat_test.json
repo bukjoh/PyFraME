@@ -65,9 +65,9 @@
         "name" : "H20",
         "atoms": [
       {
-        "index": 0,
+        "index": 1,
         "element": "O",
-        "exclusions": [0, 1, 2],
+        "exclusions": [1, 2, 3],
         "coordinate": [
           2.07715105,
           4.18896535,
@@ -98,9 +98,9 @@
             }
       },
       {
-        "index": 1,
+        "index": 2,
         "element": "H",
-        "exclusions": [0, 1, 2],
+        "exclusions": [1, 2, 3],
         "coordinate": [
           4.28467053,
           4.25750383,
@@ -131,9 +131,9 @@
             }
       },
       {
-        "index": 2,
+        "index": 3,
         "element": "H",
-        "exclusions": [0, 1, 2],
+        "exclusions": [1, 2, 3],
         "coordinate": [
           1.88671201,
           5.30644733,
@@ -170,9 +170,9 @@
         "name" : "H20",
         "atoms": [
       {
-        "index": 3,
+        "index": 4,
         "element": "O",
-        "exclusions": [3, 4, 5],
+        "exclusions": [4, 5, 6],
         "coordinate": [
           -1.55405218,
           0.40461682,
@@ -203,9 +203,9 @@
             }
       },
       {
-        "index": 4,
+        "index": 5,
         "element": "H",
-        "exclusions": [3, 4, 5],
+        "exclusions": [4, 5, 6],
         "coordinate": [
           -3.02174955,
           1.58892141,
@@ -236,9 +236,9 @@
             }
       },
       {
-        "index": 5,
+        "index": 6,
         "element": "H",
-        "exclusions": [3, 4, 5],
+        "exclusions": [4, 5, 6],
         "coordinate": [
           -0.88503622,
           0.78456704,
@@ -275,9 +275,9 @@
         "name" : "H20",
         "atoms": [
       {
-        "index": 6,
+        "index": 7,
         "element": "O",
-        "exclusions": [6, 7, 8],
+        "exclusions": [7, 8, 9],
         "coordinate": [
           3.28386023,
           -3.81127146,
@@ -308,9 +308,9 @@
             }
       },
       {
-        "index": 7,
+        "index": 8,
         "element": "H",
-        "exclusions": [6, 7, 8],
+        "exclusions": [7, 8, 9],
         "coordinate": [
           3.92191492,
           -4.24177186,
@@ -341,9 +341,9 @@
             }
       },
       {
-        "index": 8,
+        "index": 9,
         "element": "H",
-        "exclusions": [6, 7, 8],
+        "exclusions": [7, 8, 9],
         "coordinate": [
            3.14393168,
           -5.19987812,
@@ -380,9 +380,9 @@
         "name" : "H20",
         "atoms": [
       {
-        "index": 9,
+        "index": 10,
         "element": "O",
-        "exclusions": [9, 10, 11],
+        "exclusions": [10, 11, 12],
         "coordinate": [
           -2.03309965,
           -0.50877663,
@@ -413,9 +413,9 @@
             }
       },
       {
-        "index": 10,
+        "index": 11,
         "element": "H",
-        "exclusions": [9, 10, 11],
+        "exclusions": [10, 11, 12],
         "coordinate": [
           -1.10032516,
           -0.35675762,
@@ -446,8 +446,8 @@
             }
       },
       {
-        "index": 11,
-        "exclusions": [9, 10, 11],
+        "index": 12,
+        "exclusions": [10, 11, 12],
         "element": "H",
         "coordinate": [
           -2.1982088,

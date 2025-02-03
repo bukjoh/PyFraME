@@ -612,7 +612,7 @@ static PyObject *set_old_ind_dipoles(PyObject *self, PyObject *args)
 
 // Sets the multipoles with degeneracy and taylor coefficients and multipole orders for the calculation of the multipole fields.
 // args: [multipoles, multipole_orders]
-static PyObject *set_multipoles_multipoles_order(PyObject *self, PyObject *args)
+static PyObject *set_multipoles_multipole_orders(PyObject *self, PyObject *args)
 {
     PyObject *multipoles_obj, *multipole_orders_obj;
     if (!PyArg_ParseTuple(args, "OO", &multipoles_obj, &multipole_orders_obj)) {
@@ -640,8 +640,6 @@ static PyObject* ind_dipoles_fields(PyObject* self, PyObject* args) {
 
 // Calculates the induced dipoles fields with FMM
 static PyObject* ind_dipoles_fields_fmm(PyObject* self, PyObject* args) {
-    //TODO test this
-    // Declare variables for the input arguments
     int n_crit;
     int order;
     double theta;
@@ -656,6 +654,42 @@ static PyObject* ind_dipoles_fields_fmm(PyObject* self, PyObject* args) {
     try {
         // Call the computation function to calculate the fields
         Eigen::MatrixXd result = computation::ind_dipoles_field_fmm(n_crit, order, theta, damping);
+
+        // Convert the Eigen matrix to a NumPy array
+        PyObject* numpy_result = eigen_matrix_to_numpy(result);
+        if (numpy_result == NULL) {
+            PyErr_SetString(PyExc_RuntimeError, "Failed to convert Eigen matrix to NumPy array.");
+            return NULL;
+        }
+
+        return numpy_result;  // Return the NumPy array to Python
+    } catch (const std::exception& e) {
+        // Catch any exceptions and set a Python error
+        PyErr_SetString(PyExc_RuntimeError, e.what());
+        return NULL;
+    } catch (...) {
+        // Catch all other errors
+        PyErr_SetString(PyExc_RuntimeError, "An unknown error occurred in ind_dipoles_fields.");
+        return NULL;
+    }
+}
+
+// Calculates the multipole fields with FMM
+static PyObject* multipole_fields_fmm(PyObject* self, PyObject* args) {
+    int n_crit;
+    int order;
+    double theta;
+    double damping;
+
+    // Parse the input arguments
+    if (!PyArg_ParseTuple(args, "iidd", &n_crit, &order, &theta, &damping)) {
+        PyErr_SetString(PyExc_ValueError, "Invalid arguments. Expected: int, int, double, double.");
+        return NULL;  // Return NULL on error
+    }
+
+    try {
+        // Call the computation function to calculate the fields
+        Eigen::MatrixXd result = computation::multipole_fields_fmm(n_crit, order, theta, damping);
 
         // Convert the Eigen matrix to a NumPy array
         PyObject* numpy_result = eigen_matrix_to_numpy(result);
@@ -1091,6 +1125,8 @@ static PyMethodDef module_methods[] = {
      "Calculates induced dipoles fields at atom i from old induced dipoles and previously set coords, idxs and exclusions."},
      {"ind_dipoles_fields_fmm", ind_dipoles_fields_fmm, METH_VARARGS,
      "Calculates induced dipoles fields for all atoms from old induced dipoles and previously set coords, idxs and exclusions."},
+      {"multipole_fields_fmm", multipole_fields_fmm, METH_VARARGS,
+     "Calculates fields on all atoms from all multipoles. Have to set coords, idxs, exclusions, multipoles, and multipole orders."},
      {"target_source_ind_dipoles_fields", target_source_ind_dipoles_fields, METH_VARARGS,
      "Calculates the induced dipoles for all targets from all sources"},
      {"set_coords_nuc_coords_charges", set_coords_nuc_coords_charges, METH_VARARGS,
@@ -1099,7 +1135,7 @@ static PyMethodDef module_methods[] = {
      "Calculates the field of the nuclei on atoms defined with start and end. Previously set coordinates, nuclei_coords and nuclei_charges."},
      {"nuclei_field_gradients", nuclei_field_gradients, METH_VARARGS,
       "Calculates the field gradients of the nuclei on atoms defined with start and end. Previously set coordinates, nuclei_coords and nuclei_charges."},
-     {"set_multipoles_multipoles_order", set_multipoles_multipoles_order, METH_VARARGS,
+     {"set_multipoles_multipole_orders", set_multipoles_multipole_orders, METH_VARARGS,
      "Sets multipoles with degeneracy and taylor coefficient and the multipole orders."},
      {"multipole_fields", multipole_fields, METH_VARARGS,
      "Calculates the field of the multipoles at atom i. Previously set coords, idxs, exclusions, multipoles, multipole_orders."},

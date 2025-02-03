@@ -9,6 +9,7 @@ from .fragment import QuantumFragment, ClassicalFragment
 from .particle import Nucleus
 from .subsystem import QuantumSubsystem, ClassicalSubsystem
 from pyframe.simulation_box import SimulationBox
+from .logging_util import log_manager
 
 __all__ = 'reader'
 
@@ -52,10 +53,14 @@ def reader(input_data: dict | Path | str,
         QuantumSubsystem(s) and/ or ClassicalSubsystem(s).
     """
     if isinstance(input_data, dict):
-        print("Creating subsystem(s) from input dictionary.")
+        log_manager.logger.debug(
+            print("Creating subsystem(s) from input dictionary.")
+        )
         subsystems_data = input_data
     elif isinstance(input_data, Path) or isinstance(input_data, str):
-        print("Creating from Path or str.")
+        log_manager.logger.debug(
+            print("Creating from Path or str.")
+        )
         subsystems_data = json_to_dict(input_data)
         if not input_data:
             raise RuntimeError("Input data not created successfully, please check filepath.")

@@ -374,33 +374,63 @@ class ClassicalSubsystem(Subsystem):
         return self._disp_lj_epsilon
 
     @property
-    def multipole_fields(self):
+    def multipole_fields(self) -> np.ndarray:
         if self._multipole_fields is None:
             self.compute_multipole_fields()
         return self._multipole_fields
 
-    def compute_multipole_fields(self) -> None:
+    def multipole_fields_fmm(self,
+                             solver: str | None = None,
+                             tree_ncrit: int = 64,
+                             tree_expansion_order: int = 5,
+                             theta: float = 0.5
+                             ) -> np.ndarray:
+        if self._multipole_fields is None:
+            self.compute_multipole_fields(solver=solver,
+                                          tree_ncrit=tree_ncrit,
+                                          tree_expansion_order=tree_expansion_order,
+                                          theta=theta)
+        return self._multipole_fields
+
+    def compute_multipole_fields(self,
+                                 solver: str | None = None,
+                                 tree_ncrit: int = 64,
+                                 tree_expansion_order: int = 5,
+                                 theta: float = 0.5
+                                 ) -> None:
         """Compute the electric fields from all multipoles on all polarizable atoms."""
-        engine.set_multipoles_multipoles_order(self.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(self.degenerate_multipoles_with_taylor_coefficients,
                                                self.multipole_orders)
-        engine.set_coords_idcs_exlcs(self.coordinates,
-                                     self.indices,
-                                     self.exclusions)
+
         self._multipole_fields = np.zeros([self.num_atoms, 3])
-        if self.comm is not None:
-            multipole_fields_local = np.zeros_like(self._multipole_fields)
-            avg, res = divmod(len(self.coordinates), self.size)
-            counts = [avg + 1 if p < res else avg for p in range(self.size)]
-            start = sum(counts[:self.rank])
-            end = sum(counts[:self.rank + 1])
-            for i in range(start, end):
-                multipole_fields_local[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
-            self.comm.Allreduce([multipole_fields_local, MPI.DOUBLE],
-                                [self._multipole_fields, MPI.DOUBLE],
-                                op=MPI.SUM)
+        if solver == "fmm":
+            shifted_exclusions = [
+                tuple(value - 1 for value in exclusion) for exclusion in self.exclusions
+            ]
+            engine.set_coords_idcs_exlcs(self.coordinates,
+                                         self.indices,
+                                         shifted_exclusions)
+            damping = 0.0
+            self._multipole_fields -= engine.multipole_fields_fmm(tree_ncrit, tree_expansion_order, theta, damping)
+
         else:
-            for i in range(len(self.coordinates)):
-                self._multipole_fields[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
+            engine.set_coords_idcs_exlcs(self.coordinates,
+                                         self.indices,
+                                         self.exclusions)
+            if self.comm is not None:
+                multipole_fields_local = np.zeros_like(self._multipole_fields)
+                avg, res = divmod(len(self.coordinates), self.size)
+                counts = [avg + 1 if p < res else avg for p in range(self.size)]
+                start = sum(counts[:self.rank])
+                end = sum(counts[:self.rank + 1])
+                for i in range(start, end):
+                    multipole_fields_local[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
+                self.comm.Allreduce([multipole_fields_local, MPI.DOUBLE],
+                                    [self._multipole_fields, MPI.DOUBLE],
+                                    op=MPI.SUM)
+            else:
+                for i in range(len(self.coordinates)):
+                    self._multipole_fields[i, :] = engine.multipole_fields(np.array([i], dtype=np.int64)).T
 
     def environment_energy(self,
                            vdw_method: str = 'LJ',
@@ -423,7 +453,7 @@ class ClassicalSubsystem(Subsystem):
 
     def compute_electrostatic_energy(self) -> float:
         """Compute the electrostatic energy."""
-        engine.set_multipoles_multipoles_order(self.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(self.degenerate_multipoles_with_taylor_coefficients,
                                                self.multipole_orders)
         engine.set_coords_idcs_exlcs(self.coordinates, self.indices, self.exclusions)
         total_iterations = (self.num_atoms - 1) * self.num_atoms // 2
@@ -473,7 +503,9 @@ class ClassicalSubsystem(Subsystem):
         """
         if self.comm is None:
             # Serial computation
-            print("I run serial!")
+            log_manager.logger.debug(
+                print("Calculation of environment energy in serial.")
+            )
             return compute_fn(0, total_iterations)
         else:
             # Parallel computation
@@ -534,7 +566,13 @@ class ClassicalSubsystem(Subsystem):
         else:
             static_fields = external_fields
         if not exclude_static_internal_fields:
-            static_fields += self.multipole_fields
+            if solver == 'fmm':
+                static_fields += self.multipole_fields_fmm(solver=solver,
+                                                           tree_ncrit=tree_ncrit,
+                                                           tree_expansion_order=tree_expansion_order,
+                                                           theta=theta)
+            else:
+                static_fields += self.multipole_fields
         # First guess for induced dipoles
         if np.all(self.induced_dipoles.induced_dipoles == 0):
             starting_guess = np.zeros([self.num_atoms, 3])
@@ -686,20 +724,26 @@ class ClassicalSubsystem(Subsystem):
         for old_pert_induced_dipole in self.perturbed_induced_dipoles:
             residue_norm = np.linalg.norm(external_fields - old_pert_induced_dipole.external_fields)
             if residue_norm == 0:
-                print("Residue norm between new and old external fields is 0, induced dipoles will not be "
-                      "recalculated.")
+                log_manager.logger.debug(
+                    print("Residue norm between new and old external fields is 0, induced dipoles will not be "
+                          "recalculated.")
+                )
                 return old_pert_induced_dipole.induced_dipoles
             else:
                 residue_norms.append(residue_norm)
         # check which residue norm is the smallest
         min_res_norm = min(residue_norms)
         if min_res_norm < 1e-6:
-            print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
-                  "be used as a starting guess.")
+            log_manager.logger.debug(
+                print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
+                      "be used as a starting guess.")
+            )
             starting_guess = self.perturbed_induced_dipoles[residue_norms.index(min_res_norm)].induced_dipoles
         else:
-            print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
-                  "not be used as a starting guess.")
+            log_manager.logger.debug(
+                print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
+                      "not be used as a starting guess.")
+            )
             starting_guess = np.zeros([self.num_atoms, 3])
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.dipole_dipole_polarizabilities[i], field)

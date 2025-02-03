@@ -95,14 +95,14 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
         for c_subsystem in classical_subsystem:
             # E_nuc_es
             if c_subsystem.comm is None:
-                engine.set_multipoles_multipoles_order(c_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                engine.set_multipoles_multipole_orders(c_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                        c_subsystem.multipole_orders)
                 engine.set_coords_nuc_coords_charges(c_subsystem.coordinates,
                                                      quantum_subsystem.charges,
                                                      quantum_subsystem.coordinates)
                 nuclear_energy = engine.e_nuc_es(np.array([0, len(c_subsystem.coordinates)], dtype=np.int64))
             else:
-                engine.set_multipoles_multipoles_order(c_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                engine.set_multipoles_multipole_orders(c_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                        c_subsystem.multipole_orders)
                 engine.set_coords_nuc_coords_charges(c_subsystem.coordinates,
                                                      quantum_subsystem.charges,
@@ -119,14 +119,14 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
     else:
         # E_nuc_es
         if classical_subsystem.comm is None:
-            engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+            engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                    classical_subsystem.multipole_orders)
             engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                                  quantum_subsystem.charges,
                                                  quantum_subsystem.coordinates)
             nuclear_energy = engine.e_nuc_es(np.array([0, len(classical_subsystem.coordinates)], dtype=np.int64))
         else:
-            engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+            engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                    classical_subsystem.multipole_orders)
             engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                                  quantum_subsystem.charges,
@@ -147,14 +147,14 @@ def compute_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsys
 def compute_electrostatic_nuclear_energy(quantum_subsystem: subsystem.QuantumSubsystem,
                                          classical_subsystem: subsystem.ClassicalSubsystem):
     if classical_subsystem.comm is None:
-        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                classical_subsystem.multipole_orders)
         engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                              quantum_subsystem.charges,
                                              quantum_subsystem.coordinates)
         nuclear_energy = engine.e_nuc_es(np.array([0, len(classical_subsystem.coordinates)], dtype=np.int64))
     else:
-        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                classical_subsystem.multipole_orders)
         engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                              quantum_subsystem.charges,
@@ -178,7 +178,7 @@ def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.Quantum
             Dtype: np.float64
     """
     if classical_subsystem.comm is None:
-        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                classical_subsystem.multipole_orders)
         engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                              quantum_subsystem.charges,
@@ -186,7 +186,7 @@ def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.Quantum
         nuclear_gradients = engine.e_nuc_es_gradients(
             np.array([0, len(classical_subsystem.coordinates)], dtype=np.int64))
     else:
-        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                classical_subsystem.multipole_orders)
         engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                              quantum_subsystem.charges,
@@ -254,7 +254,7 @@ def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.Qua
     # E_nuc_es
     # FIXME has to be tested
     if classical_subsystem.comm is None:
-        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                classical_subsystem.multipole_orders)
         engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                              quantum_subsystem.charges,
@@ -264,7 +264,7 @@ def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.Qua
                                                    [np.array(perturbation_indices, dtype=np.int64),
                                                     np.array([0, 0, 0], dtype=np.int64)])
     else:
-        engine.set_multipoles_multipoles_order(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                                                classical_subsystem.multipole_orders)
         engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
                                              quantum_subsystem.charges,

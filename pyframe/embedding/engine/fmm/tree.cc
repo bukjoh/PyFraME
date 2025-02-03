@@ -133,23 +133,16 @@ void split_cell(std::vector<Cell>& cells, std::vector<Particle>& particles, size
 
 template <int m_order, int osize>
 std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
-      size_t ncrit, size_t order,
+      double* S, size_t ncrit, size_t order,
       double theta, double damping) {
   int sourcesize = (m_order + 1) * (m_order + 2) / 2;
   int nparticles = static_cast<int>(global::coordinates.size());
   std::vector<Particle> particles(nparticles);
   bool damping_enabled = damping > 0.0;
 
-std::vector<double> S(3 * nparticles);
-for (int i = 0; i < nparticles; ++i) {
-    S[i * 3 + 0] = global::old_ind_dipoles.col(i)(0);  // x-component global::old_ind_dipoles.row(i)
-    S[i * 3 + 1] = global::old_ind_dipoles.col(i)(1);  // y-component -> change back to .row
-    S[i * 3 + 2] = global::old_ind_dipoles.col(i)(2);  // z-component
-}
-
   for (auto i = 0; i < nparticles; i++) {
     particles[i].r = global::coordinates[i].data();
-    particles[i].S = global::old_ind_dipoles.col(i).data();
+    particles[i].S = &S[sourcesize * i]; // global::old_ind_dipoles.col(i).data();
     particles[i].exclusions = std::vector<int>(global::exclusions[i].begin(), global::exclusions[i].end());
   }
 
@@ -241,108 +234,6 @@ for (int i = 0; i < nparticles; ++i) {
   return tree;
 }
 
-//CPPE IS USED HERE
-
-template <int m_order, int osize>
-std::shared_ptr<Tree<m_order, osize>> build_shared_tree(
-      size_t nparticles, size_t ncrit, size_t order, double theta,
-      std::vector<std::vector<int>> exclusion_lists) {
-  int sourcesize = (m_order + 1) * (m_order + 2) / 2;
-  // Create particles list for convenience
-  std::vector<Particle> particles(nparticles);
-  for (auto i = 0; i < nparticles; i++) {
-    particles[i].r = global::coordinates[i].data();
-    particles[i].S = global::old_ind_dipoles.col(i).data();
-    particles[i].exclusions = std::vector<int>(global::exclusions[i].begin(), global::exclusions[i].end());
-  }
-
-  // Now create cells list
-  std::vector<Cell> cells;
-  size_t curr;
-  int octant;
-
-  // Compute average position
-  double xavg = 0;
-  double yavg = 0;
-  double zavg = 0;
-  for (auto i = 0; i < particles.size(); i++) {
-    xavg += particles[i].r[0];
-    yavg += particles[i].r[1];
-    zavg += particles[i].r[2];
-  }
-
-  xavg /= particles.size();
-  yavg /= particles.size();
-  zavg /= particles.size();
-#ifdef FMMLIBDEBUG
-  std::cout << "Building Tree: Avg pos = (" << xavg << ", " << yavg << ", " << zavg << ")"
-            << std::endl;
-#endif
-  double xmax = 0;
-  double ymax = 0;
-  double zmax = 0;
-
-  for (auto i = 0; i < particles.size(); i++) {
-    double x = std::abs(particles[i].r[0] - xavg);
-    double y = std::abs(particles[i].r[1] - yavg);
-    double z = std::abs(particles[i].r[2] - zavg);
-
-    if (x > xmax) xmax = x;
-    if (y > ymax) ymax = y;
-    if (z > zmax) zmax = z;
-  }
-
-  double r =
-        (xmax > ymax ? (xmax > zmax ? xmax : zmax) : (ymax > zmax ? ymax : zmax)) * 1.001;
-  auto root = Cell(xavg, yavg, zavg, r, 0, order, 0, ncrit);
-
-  cells.push_back(root);
-  for (auto i = 0; i < particles.size(); i++) {
-    curr = 0;
-    while (cells[curr].nleaf >= ncrit) {
-      cells[curr].nleaf += 1;
-      octant = (particles[i].r[0] > cells[curr].x) +
-               ((particles[i].r[1] > cells[curr].y) << 1) +
-               ((particles[i].r[2] > cells[curr].z) << 2);
-      if (!(cells[curr].nchild & (1 << octant))) {
-        add_child(cells, octant, curr, ncrit, order);
-      }
-      curr = cells[curr].child[octant];
-    }
-    cells[curr].leaf[cells[curr].nleaf] = i;
-    cells[curr].nleaf += 1;
-    if (cells[curr].nleaf >= ncrit) {
-      split_cell(cells, particles, curr, ncrit, order);
-    }
-  }
-
-  // Now create tree object, and set properties.
-  // Choosing a very simple data type here.
-  std::shared_ptr<Tree<m_order, osize>> tree = std::make_shared<Tree<m_order, osize>>();
-  tree->theta                                = theta;
-  tree->ncrit                                = ncrit;
-  tree->order                                = order;
-  tree->cells                                = cells;
-  tree->particles                            = particles;
-
-  // Create interaction lists, and sort M2L list for cache efficiency.
-  interact_dehnen_lazy<m_order, osize>(0, 0, tree->cells, particles, theta, order, ncrit,
-                                       tree->M2L_list, tree->P2P_list);
-  std::sort(tree->M2L_list.begin(), tree->M2L_list.end(),
-            [](std::pair<size_t, size_t>& left, std::pair<size_t, size_t>& right) {
-              return left.first < right.first;
-            });
-
-  // Create memory into which each cell can point for the multipole arrays.
-  tree->M.resize(tree->cells.size() * Msize(order, m_order), 0.0);
-  tree->L.resize(tree->cells.size() * Lsize(order, m_order), 0.0);
-  for (auto i = 0; i < tree->cells.size(); i++) {
-    tree->cells[i].M = &tree->M[i * Msize(order, m_order)];
-    tree->cells[i].L = &tree->L[i * Lsize(order, m_order)];
-  }
-  return tree;
-}
-
 template <int m_order, int osize>
 void Tree<m_order, osize>::clear_M() {
   std::fill(M.begin(), M.end(), 0);
@@ -404,21 +295,11 @@ template class Tree<0, 3>;
 template class Tree<1, 3>;
 template class Tree<2, 3>;
 template std::shared_ptr<Tree<0, 3>> build_shared_tree<0, 3>(
-      size_t nparticles, size_t ncrit, size_t order, double theta,
-      std::vector<std::vector<int>> exclusion_lists);
-template std::shared_ptr<Tree<1, 3>> build_shared_tree<1, 3>(
-      size_t nparticles, size_t ncrit, size_t order, double theta,
-      std::vector<std::vector<int>> exclusion_lists);
-template std::shared_ptr<Tree<2, 3>> build_shared_tree<2, 3>(
-      size_t nparticles, size_t ncrit, size_t order, double theta,
-      std::vector<std::vector<int>> exclusion_lists);
-
-template std::shared_ptr<Tree<0, 3>> build_shared_tree<0, 3>(
-      size_t ncrit, size_t order,
+      double* S, size_t ncrit, size_t order,
       double theta, double damping);
 template std::shared_ptr<Tree<1, 3>> build_shared_tree<1, 3>(
-      size_t ncrit, size_t order,
+      double* S, size_t ncrit, size_t order,
       double theta, double damping);
 template std::shared_ptr<Tree<2, 3>> build_shared_tree<2, 3>(
-      size_t ncrit, size_t order,
+      double* S, size_t ncrit, size_t order,
       double theta, double damping);
