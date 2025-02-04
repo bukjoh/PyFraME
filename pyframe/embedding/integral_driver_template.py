@@ -26,6 +26,26 @@ class IntegralDriverTemplate(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def electronic_field_gradients(self,
+                                   coordinates: np.ndarray,
+                                   density_matrix: np.ndarray) -> np.ndarray:
+        """Calculate the electronic fields on coordinates.
+
+        Args:
+            coordinates: Coordinates on which the fields are to be evaluated.
+                Shape: (number of atoms, 3)
+                Dtype: np.float64
+            density_matrix: Density Matrix that is the source of the electronic field.
+                Shape: (number of ao functions, number of ao functions)
+                Dtype: np.float64
+
+        Returns:
+            Array of electronic field gradients in the same ordering as the input coordinates.
+                Shape: (number of nuclei, number of atoms, 6) Dtype: np.float64.
+        """
+        raise NotImplementedError
+
+    @abstractmethod
     def multipole_potential_integrals(self,
                                       multipole_coordinates: np.ndarray,
                                       multipole_orders: np.ndarray,

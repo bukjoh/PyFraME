@@ -153,12 +153,9 @@ class QuantumSubsystem(Subsystem):
             counts = [avg + 1 if p < res else avg for p in range(self.size)]
             start = sum(counts[:self.rank])
             end = sum(counts[:self.rank + 1])
-            nuclear_fields_global = np.zeros([len(coordinates), 3])
-            nuclear_fields_local = engine.nuclei_field_gradients(np.array([start, end], dtype=np.int64))
-            self.comm.Allreduce([nuclear_fields_local, MPI.DOUBLE],
-                                [nuclear_fields_global, MPI.DOUBLE],
-                                op=MPI.SUM)
-            return nuclear_fields_global
+            nuclear_field_gradients = engine.nuclei_field_gradients(np.array([start, end], dtype=np.int64))
+            nuclear_field_gradients = self.comm.allreduce(nuclear_field_gradients)
+            return nuclear_field_gradients
         else:
             return engine.nuclei_field_gradients(np.array([0, len(coordinates)], dtype=np.int64))
 
@@ -206,9 +203,24 @@ class QuantumSubsystem(Subsystem):
             Electronic field gradients.
                 Shape: (number of nuclei, number of atoms, 6)
         """
-        # TODO mpi parallelize
-        return -1.0 * integral_driver.electronic_field_gradient(coordinates=coordinates,
-                                                                density_matrix=density_matrix)
+        if self.comm is not None:
+            avg, res = divmod(len(coordinates), self.size)
+            counts = [avg + 1 if p < res else avg for p in range(self.size)]
+            start = sum(counts[:self.rank])
+            end = sum(counts[:self.rank + 1])
+            electronic_field_gradient = np.zeros([len(coordinates), 3])
+            electronic_field_gradient[start:end] += -1.0 * integral_driver.electronic_field_gradients(
+                coordinates=coordinates[start:end],
+                density_matrix=density_matrix)
+            electronic_field_gradient = self.comm.allreduce(electronic_field_gradient)
+            return electronic_field_gradient
+        else:
+            return -1.0 * integral_driver.electronic_field_gradients(coordinates=coordinates,
+                                                                     density_matrix=density_matrix)
+
+
+    def compute_electronic_induction_energy_gradient(self):
+        return NotImplementedError
 
 
 class ClassicalSubsystem(Subsystem):

@@ -69,19 +69,46 @@ def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
         Induction energy gradient.
     """
     # TODO move into c++ layer?
+
+    # sign has been changed from other branch -> internally I expect potentials + potential derivatives
     energy_gradient = np.zeros([len(total_field_gradients), 3], dtype=np.float64)
     for i, field_gradient in enumerate(total_field_gradients):
         for j in range(len(induced_dipoles)):
-            energy_gradient[i, 0] -= (induced_dipoles[j, 0] * field_gradient[j, 0] +
+            energy_gradient[i, 0] += (induced_dipoles[j, 0] * field_gradient[j, 0] +
                                       induced_dipoles[j, 1] * field_gradient[j, 1] +
                                       induced_dipoles[j, 2] * field_gradient[j, 2])
-            energy_gradient[i, 1] -= (induced_dipoles[j, 0] * field_gradient[j, 1] +
+            energy_gradient[i, 1] += (induced_dipoles[j, 0] * field_gradient[j, 1] +
                                       induced_dipoles[j, 1] * field_gradient[j, 3] +
                                       induced_dipoles[j, 2] * field_gradient[j, 4])
-            energy_gradient[i, 2] -= (induced_dipoles[j, 0] * field_gradient[j, 2] +
+            energy_gradient[i, 2] += (induced_dipoles[j, 0] * field_gradient[j, 2] +
                                       induced_dipoles[j, 1] * field_gradient[j, 4] +
                                       induced_dipoles[j, 2] * field_gradient[j, 5])
     return energy_gradient
+
+
+def compute_electronic_induction_energy_gradient(density_matrix: np.ndarray,
+                                                 classical_subsystem: subsystem.ClassicalSubsystem,
+                                                 integral_driver: Any) -> np.ndarray:
+    """Calculates the electronic induction energy gradient (µ_ind * F_el)^g from a ClassicalSubsystem and
+    the one-electron integrals gradients.
+
+    Args:
+        density_matrix: Density Matrix that is the source of the electronic field.
+                Shape: (number of ao functions, number of ao functions)
+                Dtype: np.float64
+        classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
+        integral_driver: Integral driver that calculates the electronic field gradients on coordinates and contracts
+        with the induced dipoles.
+
+    Returns:
+        Electronic induction energy gradient.
+    """
+    # TODO check if sign change here (since its potential based ind dipoles) makes sense.
+    #  -> or general sign change maybe in the embedding state class to come in vlx
+    return integral_driver.electronic_induction_energy_gradient(
+        induced_dipoles=-1 * classical_subsystem.induced_dipoles.induced_dipoles,
+        coordinates=classical_subsystem.coordinates,
+        density_matrix=density_matrix)
 
 
 def compute_rsp_induction_energy(input_cache: rspCache,
