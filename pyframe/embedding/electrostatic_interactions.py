@@ -218,8 +218,7 @@ def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsyst
         es_fock_matrix = integral_driver.multipole_potential_integrals(
             multipole_coordinates=classical_subsystem.coordinates[start:end],
             multipole_orders=classical_subsystem.multipole_orders[start:end],
-            multipoles=classical_subsystem.
-            degenerate_multipoles_with_taylor_coefficients[start:end])
+            multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients[start:end])
         es_fock_matrix = classical_subsystem.comm.allreduce(es_fock_matrix)
         return es_fock_matrix
     else:
@@ -242,6 +241,44 @@ def es_fock_matrix_gradient_contributions(classical_subsystem: subsystem.Classic
                                                                   multipole_orders=classical_subsystem.multipole_orders,
                                                                   multipoles=classical_subsystem.
                                                                   degenerate_multipoles_with_taylor_coefficients)
+
+
+def compute_electronic_electrostatic_energy_gradients(density_matrix: np.ndarray,
+                                                      classical_subsystem: subsystem.ClassicalSubsystem,
+                                                      integral_driver: Any) -> np.ndarray:
+    """Calculates the electronic induction energy gradient (µ_ind * F_el)^g from a ClassicalSubsystem and
+    the one-electron integrals gradients.
+
+    Args:
+        density_matrix: Density Matrix that is the source of the electronic field.
+                Shape: (number of ao functions, number of ao functions)
+                Dtype: np.float64
+        classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
+        integral_driver: Integral driver that calculates the electronic field gradients on coordinates and contracts
+        with the induced dipoles.
+
+    Returns:
+        Electronic electrostatic energy gradients.
+    """
+    if classical_subsystem.comm is not None:
+        avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.comm.size)
+        counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.comm.size)]
+        start = sum(counts[:classical_subsystem.comm.rank])
+        end = sum(counts[:classical_subsystem.comm.rank + 1])
+        e_el_es_grad = integral_driver.electronic_electrostatic_energy_gradients(
+            multipole_coordinates=classical_subsystem.coordinates[start:end],
+            multipole_orders=classical_subsystem.multipole_orders[start:end],
+            multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients[start:end],
+            density_matrix=density_matrix)
+        e_el_es_grad = classical_subsystem.comm.allreduce(e_el_es_grad)
+        return e_el_es_grad
+    else:
+        return integral_driver.electronic_electrostatic_energy_gradients(
+            multipole_coordinates=classical_subsystem.coordinates,
+            multipole_orders=classical_subsystem.multipole_orders,
+            multipoles=classical_subsystem.
+            degenerate_multipoles_with_taylor_coefficients,
+            density_matrix=density_matrix)
 
 
 def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,

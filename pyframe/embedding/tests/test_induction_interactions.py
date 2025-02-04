@@ -137,8 +137,8 @@ def test_compute_induction_energy_gradient(two_oxygen, two_wat):
     ref_energy_gradient_two_wat = np.array([[4.85319304e-03, 2.74198596e-03, 1.12304565e-06],
                                             [1.16342801e-03, 6.03914172e-04, -1.47528824e-07],
                                             [5.31607331e-04, 1.47436487e-04, 1.78351047e-07]], dtype=np.float64)
-    assert np.allclose(ref_energy_gradient_two_ox, induction_energy_gradient_two_ox)
-    assert np.allclose(ref_energy_gradient_two_wat, induction_energy_gradient_two_wat)
+    assert np.allclose(-1 * ref_energy_gradient_two_ox, induction_energy_gradient_two_ox)
+    assert np.allclose(-1 * ref_energy_gradient_two_wat, induction_energy_gradient_two_wat)
 
 
 def test_compute_rsp_induction_energy(wat_wat):

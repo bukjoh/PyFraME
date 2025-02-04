@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import numpy as np
-import copy
 from typing import Any
 from pyframe.embedding import perturbation_tools as pt
 from pyframe.embedding import subsystem
@@ -86,7 +85,7 @@ def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
     return energy_gradient
 
 
-def compute_electronic_induction_energy_gradient(density_matrix: np.ndarray,
+def compute_electronic_induction_energy_gradients(density_matrix: np.ndarray,
                                                  classical_subsystem: subsystem.ClassicalSubsystem,
                                                  integral_driver: Any) -> np.ndarray:
     """Calculates the electronic induction energy gradient (µ_ind * F_el)^g from a ClassicalSubsystem and
