@@ -104,8 +104,8 @@ def compute_electronic_induction_energy_gradients(density_matrix: np.ndarray,
     """
     # TODO check if sign change here (since its potential based ind dipoles) makes sense.
     #  -> or general sign change maybe in the embedding state class to come in vlx
-    return integral_driver.electronic_induction_energy_gradient(
-        induced_dipoles=-1 * classical_subsystem.induced_dipoles.induced_dipoles,
+    return integral_driver.electronic_induction_energy_gradients(
+        induced_dipoles=-1.0 * classical_subsystem.induced_dipoles.induced_dipoles,
         coordinates=classical_subsystem.coordinates,
         density_matrix=density_matrix)
 
