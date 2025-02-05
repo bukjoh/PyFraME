@@ -72,6 +72,15 @@ class QuantumSubsystem(Subsystem):
                 self._coordinates[i, :] = nucleus.coordinate[:]
         return self._coordinates
 
+    @coordinates.setter
+    def coordinates(self, new_coordinates: np.ndarray):
+        if not isinstance(new_coordinates, np.ndarray):
+            raise TypeError("Coordinates must be a NumPy array.")
+        if new_coordinates.shape != (self.num_nuclei, 3):
+            raise ValueError(f"Coordinates must have shape ({self.num_nuclei}, 3).")
+
+        self._coordinates = new_coordinates
+
     @property
     def charges(self) -> np.ndarray:
         if self._charges is None:
