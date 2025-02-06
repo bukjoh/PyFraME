@@ -198,6 +198,7 @@ def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.Quantum
         nuclear_gradients = classical_subsystem.comm.allreduce(nuclear_gradients)
     return nuclear_gradients
 
+
 def compute_electrostatic_nuclear_hessian(quantum_subsystem: subsystem.QuantumSubsystem,
                                           classical_subsystem: subsystem.ClassicalSubsystem):
     """Calculate Hessian of electrostatic nuclear interaction between a QuantumSubsystem and a ClassicalSubsystem.
@@ -291,7 +292,7 @@ def es_fock_matrix_gradient_contributions(classical_subsystem: subsystem.Classic
 def compute_electronic_electrostatic_energy_gradients(density_matrix: np.ndarray,
                                                       classical_subsystem: subsystem.ClassicalSubsystem,
                                                       integral_driver: Any) -> np.ndarray:
-    """Calculates the electronic induction energy gradient (µ_ind * F_el)^g from a ClassicalSubsystem and
+    """Calculates the electronic electrostatic energy gradient from a ClassicalSubsystem and
     the one-electron integrals gradients.
 
     Args:
@@ -325,6 +326,60 @@ def compute_electronic_electrostatic_energy_gradients(density_matrix: np.ndarray
             degenerate_multipoles_with_taylor_coefficients,
             density_matrix=density_matrix)
 
+
+def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
+                                                    density_matrix: np.ndarray,
+                                                    classical_subsystem: subsystem.ClassicalSubsystem,
+                                                    integral_driver: Any) -> np.ndarray:
+    """Calculates the electronic electrostatic energy Hessian from a ClassicalSubsystem and
+    the one-electron integrals gradients.
+
+    Args:
+        nuc_list: Index list of Nuclei.
+                Shape: (number of nuclei)
+                Dtype: np.int64
+        density_matrix: Density Matrix that is the source of the electronic field.
+                Shape: (number of ao functions, number of ao functions)
+                Dtype: np.float64
+        classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
+        integral_driver: Integral driver that calculates the electronic field gradients on coordinates and contracts
+        with the induced dipoles.
+
+    Returns:
+        Electronic electrostatic energy Hessian.
+    """
+    no_nuc = len(nuc_list)
+    if classical_subsystem.comm is not None:
+        hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
+        for i in nuc_list:
+            for j in nuc_list:
+                # Compute the 3x3 submatrix for the (i, j) pair
+                hessian_block = integral_driver.electronic_electrostatic_energy_hessian(
+                    multipole_coordinates=classical_subsystem.coordinates,
+                    multipole_orders=classical_subsystem.multipole_orders,
+                    multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                    density_matrix=density_matrix,
+                    nuc_i=i,
+                    nuc_j=j)
+
+                # Insert the 3x3 block into the correct position in hess_contr
+                hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
+        return hess_contr
+        hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
+        for i in nuc_list:
+            for j in nuc_list:
+                # Compute the 3x3 submatrix for the (i, j) pair
+                hessian_block = integral_driver.electronic_electrostatic_energy_hessian(
+                    multipole_coordinates=classical_subsystem.coordinates,
+                    multipole_orders=classical_subsystem.multipole_orders,
+                    multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                    density_matrix=density_matrix,
+                    nuc_i=i,
+                    nuc_j=j)
+
+                # Insert the 3x3 block into the correct position in hess_contr
+                hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
+        return hess_contr
 
 def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
                                                 classical_subsystem: Union[subsystem.ClassicalSubsystem, list],
