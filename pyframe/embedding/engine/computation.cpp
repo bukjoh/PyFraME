@@ -558,6 +558,84 @@ std::vector<Eigen::Vector3d> e_nuc_es_gradients(int start, int end) {
     return e_nuc_es_gradients;
 }
 
+// Computes the energy Hessian between all atoms and all nuclei.
+// Parallelized with OpenMP.
+std::vector<Eigen::Matrix<double, 6, 1>>  e_nuc_es_hessian(int start, int end) {
+    int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
+    std::vector<Eigen::Matrix<double, 6, 1>> e_nuc_es_hessian(no_nuclei, Eigen::Matrix<double, 6, 1>::Zero());
+    #pragma omp parallel
+    {
+        std::vector<Eigen::Matrix<double, 6, 1>> thread_hessian(no_nuclei, Eigen::Matrix<double, 6, 1>::Zero());
+        const Eigen::Matrix<int, 2, 3> xx_hess((Eigen::Matrix<int, 2, 3>() << 2, 0, 0, 0, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> xy_hess((Eigen::Matrix<int, 2, 3>() << 1, 1, 0, 0, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> xz_hess((Eigen::Matrix<int, 2, 3>() << 1, 0, 1, 0, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> yy_hess((Eigen::Matrix<int, 2, 3>() << 0, 2, 0, 0, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> yz_hess((Eigen::Matrix<int, 2, 3>() << 0, 1, 1, 0, 0, 0).finished());
+        const Eigen::Matrix<int, 2, 3> zz_hess((Eigen::Matrix<int, 2, 3>() << 0, 0, 2, 0, 0, 0).finished());
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            for(int i = 0; i < no_nuclei; i++) {
+                double energy_contr_xx = 0.0;
+                double energy_contr_xy = 0.0;
+                double energy_contr_xz = 0.0;
+                double energy_contr_yy = 0.0;
+                double energy_contr_yz = 0.0;
+                double energy_contr_zz = 0.0;
+                Eigen::Vector3d r_ab = global::nuclei_coordinates[i] - global::coordinates[j];
+                Eigen::MatrixXd xx_hess_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                                              global::tensor_template_interaction,
+                                                                              xx_hess,
+                                                                              global::multipole_orders[j], 0, 0, 0);
+
+                Eigen::MatrixXd xy_hess_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                                              global::tensor_template_interaction,
+                                                                              xy_hess,
+                                                                              global::multipole_orders[j], 0, 0, 0);
+
+                Eigen::MatrixXd xz_hess_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                                              global::tensor_template_interaction,
+                                                                              xz_hess,
+                                                                              global::multipole_orders[j], 0, 0, 0);
+
+                Eigen::MatrixXd yy_hess_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                                              global::tensor_template_interaction,
+                                                                              yy_hess,
+                                                                              global::multipole_orders[j], 0, 0, 0);
+
+                Eigen::MatrixXd yz_hess_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                                              global::tensor_template_interaction,
+                                                                              yz_hess,
+                                                                              global::multipole_orders[j], 0, 0, 0);
+
+                Eigen::MatrixXd zz_hess_t_tensor = compute_perturbed_t_tensor(r_ab,
+                                                                              global::tensor_template_interaction,
+                                                                              zz_hess,
+                                                                              global::multipole_orders[j], 0, 0, 0);
+
+                energy_contr_xx +=(global::multipoles[j].transpose() * xx_hess_t_tensor * global::nuclei_charges[i])[0];
+                energy_contr_xy +=(global::multipoles[j].transpose() * xy_hess_t_tensor * global::nuclei_charges[i])[0];
+                energy_contr_xz +=(global::multipoles[j].transpose() * xz_hess_t_tensor * global::nuclei_charges[i])[0];
+                energy_contr_yy +=(global::multipoles[j].transpose() * yy_hess_t_tensor * global::nuclei_charges[i])[0];
+                energy_contr_yz +=(global::multipoles[j].transpose() * yz_hess_t_tensor * global::nuclei_charges[i])[0];
+                energy_contr_zz +=(global::multipoles[j].transpose() * zz_hess_t_tensor * global::nuclei_charges[i])[0];
+                thread_hessian[i][0] += energy_contr_xx;
+                thread_hessian[i][1] += energy_contr_xy;
+                thread_hessian[i][2] += energy_contr_xz;
+                thread_hessian[i][3] += energy_contr_yy;
+                thread_hessian[i][4] += energy_contr_yz;
+                thread_hessian[i][5] += energy_contr_zz;
+            }
+        }
+        #pragma omp critical
+        {
+            for(int i = 0; i < no_nuclei; ++i) {
+                e_nuc_es_hessian[i] += thread_hessian[i];
+            }
+        }
+    }
+    return e_nuc_es_hessian;
+}
+
 // Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem.
 // Parallelized with OpenMP.
 double compute_unperturbed_lj_dispersion(int start, int end, std::string combination_rule) {

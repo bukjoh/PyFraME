@@ -1827,6 +1827,10 @@ def dummy_integral_driver_factory():
 def wat_wat():
     return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/wat_in_wat_test.json')
 
+@pytest.fixture(scope='session')
+def HF():
+    return read_input.reader(input_data=f'{os.path.dirname(__file__)}/data/HF.json')
+
 
 @pytest.fixture(scope='session')
 def act_wat():

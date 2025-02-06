@@ -88,6 +88,10 @@ double e_nuc_es(int start, int end);
 // Parallelized with OpenMP.
 std::vector<Eigen::Vector3d> e_nuc_es_gradients(int start, int end);
 
+// Computes the energy Hessian between all atoms and all nuclei.
+// Parallelized with OpenMP.
+std::vector<Eigen::Matrix<double, 6, 1>> e_nuc_es_hessian(int start, int end);
+
 // Uses the Lorentz-Berthelot combination rules for non-bonded VdW interactions.
 std::tuple<double, double> LB_combination(double sigma_i, double sigma_j, double epsilon_i, double epsilon_j);
 

@@ -238,6 +238,26 @@ def test_compute_electrostatic_nuclear_gradients(neon, wat_wat, butadiene_water)
     assert np.allclose(ref_energy, gradient)
 
 
+def test_compute_electrostatic_nuclear_hessian(neon, HF):
+    core_ne, env_ne = neon
+
+    ref_hess = np.array([[-2.2266673873992375, 0.0, 0.0],[0.0, 1.1133336936996188, 0.0],[0.0, 0.0, 1.1133336936996188]], dtype=np.float64)
+    hessian = electrostatic_interactions.compute_electrostatic_nuclear_hessian(quantum_subsystem=core_ne,
+                                                                               classical_subsystem=env_ne)
+    assert np.allclose(ref_hess, hessian)
+
+    core_hf, env_hf = HF
+    hessian = electrostatic_interactions.compute_electrostatic_nuclear_hessian(quantum_subsystem=core_hf,
+                                                                               classical_subsystem=env_hf)
+    ref_hess = np.array([[-3.4998303927968960E-002,  9.5791308147619592E-003, -1.1925832363660176E-003, 0.0, 0.0, 0.0],
+                         [9.5791308147619592E-003, 1.6947943104082257E-002, 4.6678634905608120E-003, 0.0, 0.0, 0.0],
+                         [-1.1925832363660176E-003, 4.6678634905608120E-003, 1.8050360823886634E-002, 0.0, 0.0, 0.0],
+                         [0.0, 0.0, 0.0, -4.2577332248156154E-003, 1.1465409747293625E-003, -3.9303257581591380E-004],
+                         [0.0, 0.0, 0.0, 1.1465409747293625E-003, 9.8884524572834731E-004, -1.1312073154140872E-003],
+                         [0.0, 0.0, 0.0, -3.9303257581591380E-004, -1.1312073154140872E-003, 3.2688879790872577E-003]])
+    assert np.allclose(ref_hess, hessian, atol=1e-6)
+
+
 def test_compute_perturbed_electrostatic_interaction(neon):
     core_ne, env_ne = neon
     ref_energy = [-2.3142853266046646, 0.0, 0.0]

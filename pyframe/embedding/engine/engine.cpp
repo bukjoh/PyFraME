@@ -27,6 +27,29 @@
 #include "computation.h"
 #include "global.h"
 
+// Function to convert std::vector<Eigen::Matrix<double, 6, 1>> to NumPy array
+PyObject* std_vec_of_eigen_vector6_to_numpy(const std::vector<Eigen::Matrix<double, 6, 1>>& vec) {
+    int rows = vec.size();
+    int cols = 6; // Each vector has 6 elements
+
+    npy_intp dims[2] = {rows, cols};
+    PyObject* numpyArray = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+    if (!numpyArray) {
+        PyErr_SetString(PyExc_RuntimeError, "Could not allocate NumPy array");
+        return nullptr;
+    }
+    double* dataPtr = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
+
+    // Copy each 6-element vector into a row of the array
+    for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+            dataPtr[i * cols + j] = vec[i](j);
+        }
+    }
+
+    return numpyArray;
+}
+
 // Function to convert std::vector<Eigen::Vector3d> to NumPy array
 PyObject* std_vec_of_eigen_vec3d_to_numpy(const std::vector<Eigen::Vector3d>& vec) {
     int rows = vec.size();
@@ -303,22 +326,22 @@ std::vector<Eigen::VectorXd> read_multipoles(PyObject *multipoles_obj)
 
 // Creates, from an Eigen::MatrixXd, a 2-dimensional np.ndarray of the same shape.
 // matrix: the matrix to use
-PyObject *eigen_matrix_to_numpy(const Eigen::MatrixXd &matrix)
+template <typename Derived>
+PyObject* eigen_matrix_to_numpy(const Eigen::MatrixBase<Derived>& matrix)
 {
-    int rows = (int)matrix.rows();
-    int cols = (int)matrix.cols();
+    int rows = static_cast<int>(matrix.rows());
+    int cols = static_cast<int>(matrix.cols());
 
     npy_intp dims[] = {rows, cols};
-    PyObject *numpyArray = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
-    if (numpyArray == NULL)
-    {
-        return NULL; // Memory allocation failed
+    PyObject* numpyArray = PyArray_SimpleNew(2, dims, NPY_DOUBLE);
+    if (numpyArray == nullptr) {
+        return nullptr; // Memory allocation failed
     }
 
-    // Copy data from Eigen matrix to NumPy array, but first converting to row-major order
-    double *numpyData = static_cast<double *>(PyArray_DATA((PyArrayObject *)numpyArray));
+    // Convert to row-major order (NumPy's default) if necessary
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> matrix_rm = matrix;
-    const double *eigenData = matrix_rm.data();
+    const double* eigenData = matrix_rm.data();
+    double* numpyData = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
     std::copy(eigenData, eigenData + rows * cols, numpyData);
 
     return numpyArray;
@@ -872,6 +895,18 @@ static PyObject* e_nuc_es_gradients(PyObject* self, PyObject* args) {
     return std_vec_of_eigen_vec3d_to_numpy(computation::e_nuc_es_gradients(start, end));
 }
 
+//Calculates the Hessian of the electrostatic interaction energy between the nuclei and the ClassicalSystem
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* e_nuc_es_hessian(PyObject* self, PyObject* args) {
+    PyObject *start_end_nuc_idx_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_nuc_idx_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_nuc_idx_obj)(0);
+    int end = (int)read_vector(start_end_nuc_idx_obj)(1);
+    return std_vec_of_eigen_vector6_to_numpy(computation::e_nuc_es_hessian(start, end));
+}
+
 
 //Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem
 //args: np.array([start, end]), [np.array([0,0,0]), np.array([perturbation multi index])]
@@ -1149,6 +1184,8 @@ static PyMethodDef module_methods[] = {
      "Calculates the electrostatic energy gradients between all Atoms and Nuclei. Previously set coords, multipoles, multipole_orders, nuclei_coords and nuclei_charges."},
      {"e_nuc_es_gradients", e_nuc_es_gradients, METH_VARARGS,
      "Calculates the gradient of the electrostatic interaction energy between the nuclei and the ClassicalSystem."},
+     {"e_nuc_es_hessian", e_nuc_es_hessian, METH_VARARGS,
+     "Calculates the hessian of the electrostatic interaction energy between the nuclei and the ClassicalSystem."},
      {"e_nuc_es_perturbed", e_nuc_es_perturbed, METH_VARARGS,
      "Calculates the perturbed electrostatic interaction energy between the nuclei and the ClassicalSystem."},
      {"set_atoms_nuclei_coordinates_lj_sigma_epsilon", set_atoms_nuclei_coordinates_lj_sigma_epsilon, METH_VARARGS,

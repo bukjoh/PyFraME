@@ -168,6 +168,30 @@ class QuantumSubsystem(Subsystem):
         else:
             return engine.nuclei_field_gradients(np.array([0, len(coordinates)], dtype=np.int64))
 
+    def compute_nuclear_field_hessian(self,
+                                        coordinates
+                                        ) -> np.ndarray:
+        """Calculate the electric field gradient from the nuclei at the given coordinates.
+
+        Args:
+            coordinates: Array of coordinates at which the field gradients are calculated.
+
+        Returns:
+            Array of nuclear field gradients in the same ordering as the input coordinates.
+                Shape: (number of nuclei, number of atoms, 6)
+        """
+        engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
+        if self.comm is not None:
+            avg, res = divmod(len(coordinates), self.size)
+            counts = [avg + 1 if p < res else avg for p in range(self.size)]
+            start = sum(counts[:self.rank])
+            end = sum(counts[:self.rank + 1])
+            nuclear_field_gradients = engine.nuclei_field_hessian(np.array([start, end], dtype=np.int64))
+            nuclear_field_gradients = self.comm.allreduce(nuclear_field_gradients)
+            return nuclear_field_gradients
+        else:
+            return engine.nuclei_field_hessian(np.array([0, len(coordinates)], dtype=np.int64))
+
     def compute_electronic_fields(self,
                                   coordinates: np.ndarray,
                                   density_matrix: np.ndarray,
@@ -226,10 +250,6 @@ class QuantumSubsystem(Subsystem):
         else:
             return -1.0 * integral_driver.electronic_field_gradients(coordinates=coordinates,
                                                                      density_matrix=density_matrix)
-
-
-    def compute_electronic_induction_energy_gradient(self):
-        return NotImplementedError
 
 
 class ClassicalSubsystem(Subsystem):

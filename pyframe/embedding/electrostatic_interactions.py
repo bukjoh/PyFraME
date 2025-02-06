@@ -3,7 +3,6 @@ from __future__ import annotations
 import numpy as np
 
 from pyframe.embedding import polytensor, particle, fragment, subsystem, engine
-from mpi4py import MPI
 from typing import Union, Any, Tuple
 
 
@@ -198,6 +197,52 @@ def compute_electrostatic_nuclear_gradients(quantum_subsystem: subsystem.Quantum
         nuclear_gradients = engine.e_nuc_es_gradients(np.array([start, end], dtype=np.int64))
         nuclear_gradients = classical_subsystem.comm.allreduce(nuclear_gradients)
     return nuclear_gradients
+
+def compute_electrostatic_nuclear_hessian(quantum_subsystem: subsystem.QuantumSubsystem,
+                                          classical_subsystem: subsystem.ClassicalSubsystem):
+    """Calculate Hessian of electrostatic nuclear interaction between a QuantumSubsystem and a ClassicalSubsystem.
+
+    Returns:
+        Electrostatic nuclear Hessian in anticanonical ordering.
+            Shape: (Number of Nuclei, 6)
+            Dtype: np.float64
+    """
+    if classical_subsystem.comm is None:
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        nuclear_hessian = engine.e_nuc_es_hessian(
+            np.array([0, len(classical_subsystem.coordinates)], dtype=np.int64))
+    else:
+        engine.set_multipoles_multipole_orders(classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                                               classical_subsystem.multipole_orders)
+        engine.set_coords_nuc_coords_charges(classical_subsystem.coordinates,
+                                             quantum_subsystem.charges,
+                                             quantum_subsystem.coordinates)
+        avg, res = divmod(len(classical_subsystem.coordinates), classical_subsystem.size)
+        counts = [avg + 1 if p < res else avg for p in range(classical_subsystem.size)]
+        start = sum(counts[:classical_subsystem.rank])
+        end = sum(counts[:classical_subsystem.rank + 1])
+        nuclear_hessian = engine.e_nuc_es_hessian(np.array([start, end], dtype=np.int64))
+        nuclear_hessian = classical_subsystem.comm.allreduce(nuclear_hessian)
+    N = nuclear_hessian.shape[0]  # Number of nuclei
+    H_full = np.zeros((3 * N, 3 * N))  # Initialize full Hessian
+
+    # Indices for 3×3 blocks
+    idx = np.arange(N) * 3  # Start index for each nucleus
+
+    # Assign diagonal elements
+    H_full[idx, idx] = nuclear_hessian[:, 0]  # H_xx
+    H_full[idx + 1, idx + 1] = nuclear_hessian[:, 3]  # H_yy
+    H_full[idx + 2, idx + 2] = nuclear_hessian[:, 5]  # H_zz
+
+    # Assign symmetric off-diagonal elements
+    H_full[idx, idx + 1] = H_full[idx + 1, idx] = nuclear_hessian[:, 1]  # H_xy = H_yx
+    H_full[idx, idx + 2] = H_full[idx + 2, idx] = nuclear_hessian[:, 2]  # H_xz = H_zx
+    H_full[idx + 1, idx + 2] = H_full[idx + 2, idx + 1] = nuclear_hessian[:, 4]  # H_yz = H_zy
+    return H_full
 
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
