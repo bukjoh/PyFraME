@@ -350,6 +350,7 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
     """
     no_nuc = len(nuc_list)
     if classical_subsystem.comm is not None:
+        # FIXME MPI parallelize here
         hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
         for i in nuc_list:
             for j in nuc_list:
@@ -380,6 +381,30 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
                 # Insert the 3x3 block into the correct position in hess_contr
                 hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
         return hess_contr
+
+
+def compute_electronic_electrostatic_fock_gradient(i: int,
+                                                   classical_subsystem: subsystem.ClassicalSubsystem,
+                                                   integral_driver: Any) -> np.ndarray:
+    """Calculates the electronic electrostatic energy Hessian from a ClassicalSubsystem and
+    the one-electron integrals gradients.
+
+    Args:
+        i: Index of Nucleus "i".
+        classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
+        integral_driver: Integral driver that calculates the electronic field gradients on coordinates and contracts
+        with the induced dipoles.
+
+    Returns:
+        Electronic electrostatic energy Hessian.
+    """
+
+    return integral_driver.electronic_electrostatic_fock_gradient(
+        multipole_coordinates=classical_subsystem.coordinates,
+        multipole_orders=classical_subsystem.multipole_orders,
+        multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+        i=i)
+
 
 def compute_perturbed_electrostatic_interaction(quantum_subsystem: subsystem.QuantumSubsystem,
                                                 classical_subsystem: Union[subsystem.ClassicalSubsystem, list],
