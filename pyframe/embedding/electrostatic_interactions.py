@@ -354,6 +354,8 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
         hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
         for i in nuc_list:
             for j in nuc_list:
+                if i == j:
+                    continue
                 # Compute the 3x3 submatrix for the (i, j) pair
                 hessian_block = integral_driver.electronic_electrostatic_energy_hessian(
                     multipole_coordinates=classical_subsystem.coordinates,
@@ -366,9 +368,12 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
                 # Insert the 3x3 block into the correct position in hess_contr
                 hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
         return hess_contr
+    else:
         hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
         for i in nuc_list:
             for j in nuc_list:
+                if i == j:
+                    continue
                 # Compute the 3x3 submatrix for the (i, j) pair
                 hessian_block = integral_driver.electronic_electrostatic_energy_hessian(
                     multipole_coordinates=classical_subsystem.coordinates,
