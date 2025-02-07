@@ -349,31 +349,26 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
         Electronic electrostatic energy Hessian.
     """
 
-    def iteration_to_pair(k, n):
+    def iteration_to_pair(k, no_nuc):
         """
-        Map a linear iteration index k (0-indexed) to a unique pair (i, j) for n atoms,
-        where 0 <= i < j < n.
-
-        Parameters:
-            k (int): The iteration index (0 <= k < n*(n-1)/2).
-            n (int): The total number of atoms.
-
-        Returns:
-            tuple: A tuple (i, j) representing the pair indices.
+        Map an iteration index k (0 <= k < no_nuc*(no_nuc+1)//2)
+        to a pair (i, j) with i <= j.
         """
         i = 0
-        # For each row i, there are (n - i - 1) pairs: (i, i+1), (i, i+2), ..., (i, n-1).
-        # We subtract that many pairs until k falls within the current row.
-        while k >= (n - i - 1):
-            k -= (n - i - 1)
+        while k >= (no_nuc - i):
+            k -= (no_nuc - i)
             i += 1
-        j = i + k + 1
+        j = i + k
         return i, j
 
     no_nuc = len(nuc_list)
     if classical_subsystem.comm is not None:
+        # Allocate the contribution matrix
         hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
-        total_iterations = (no_nuc - 1) * no_nuc // 2
+
+        # Total number of (i,j) pairs with i <= j
+        total_iterations = no_nuc * (no_nuc + 1) // 2
+
         rank = classical_subsystem.comm.Get_rank()
         size = classical_subsystem.comm.Get_size()
 
@@ -392,11 +387,14 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
                 multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                 density_matrix=density_matrix,
                 nuc_i=i,
-                nuc_j=j)
+                nuc_j=j
+            )
             # Insert the 3x3 block into the correct position in hess_contr
             hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
             if i != j:
                 hess_contr[3 * j: 3 * j + 3, 3 * i: 3 * i + 3] += hessian_block.T
+
+        # Reduce the contributions from all processes
         hess_contr = classical_subsystem.comm.allreduce(hess_contr)
         return hess_contr
     else:
@@ -412,11 +410,12 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
                     multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
                     density_matrix=density_matrix,
                     nuc_i=i,
-                    nuc_j=j)
+                    nuc_j=j
+                )
                 # Insert the 3x3 block into the correct position in hess_contr
                 hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
                 if i != j:
-                    hess_contr[3 * j: 3 * j + 3, 3 * i: 3 * i + 3] += hessian_block.Ts
+                    hess_contr[3 * j: 3 * j + 3, 3 * i: 3 * i + 3] += hessian_block.T
         return hess_contr
 
 
