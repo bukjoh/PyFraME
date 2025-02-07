@@ -228,22 +228,22 @@ def compute_electrostatic_nuclear_hessian(quantum_subsystem: subsystem.QuantumSu
         end = sum(counts[:classical_subsystem.rank + 1])
         nuclear_hessian = engine.e_nuc_es_hessian(np.array([start, end], dtype=np.int64))
         nuclear_hessian = classical_subsystem.comm.allreduce(nuclear_hessian)
-    N = nuclear_hessian.shape[0]  # Number of nuclei
-    H_full = np.zeros((3 * N, 3 * N))  # Initialize full Hessian
+    num_nuc = quantum_subsystem.num_nuclei  # Number of nuclei
+    hessian_contr = np.zeros((3 * num_nuc, 3 * num_nuc))  # Initialize full Hessian
 
     # Indices for 3×3 blocks
-    idx = np.arange(N) * 3  # Start index for each nucleus
+    idx = np.arange(num_nuc) * 3  # Start index for each nucleus
 
     # Assign diagonal elements
-    H_full[idx, idx] = nuclear_hessian[:, 0]  # H_xx
-    H_full[idx + 1, idx + 1] = nuclear_hessian[:, 3]  # H_yy
-    H_full[idx + 2, idx + 2] = nuclear_hessian[:, 5]  # H_zz
+    hessian_contr[idx, idx] = nuclear_hessian[:, 0]  # H_xx
+    hessian_contr[idx + 1, idx + 1] = nuclear_hessian[:, 3]  # H_yy
+    hessian_contr[idx + 2, idx + 2] = nuclear_hessian[:, 5]  # H_zz
 
     # Assign symmetric off-diagonal elements
-    H_full[idx, idx + 1] = H_full[idx + 1, idx] = nuclear_hessian[:, 1]  # H_xy = H_yx
-    H_full[idx, idx + 2] = H_full[idx + 2, idx] = nuclear_hessian[:, 2]  # H_xz = H_zx
-    H_full[idx + 1, idx + 2] = H_full[idx + 2, idx + 1] = nuclear_hessian[:, 4]  # H_yz = H_zy
-    return H_full
+    hessian_contr[idx, idx + 1] = hessian_contr[idx + 1, idx] = nuclear_hessian[:, 1]  # H_xy = H_yx
+    hessian_contr[idx, idx + 2] = hessian_contr[idx + 2, idx] = nuclear_hessian[:, 2]  # H_xz = H_zx
+    hessian_contr[idx + 1, idx + 2] = hessian_contr[idx + 2, idx + 1] = nuclear_hessian[:, 4]  # H_yz = H_zy
+    return hessian_contr
 
 
 def es_fock_matrix_contributions(classical_subsystem: subsystem.ClassicalSubsystem,
@@ -348,26 +348,56 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
     Returns:
         Electronic electrostatic energy Hessian.
     """
+
+    def iteration_to_pair(k, n):
+        """
+        Map a linear iteration index k (0-indexed) to a unique pair (i, j) for n atoms,
+        where 0 <= i < j < n.
+
+        Parameters:
+            k (int): The iteration index (0 <= k < n*(n-1)/2).
+            n (int): The total number of atoms.
+
+        Returns:
+            tuple: A tuple (i, j) representing the pair indices.
+        """
+        i = 0
+        # For each row i, there are (n - i - 1) pairs: (i, i+1), (i, i+2), ..., (i, n-1).
+        # We subtract that many pairs until k falls within the current row.
+        while k >= (n - i - 1):
+            k -= (n - i - 1)
+            i += 1
+        j = i + k + 1
+        return i, j
+
     no_nuc = len(nuc_list)
     if classical_subsystem.comm is not None:
-        # FIXME MPI parallelize here
         hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
-        for i in nuc_list:
-            for j in nuc_list:
-                if i > j:
-                    continue
-                # Compute the 3x3 submatrix for the (i, j) pair
-                hessian_block = integral_driver.electronic_electrostatic_energy_hessian(
-                    multipole_coordinates=classical_subsystem.coordinates,
-                    multipole_orders=classical_subsystem.multipole_orders,
-                    multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
-                    density_matrix=density_matrix,
-                    nuc_i=i,
-                    nuc_j=j)
-                # Insert the 3x3 block into the correct position in hess_contr
-                hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
-                if i != j:
-                    hess_contr[3 * j: 3 * j + 3, 3 * i: 3 * i + 3] += hessian_block.T
+        total_iterations = (no_nuc - 1) * no_nuc // 2
+        rank = classical_subsystem.comm.Get_rank()
+        size = classical_subsystem.comm.Get_size()
+
+        iterations_per_process = total_iterations // size
+        remainder = total_iterations % size
+
+        start = rank * iterations_per_process + min(rank, remainder)
+        end = start + iterations_per_process + (1 if rank < remainder else 0)
+
+        for iteration in range(start, end):
+            i, j = iteration_to_pair(iteration, no_nuc)
+            # Compute the 3x3 submatrix for the (i, j) pair
+            hessian_block = integral_driver.electronic_electrostatic_energy_hessian(
+                multipole_coordinates=classical_subsystem.coordinates,
+                multipole_orders=classical_subsystem.multipole_orders,
+                multipoles=classical_subsystem.degenerate_multipoles_with_taylor_coefficients,
+                density_matrix=density_matrix,
+                nuc_i=i,
+                nuc_j=j)
+            # Insert the 3x3 block into the correct position in hess_contr
+            hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
+            if i != j:
+                hess_contr[3 * j: 3 * j + 3, 3 * i: 3 * i + 3] += hessian_block.T
+        hess_contr = classical_subsystem.comm.allreduce(hess_contr)
         return hess_contr
     else:
         hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
@@ -405,7 +435,6 @@ def compute_electronic_electrostatic_fock_gradient(i: int,
     Returns:
         Electronic electrostatic energy Hessian.
     """
-
     return integral_driver.electronic_electrostatic_fock_gradient(
         multipole_coordinates=classical_subsystem.coordinates,
         multipole_orders=classical_subsystem.multipole_orders,
