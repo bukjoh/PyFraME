@@ -28,7 +28,7 @@ def test_compute_dispersion_interactions(two_oxygen,
                                             perturbed=False,
                                             method='LJ',
                                             combination_rule='Lorentz-Berthelot'))
-    # First order perturbed repulsion potential
+    # First order perturbed dispersion potential
     geo_templ = rspPert('GEO', 0.0)
     el_0_templ = rspPert('EL', 0.0)
     perts_el0 = rspPertTuple([copy.deepcopy(el_0_templ)])
@@ -195,3 +195,16 @@ def test_compute_dispersion_interactions_gradient(two_oxygen,
                                                                 classical_subsystem=env_two_wat,
                                                                 method='LJ',
                                                                 combination_rule='Lorentz-Berthelot'))
+
+
+def test_compute_dispersion_interactions_hessian(neon):
+    # Setup
+    core_neon, env_neon = neon
+    ref_hess = np.array([[-235.3135504147008, 0.0, 0.0], [0.0, 33.6162214878144, 0.0], [0.0, 0.0, 33.6162214878144]])
+    # Test LJ repulsion Hessian
+    assert np.allclose(ref_hess, dispersion_interactions.
+                       compute_dispersion_interactions_hessian(quantum_subsystem=core_neon,
+                                                               classical_subsystem=env_neon,
+                                                               method='LJ',
+                                                               combination_rule='Lorentz-Berthelot'))
+

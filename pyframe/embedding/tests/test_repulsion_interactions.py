@@ -199,3 +199,15 @@ def test_compute_repulsion_interactions_gradient(two_oxygen,
                                                                classical_subsystem=env_two_wat,
                                                                method='LJ',
                                                                combination_rule='Lorentz-Berthelot'))
+
+
+def test_compute_dispersion_interactions_hessian(neon):
+    # Setup
+    core_neon, env_neon = neon
+    ref_hess = np.array([[2644.9228090075026, 0.0, 0.0], [0.0, -203.45560069288484, 0.0], [0.0, 0.0, -203.45560069288484]])
+    # Test LJ repulsion Hessian
+    assert np.allclose(ref_hess, repulsion_interactions.
+                       compute_repulsion_interactions_hessian(quantum_subsystem=core_neon,
+                                                              classical_subsystem=env_neon,
+                                                              method='LJ',
+                                                              combination_rule='Lorentz-Berthelot'))

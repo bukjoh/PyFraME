@@ -34,7 +34,7 @@ double compute_interaction_tensor_element(
     double norm = r_ab.norm();
 
     for (int q = 0; q <= i; q++) {
-        double cl = tensor_coefficients[q](i, 1) * std::pow(r_ab(0) / norm, q);
+        double cl = tensor_coefficients[q](i, 1) * std::pow(r_ab(0) / norm, static_cast<double>(q));
         int o = q + i + 1;
         for (int m = 0; m <= j; m++) {
             double cm = cl * tensor_coefficients[m](j, o) * std::pow(r_ab(1) / norm, m);
@@ -391,6 +391,9 @@ double lj_repulsion_environment_energy(Eigen::MatrixXi idx_arr, std::string comb
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
     }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
+    }
     if (combination_rule != "Lorentz-Berthelot") {
     throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
     }
@@ -430,6 +433,9 @@ double lj_dispersion_environment_energy(Eigen::MatrixXi idx_arr, std::string com
     std::tuple<double, double> (*combination_func)(double, double, double, double);
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
+    }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
     }
     #pragma omp parallel
     {
@@ -645,6 +651,9 @@ double compute_unperturbed_lj_dispersion(int start, int end, std::string combina
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
     }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
+    }
     int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
     #pragma omp parallel
     {
@@ -681,6 +690,9 @@ double compute_unperturbed_lj_repulsion(int start, int end, std::string combinat
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
     }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
+    }
     int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
     #pragma omp parallel
     {
@@ -716,6 +728,9 @@ std::vector<Eigen::Vector3d> compute_lj_repulsion_gradient(int start, int end, s
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
     }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
+    }
     int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
     std::vector<Eigen::Vector3d> lj_repulsion_gradient(no_nuclei , Eigen::Vector3d::Zero());
     #pragma omp parallel
@@ -749,6 +764,56 @@ std::vector<Eigen::Vector3d> compute_lj_repulsion_gradient(int start, int end, s
     return lj_repulsion_gradient;
 }
 
+// Computes the LJ repulsion Hessian of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
+// Parallelized with OpenMP.
+std::vector<Eigen::MatrixXd> compute_lj_repulsion_hessian(int start, int end, std::string combination_rule) {
+    // Define the function pointer type
+    std::tuple<double, double> (*combination_func)(double, double, double, double);
+    if (combination_rule == "Lorentz-Berthelot") {
+        combination_func = LB_combination;
+    }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
+    }
+
+    int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
+    std::vector<Eigen::MatrixXd> lj_repulsion_hessian(no_nuclei, Eigen::MatrixXd::Zero(3, 3));
+    #pragma omp parallel
+    {
+        std::vector<Eigen::MatrixXd> hessian_contr(no_nuclei, Eigen::MatrixXd::Zero(3, 3));
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            for(int i = 0; i < no_nuclei; i++) {
+            std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::quantum_sigmas[i],
+                                                                                    global::classical_sigmas[j],
+                                                                                    global::quantum_epsilons[i],
+                                                                                    global::classical_epsilons[j]);
+            double sigma = std::get<0>(combined_sigma_epsilon);
+            double epsilon = std::get<1>(combined_sigma_epsilon);
+            double recip_distance = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                      global::tensor_template_potential,
+                                                      0, 0, 0, 0)(0,0);
+            Eigen::MatrixXd recip_distance_deriv = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                               global::tensor_template_potential,
+                                                               1, 0, 1, 0);
+            Eigen::MatrixXd recip_distance_hess = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                                     global::tensor_template_potential,
+                                                                     1, 1, 1, 1);
+            hessian_contr[i] += epsilon * 12.0 * std::pow(sigma, 12) * std::pow(recip_distance, 11) * recip_distance_hess;
+
+            hessian_contr[i] += epsilon * 132.0 * std::pow(sigma, 12) * std::pow(recip_distance, 10) * recip_distance_deriv * recip_distance_deriv.transpose();
+            }
+        }
+        #pragma omp critical
+        {
+        for (int i = 0; i < no_nuclei; ++i) {
+            lj_repulsion_hessian[i] += 4.0 * hessian_contr[i];
+        }
+        }
+    }
+    return lj_repulsion_hessian;
+}
+
 // Computes the LJ dispersion gradients of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
 // Parallelized with OpenMP.
 std::vector<Eigen::Vector3d> compute_lj_dispersion_gradient(int start, int end, std::string combination_rule) {
@@ -756,6 +821,9 @@ std::vector<Eigen::Vector3d> compute_lj_dispersion_gradient(int start, int end, 
     std::tuple<double, double> (*combination_func)(double, double, double, double);
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
+    }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
     }
     int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
     std::vector<Eigen::Vector3d> lj_dispersion_gradient(no_nuclei , Eigen::Vector3d::Zero());
@@ -790,6 +858,56 @@ std::vector<Eigen::Vector3d> compute_lj_dispersion_gradient(int start, int end, 
     return lj_dispersion_gradient;
 }
 
+// Computes the LJ dispersion Hessian of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
+// Parallelized with OpenMP.
+std::vector<Eigen::MatrixXd> compute_lj_dispersion_hessian(int start, int end, std::string combination_rule) {
+    // Define the function pointer type
+    std::tuple<double, double> (*combination_func)(double, double, double, double);
+    if (combination_rule == "Lorentz-Berthelot") {
+        combination_func = LB_combination;
+    }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
+    }
+
+    int no_nuclei = static_cast<int>(global::quantum_sigmas.size());
+    std::vector<Eigen::MatrixXd> lj_dispersion_hessian(no_nuclei, Eigen::MatrixXd::Zero(3, 3));
+    #pragma omp parallel
+    {
+        std::vector<Eigen::MatrixXd> hessian_contr(no_nuclei, Eigen::MatrixXd::Zero(3, 3));
+        #pragma omp for
+        for(int j = start; j < end; j++){
+            for(int i = 0; i < no_nuclei; i++) {
+            std::tuple<double, double> combined_sigma_epsilon = (*combination_func)(global::quantum_sigmas[i],
+                                                                                    global::classical_sigmas[j],
+                                                                                    global::quantum_epsilons[i],
+                                                                                    global::classical_epsilons[j]);
+            double sigma = std::get<0>(combined_sigma_epsilon);
+            double epsilon = std::get<1>(combined_sigma_epsilon);
+            double recip_distance = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                      global::tensor_template_potential,
+                                                      0, 0, 0, 0)(0,0);
+            Eigen::MatrixXd recip_distance_deriv = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                               global::tensor_template_potential,
+                                                               1, 0, 1, 0);
+            Eigen::MatrixXd recip_distance_hess = compute_t_tensor((global::nuclei_coordinates[i] - global::coordinates[j]),
+                                                                     global::tensor_template_potential,
+                                                                     1, 1, 1, 1);
+            hessian_contr[i] += -1.0 * epsilon * 6.0 * std::pow(sigma, 6) * std::pow(recip_distance, 5) * recip_distance_hess;
+
+            hessian_contr[i] += -1.0 * epsilon * 30.0 * std::pow(sigma, 6) * std::pow(recip_distance, 4) * recip_distance_deriv * recip_distance_deriv.transpose();
+            }
+        }
+        #pragma omp critical
+        {
+        for (int i = 0; i < no_nuclei; ++i) {
+            lj_dispersion_hessian[i] += 4.0 * hessian_contr[i];
+        }
+        }
+    }
+    return lj_dispersion_hessian;
+}
+
 // Computes the derivative of the LJ repulsion potential between a ClassicalSubsystem and a nucleus.
 // Parallelized with OpenMP.
 double compute_perturbed_lj_repulsion(int start,
@@ -801,6 +919,9 @@ double compute_perturbed_lj_repulsion(int start,
     std::tuple<double, double> (*combination_func)(double, double, double, double);
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
+    }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
     }
     #pragma omp parallel for reduction(+:perturbed_lj_repulsion)
     for (int j = start; j < end; j++) {
@@ -851,6 +972,9 @@ double compute_perturbed_lj_dispersion(int start,
     std::tuple<double, double> (*combination_func)(double, double, double, double);
     if (combination_rule == "Lorentz-Berthelot") {
         combination_func = LB_combination;
+    }
+    else {
+    throw std::invalid_argument("Unsupported combination rule: " + combination_rule);
     }
     #pragma omp parallel for reduction(+:perturbed_lj_dispersion)
     for (int j = start; j < end; j++) {

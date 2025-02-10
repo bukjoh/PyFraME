@@ -29,7 +29,7 @@
 
 // Function to convert std::vector<Eigen::Matrix<double, 6, 1>> to NumPy array
 PyObject* std_vec_of_eigen_vector6_to_numpy(const std::vector<Eigen::Matrix<double, 6, 1>>& vec) {
-    int rows = vec.size();
+    int rows = static_cast<int>(vec.size());
     int cols = 6; // Each vector has 6 elements
 
     npy_intp dims[2] = {rows, cols};
@@ -50,9 +50,65 @@ PyObject* std_vec_of_eigen_vector6_to_numpy(const std::vector<Eigen::Matrix<doub
     return numpyArray;
 }
 
+// Conversion function: from std::vector<Eigen::MatrixXd> to a NumPy array.
+PyObject* std_vec_of_eigen_matrix_to_numpy(const std::vector<Eigen::MatrixXd>& vec) {
+    // Number of matrices in the vector.
+    const int num_matrices = static_cast<int>(vec.size());
+
+    // If there are no matrices, return an empty (0, 3, 3) array.
+    // (Adjust the 3,3 if your intended default differs.)
+    if (num_matrices == 0) {
+        npy_intp dims_empty[3] = {0, 3, 3};
+        return PyArray_SimpleNew(3, dims_empty, NPY_DOUBLE);
+    }
+
+    // In our case we expect each matrix to be 3x3.
+    // You can also extract these dimensions from the first matrix:
+
+    const Eigen::Index nrows = vec[0].rows();
+    const Eigen::Index ncols = vec[0].cols();
+
+
+    // Optional: check that all matrices have the same shape.
+    for (int i = 0; i < num_matrices; ++i) {
+        if (vec[i].rows() != nrows || vec[i].cols() != ncols) {
+            PyErr_SetString(PyExc_RuntimeError, "Inconsistent matrix shapes in vector");
+            return nullptr;
+        }
+    }
+
+    // Create a NumPy array with dimensions (num_matrices, nrows, ncols)
+    npy_intp dims[3] = {num_matrices, nrows, ncols};
+    PyObject* numpyArray = PyArray_SimpleNew(3, dims, NPY_DOUBLE);
+    if (!numpyArray) {
+        PyErr_SetString(PyExc_RuntimeError, "Could not allocate NumPy array");
+        return nullptr;
+    }
+
+    // Get a pointer to the underlying data of the NumPy array.
+    // NumPy arrays created with PyArray_SimpleNew are C-contiguous.
+    double* dataPtr = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
+
+    // Each 3x3 matrix occupies nrows * ncols elements.
+    const int matrix_size = nrows * ncols;
+    for (int i = 0; i < num_matrices; ++i) {
+        // Copy the i-th Eigen matrix into the NumPy array.
+        // The data layout is assumed to be row-major.
+        for (int r = 0; r < nrows; ++r) {
+            for (int c = 0; c < ncols; ++c) {
+                // Compute the index in the flattened array:
+                // index = (matrix index) * (nrows*ncols) + (row index)*ncols + (col index)
+                dataPtr[i * matrix_size + r * ncols + c] = vec[i](r, c);
+            }
+        }
+    }
+
+    return numpyArray;
+}
+
 // Function to convert std::vector<Eigen::Vector3d> to NumPy array
 PyObject* std_vec_of_eigen_vec3d_to_numpy(const std::vector<Eigen::Vector3d>& vec) {
-    int rows = vec.size();
+    int rows = static_cast<int>(vec.size());
     int cols = 3; // Eigen::Vector3d has 3 elements
 
     // Create a NumPy array
@@ -202,7 +258,7 @@ std::vector<Eigen::MatrixXd> read_tensor(PyArrayObject *tensor_obj)
     for (npy_intp i = 0; i < t; ++i)
     {
         Eigen::MatrixXd matrix(u, v);
-        for (int j = 0; j < u; ++j)
+        for (npy_intp j = 0; j < u; ++j)
         {
             for (int k = 0; k < v; ++k)
             {
@@ -225,10 +281,8 @@ Eigen::MatrixXd read_matrix_d(PyArrayObject *matrix_obj)
     }
     npy_intp u = PyArray_DIM(matrix_obj, 0), v = PyArray_DIM(matrix_obj, 1);
     Eigen::MatrixXd matrix(u, v);
-    for (int j = 0; j < u; ++j)
-    {
-        for (int k = 0; k < v; ++k)
-        {
+    for (npy_intp j = 0; j < u; ++j) {
+        for (npy_intp k = 0; k < v; ++k) {
             matrix(j, k) = *(double *)PyArray_GETPTR2((PyArrayObject *)matrix_obj, j, k);
         }
     }
@@ -247,7 +301,7 @@ Eigen::MatrixXi read_matrix_i(PyArrayObject *matrix_obj)
     }
     npy_intp u = PyArray_DIM(matrix_obj, 0), v = PyArray_DIM(matrix_obj, 1);
     Eigen::MatrixXi matrix(u, v);
-    for (int j = 0; j < u; ++j)
+    for (npy_intp j = 0; j < u; ++j)
     {
         for (int k = 0; k < v; ++k)
         {
@@ -268,7 +322,7 @@ Eigen::VectorXi read_vector(PyObject *vector_obj)
     }
     npy_intp u = PyArray_DIM((PyArrayObject *)vector_obj, 0);
     Eigen::VectorXi vector(u);
-    for (int j = 0; j < u; ++j)
+    for (npy_intp j = 0; j < u; ++j)
     {
         vector(j) = (int)*(long *)PyArray_GETPTR1((PyArrayObject *)vector_obj, j);
     }
@@ -285,7 +339,7 @@ Eigen::VectorXd read_vector_d(PyObject *vector_obj)
     }
     npy_intp u = PyArray_DIM((PyArrayObject *)vector_obj, 0);
     Eigen::VectorXd vector(u);
-    for (int j = 0; j < u; ++j)
+    for (npy_intp j = 0; j < u; ++j)
     {
         vector(j) = *(double *)PyArray_GETPTR1((PyArrayObject *)vector_obj, j);
     }
@@ -405,11 +459,11 @@ static PyObject* compute_t_tensor(PyObject* self, PyObject* args) {
         return NULL;
     }
     Eigen::VectorXi ranks = read_vector(ranks_obj);
-    int rank_a = ranks(0);
-    int rank_b = ranks(1);
-    int start_rank_a = ranks(2);
-    int start_rank_b = ranks(3);
-    bool is_potential = (bool)ranks(4);
+    int rank_a = static_cast<int>(ranks(0));
+    int rank_b = static_cast<int>(ranks(1));
+    int start_rank_a = static_cast<int>(ranks(2));
+    int start_rank_b = static_cast<int>(ranks(3));
+    bool is_potential = static_cast<bool>(ranks(4));
 
     Eigen::Vector3d r_a = read_vector3d(r_a_obj);
     Eigen::Vector3d r_b = read_vector3d(r_b_obj);
@@ -440,11 +494,11 @@ static PyObject* compute_cluster_t_tensor(PyObject* self, PyObject* args) {
         return NULL;
     }
     Eigen::VectorXi ranks = read_vector(ranks_obj);
-    int rank_a = ranks(0);
-    int rank_b = ranks(1);
-    int start_rank_a = ranks(2);
-    int start_rank_b = ranks(3);
-    bool is_potential = (bool)ranks(4);
+    int rank_a = static_cast<int>(ranks(0));
+    int rank_b = static_cast<int>(ranks(1));
+    int start_rank_a = static_cast<int>(ranks(2));
+    int start_rank_b = static_cast<int>(ranks(3));
+    bool is_potential = static_cast<bool>(ranks(4));
 
     int index_a = PyLong_AsLong(index_a_obj);
     int index_b = PyLong_AsLong(index_b_obj);
@@ -500,8 +554,8 @@ static PyObject* set_coords_idcs_exlcs(PyObject* self, PyObject* args) {
         return NULL;
     }
     Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)coords_obj);
-    global::coordinates = std::vector<Eigen::Vector3d>();
-    for(int i = 0; i < coords.rows(); i++) {
+    global::coordinates.clear();
+    for (Eigen::Index i = 0; i < coords.rows(); ++i) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
         global::coordinates.push_back(coord);
@@ -549,8 +603,8 @@ static PyObject* set_mic_coords_idcs_exlcs(PyObject* self, PyObject* args) {
     Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)coords_obj);
     global::box = read_matrix_d((PyArrayObject *)box_obj);
     Eigen::MatrixXd inv_box = global::box.inverse();
-    global::coordinates_scaled = std::vector<Eigen::Vector3d>();
-    for(int i = 0; i < coords.rows(); i++) {
+    global::coordinates_scaled.clear();
+    for (Eigen::Index i = 0; i < coords.rows(); ++i) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
         coord = coord * inv_box;
@@ -596,15 +650,15 @@ static PyObject* set_coords_nuc_coords_charges(PyObject* self, PyObject* args) {
         return NULL;
     }
     Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)atom_coords_obj);
-    global::coordinates = std::vector<Eigen::Vector3d>();
-    for(int i = 0; i < coords.rows(); i++) {
+    global::coordinates.clear();
+    for (Eigen::Index i = 0; i < coords.rows(); ++i) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
         global::coordinates.push_back(coord);
     }
     Eigen::MatrixXd nuc_coords = read_matrix_d((PyArrayObject *)nuc_coords_obj);
-    global::nuclei_coordinates = std::vector<Eigen::Vector3d>();
-    for(int i = 0; i < nuc_coords.rows(); i++) {
+    global::nuclei_coordinates.clear();
+    for (Eigen::Index i = 0; i < nuc_coords.rows(); ++i) {
         Eigen::Vector3d coord;
         coord << nuc_coords(i, 0), nuc_coords(i, 1), nuc_coords(i, 2);
         global::nuclei_coordinates.push_back(coord);
@@ -790,13 +844,12 @@ PyObject* std_vec_of_eigen_matrixXd_to_numpy(const std::vector<Eigen::MatrixXd>&
     double* data = static_cast<double*>(PyArray_DATA(reinterpret_cast<PyArrayObject*>(numpyArray)));
 
     for (const auto& matrix : matrices) {
-        for (int i = 0; i < matrix.rows(); ++i) {
-            for (int j = 0; j < matrix.cols(); ++j) {
+        for (Eigen::Index i = 0; i < matrix.rows(); ++i) {
+            for (Eigen::Index j = 0; j < matrix.cols(); ++j) {
                 *data++ = matrix(i, j); // Copy data in row-major order
             }
         }
     }
-
     return numpyArray;
 }
 
@@ -935,15 +988,15 @@ static PyObject* set_atoms_nuclei_coordinates_lj_sigma_epsilon(PyObject* self, P
     global::quantum_sigmas = read_vector_d(quantum_sigmas_obj);
     global::quantum_epsilons = read_vector_d(quantum_epsilons_obj);
         Eigen::MatrixXd coords = read_matrix_d((PyArrayObject *)atom_coords_obj);
-    global::coordinates = std::vector<Eigen::Vector3d>();
-    for(int i = 0; i < coords.rows(); i++) {
+    global::coordinates.clear();
+    for (Eigen::Index i = 0; i < coords.rows(); ++i) {
         Eigen::Vector3d coord;
         coord << coords(i, 0), coords(i, 1), coords(i, 2);
         global::coordinates.push_back(coord);
     }
     Eigen::MatrixXd nuc_coords = read_matrix_d((PyArrayObject *)nuc_coords_obj);
-    global::nuclei_coordinates = std::vector<Eigen::Vector3d>();
-    for(int i = 0; i < nuc_coords.rows(); i++) {
+    global::nuclei_coordinates.clear();
+    for (Eigen::Index i = 0; i < nuc_coords.rows(); ++i) {
         Eigen::Vector3d coord;
         coord << nuc_coords(i, 0), nuc_coords(i, 1), nuc_coords(i, 2);
         global::nuclei_coordinates.push_back(coord);
@@ -1044,6 +1097,30 @@ static PyObject* lj_dispersion_gradient(PyObject* self, PyObject* args) {
     int start = (int)read_vector(start_end_obj)(0);
     int end = (int)read_vector(start_end_obj)(1);
     return std_vec_of_eigen_vec3d_to_numpy(computation::compute_lj_dispersion_gradient(start, end, global::combination_rule));
+}
+
+// Computes the LJ dispersion Hessian of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* lj_dispersion_hessian(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return std_vec_of_eigen_matrix_to_numpy(computation::compute_lj_dispersion_hessian(start, end, global::combination_rule));
+}
+
+// Computes the LJ repulsion Hessian of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* lj_repulsion_hessian(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return std_vec_of_eigen_matrix_to_numpy(computation::compute_lj_repulsion_hessian(start, end, global::combination_rule));
 }
 
 std::vector<std::vector<std::vector<Eigen::Matrix<int, 2, 3>>>> read_k_partitions(PyObject *k_partitions_obj) {
@@ -1201,9 +1278,13 @@ static PyMethodDef module_methods[] = {
      {"unperturbed_lj_dispersion", unperturbed_lj_dispersion, METH_VARARGS,
      "Computes the LJ repulsion between a ClassicalSubsystem and a QuantumSubsystem."},
      {"lj_repulsion_gradient", lj_repulsion_gradient, METH_VARARGS,
-     "Computes the LJ repulsion potential between a ClassicalSubsystem and a QuantumSubsystem."},
+     "Computes the LJ repulsion gradient between a ClassicalSubsystem and a QuantumSubsystem."},
+     {"lj_repulsion_hessian", lj_repulsion_hessian, METH_VARARGS,
+     "Computes the LJ repulsion Hessian between a ClassicalSubsystem and a QuantumSubsystem."},
      {"lj_dispersion_gradient", lj_dispersion_gradient, METH_VARARGS,
-     "Computes the LJ dispersion potential between a ClassicalSubsystem and a QuantumSubsystem."},
+     "Computes the LJ dispersion gradient between a ClassicalSubsystem and a QuantumSubsystem."},
+     {"lj_dispersion_hessian", lj_dispersion_hessian, METH_VARARGS,
+     "Computes the LJ dispersion Hessian between a ClassicalSubsystem and a QuantumSubsystem."},
      {"perturbed_lj_repulsion", perturbed_lj_repulsion, METH_VARARGS,
      "Computes the perturbed repulsion potential between a ClassicalSubsystem and a nucleus."},
      {"perturbed_lj_dispersion", perturbed_lj_dispersion, METH_VARARGS,
@@ -1222,7 +1303,6 @@ static struct PyModuleDef engine = {
 PyMODINIT_FUNC PyInit_engine(void)
 {
     import_array();
-    Py_Initialize();
     assert(!PyErr_Occurred());
     if (PyErr_Occurred()) {
         std::cerr << "Failed to import numpy Python module(s)." << std::endl;

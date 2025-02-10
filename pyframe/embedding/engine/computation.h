@@ -107,9 +107,17 @@ double compute_unperturbed_lj_dispersion(int start, int end, std::string combina
 // Parallelized with OpenMP.
 std::vector<Eigen::Vector3d> compute_lj_repulsion_gradient(int start, int end, std::string combination_rule);
 
+// Computes the LJ repulsion Hessian of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
+// Parallelized with OpenMP.
+std::vector<Eigen::MatrixXd> compute_lj_repulsion_hessian(int start, int end, std::string combination_rule);
+
 // Computes the LJ dispersion gradients of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
 // Parallelized with OpenMP.
 std::vector<Eigen::Vector3d> compute_lj_dispersion_gradient(int start, int end, std::string combination_rule);
+
+// Computes the LJ dispersion Hessian of the Nuclei in a QuantumSubsystem interacting with a ClassicalSubsystem.
+// Parallelized with OpenMP.
+std::vector<Eigen::MatrixXd> compute_lj_dispersion_hessian(int start, int end, std::string combination_rule);
 
 // Computes the derivative of the LJ repulsion potential between a ClassicalSubsystem and a nucleus.
 // Parallelized with OpenMP.
