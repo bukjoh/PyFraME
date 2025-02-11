@@ -656,6 +656,7 @@ def subsets_of_list(filled_list) -> list:
         for i in range(I, n // 2 + 1):
             for p in get_partitions(n - i, i):
                 yield (i,) + p
+
     partitions = []
     for partition in get_partitions(len(filled_list)):
         for combo in combinations(filled_list, partition[0]):
@@ -684,3 +685,16 @@ def replace_keys_with_values(dictionary: Dict[Any, Any],
            A nested list with keys replaced by corresponding values from the dictionary.
        """
     return [[[dictionary[element] for element in partition] for partition in term] for term in nested_list]
+
+
+def iteration_to_pair(k, no_nuc):
+    """
+    Map an iteration index k (0 <= k < no_nuc*(no_nuc+1)//2)
+    to a pair (i, j) with i <= j.
+    """
+    i = 0
+    while k >= (no_nuc - i):
+        k -= (no_nuc - i)
+        i += 1
+    j = i + k
+    return i, j

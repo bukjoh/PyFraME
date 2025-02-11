@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from pyframe.embedding import polytensor, particle, fragment, subsystem, engine
+from pyframe.embedding import polytensor, particle, fragment, subsystem, engine, perturbation_tools
 from typing import Union, Any, Tuple
 
 
@@ -300,9 +300,8 @@ def compute_electronic_electrostatic_energy_gradients(density_matrix: np.ndarray
                 Shape: (number of ao functions, number of ao functions)
                 Dtype: np.float64
         classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
-        integral_driver: Integral driver that calculates the electronic field gradients on coordinates and contracts
-        with the induced dipoles.
-
+        integral_driver: Integral driver that calculates the one-electron integral gradient contributions
+        and contracts with the multipoles in the ClassicalSubsystem and the relevant density matrices.
     Returns:
         Electronic electrostatic energy gradients.
     """
@@ -342,30 +341,17 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
                 Shape: (number of ao functions, number of ao functions)
                 Dtype: np.float64
         classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
-        integral_driver: Integral driver that calculates the electronic field gradients on coordinates and contracts
-        with the induced dipoles.
+        integral_driver: Integral driver that calculates the one-electron integral gradients and hessian contributions
+        and contracts with the multipoles in the ClassicalSubsystem and the relevant density matrices.
 
     Returns:
         Electronic electrostatic energy Hessian.
     """
 
-    def iteration_to_pair(k, no_nuc):
-        """
-        Map an iteration index k (0 <= k < no_nuc*(no_nuc+1)//2)
-        to a pair (i, j) with i <= j.
-        """
-        i = 0
-        while k >= (no_nuc - i):
-            k -= (no_nuc - i)
-            i += 1
-        j = i + k
-        return i, j
-
     no_nuc = len(nuc_list)
+    # Allocate the contribution matrix
+    hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
     if classical_subsystem.comm is not None:
-        # Allocate the contribution matrix
-        hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
-
         # Total number of (i,j) pairs with i <= j
         total_iterations = no_nuc * (no_nuc + 1) // 2
 
@@ -379,7 +365,7 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
         end = start + iterations_per_process + (1 if rank < remainder else 0)
 
         for iteration in range(start, end):
-            i, j = iteration_to_pair(iteration, no_nuc)
+            i, j = perturbation_tools.iteration_to_pair(iteration, no_nuc)
             # Compute the 3x3 submatrix for the (i, j) pair
             hessian_block = integral_driver.electronic_electrostatic_energy_hessian(
                 multipole_coordinates=classical_subsystem.coordinates,
@@ -398,7 +384,6 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
         hess_contr = classical_subsystem.comm.allreduce(hess_contr)
         return hess_contr
     else:
-        hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
         for i in nuc_list:
             for j in nuc_list:
                 if i > j:
@@ -422,18 +407,19 @@ def compute_electronic_electrostatic_energy_hessian(nuc_list: np.ndarray,
 def compute_electronic_electrostatic_fock_gradient(i: int,
                                                    classical_subsystem: subsystem.ClassicalSubsystem,
                                                    integral_driver: Any) -> np.ndarray:
-    """Calculates the electronic electrostatic energy Hessian from a ClassicalSubsystem and
-    the one-electron integrals gradients.
+    """Calculates the electronic electrostatic Fock matrix gradient of Nucleus "i" from a ClassicalSubsystem and
+    the one-electron integral gradients.
 
     Args:
         i: Index of Nucleus "i".
         classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
-        integral_driver: Integral driver that calculates the electronic field gradients on coordinates and contracts
-        with the induced dipoles.
+        integral_driver: Integral driver that calculates the one-electron integral gradients on coordinates and
+        contracts them with the multipoles at those coordinates.
 
     Returns:
-        Electronic electrostatic energy Hessian.
+        Electronic electrostatic Fock matrix gradient of Nucleus "i".
     """
+    # TODO is duplicate with es_fock_matrix_gradient_contributions -> without for specific index i
     return integral_driver.electronic_electrostatic_fock_gradient(
         multipole_coordinates=classical_subsystem.coordinates,
         multipole_orders=classical_subsystem.multipole_orders,

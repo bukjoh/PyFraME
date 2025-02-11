@@ -86,8 +86,8 @@ def compute_induction_energy_gradient(induced_dipoles: np.ndarray,
 
 
 def compute_electronic_induction_energy_gradients(density_matrix: np.ndarray,
-                                                 classical_subsystem: subsystem.ClassicalSubsystem,
-                                                 integral_driver: Any) -> np.ndarray:
+                                                  classical_subsystem: subsystem.ClassicalSubsystem,
+                                                  integral_driver: Any) -> np.ndarray:
     """Calculates the electronic induction energy gradient (µ_ind * F_el)^g from a ClassicalSubsystem and
     the one-electron integrals gradients.
 
@@ -108,6 +108,126 @@ def compute_electronic_induction_energy_gradients(density_matrix: np.ndarray,
         induced_dipoles=-1.0 * classical_subsystem.induced_dipoles.induced_dipoles,
         coordinates=classical_subsystem.coordinates,
         density_matrix=density_matrix)
+
+
+def compute_electronic_induction_energy_hessian(nuc_list: list,
+                                                density_matrix: np.ndarray,
+                                                classical_subsystem: subsystem.ClassicalSubsystem,
+                                                quantum_subsystem: subsystem.QuantumSubsystem,
+                                                integral_driver: Any,
+                                                threshold: float = 1e-8,
+                                                max_iterations: int = 100,
+                                                mic: bool = False,
+                                                box: np.ndarray = np.array([]),
+                                                solver: str = 'jacobi') -> np.ndarray:
+    no_nuc = len(nuc_list)
+    hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
+
+    # Calculate F^gBF^g
+    f_g = np.zeros([no_nuc, 3, classical_subsystem.num_atoms, 3])
+    mu_g = np.zeros([no_nuc, 3, classical_subsystem.num_atoms, 3])
+    if classical_subsystem.comm is not None:
+        rank = classical_subsystem.comm.rank
+        size = classical_subsystem.comm.size
+        # calculate f_el_g and f_nuc_g
+        avg, res = divmod(len(classical_subsystem.coordinates), size)
+        counts = [avg + 1 if p < res else avg for p in range(size)]
+        start = sum(counts[:rank])
+        end = sum(counts[:rank + 1])
+        for idx in range(no_nuc):
+            f_g[idx, :, start:end, :] += integral_driver.compute_electronic_field_gradients(
+                coordinates=classical_subsystem.coordinates[start:end],
+                density_matrix=density_matrix,
+                i=idx
+            )
+        f_g = classical_subsystem.comm.allreduce(f_g)
+        # Add nuclear Field contribution
+        idx = np.array([[0, 1, 2],
+                        [1, 3, 4],
+                        [2, 4, 5]])
+        f_g += np.swapaxes(np.take(quantum_subsystem.compute_nuclear_field_gradients(
+            coordinates=classical_subsystem.coordinates), idx, axis=2), 1, 2)
+
+        for idx in range(no_nuc):
+            for k in range(3):
+                mu_g = classical_subsystem.solve_perturbed_induced_dipoles(
+                    threshold=threshold,
+                    max_iterations=max_iterations,
+                    mic=mic,
+                    box=box,
+                    solver=solver,
+                    external_fields=f_g[idx, k])
+
+        total_iterations = no_nuc * (no_nuc + 1) // 2
+        iterations_per_process = total_iterations // size
+        remainder = total_iterations % size
+        start = rank * iterations_per_process + min(rank, remainder)
+        end = start + iterations_per_process + (1 if rank < remainder else 0)
+        for iteration in range(start, end):
+            i, j = pt.iteration_to_pair(iteration, no_nuc)
+            # Compute the 3x3 block for nuclei i and j
+            hessian_block = np.einsum('aAb, cAb -> ac', f_g[i], mu_g[j])
+            # Insert the 3x3 block into the correct position in hess_contr
+            hess_contr[3 * i: 3 * i + 3, 3 * j: 3 * j + 3] += hessian_block
+            if i != j:
+                hess_contr[3 * j: 3 * j + 3, 3 * i: 3 * i + 3] += hessian_block.T
+        # Reduce the contributions from all processes
+        hess_contr = classical_subsystem.comm.allreduce(hess_contr)
+    else:
+        for idx in range(no_nuc):
+            f_g[idx] += integral_driver.compute_electronic_field_gradients(
+                coordinates=classical_subsystem.coordinates,
+                density_matrix=density_matrix,
+                i=idx
+            )
+        # Add nuclear Field contribution
+        idx = np.array([[0, 1, 2],
+                        [1, 3, 4],
+                        [2, 4, 5]])
+        f_g += np.swapaxes(np.take(quantum_subsystem.compute_nuclear_field_gradients(
+            coordinates=classical_subsystem.coordinates), idx, axis=2), 1, 2)
+        for idx in range(no_nuc):
+            for k in range(3):
+                mu_g = classical_subsystem.solve_perturbed_induced_dipoles(
+                    threshold=threshold,
+                    max_iterations=max_iterations,
+                    mic=mic,
+                    box=box,
+                    solver=solver,
+                    external_fields=f_g[idx, k])
+        for i in nuc_list:
+            for j in nuc_list:
+                if i > j:
+                    continue  # Only compute for the upper triangle (i <= j)
+                # Compute the 3x3 block for nuclei i and j
+                hessian_block = np.einsum('aAb, cAb -> ac', f_g[i], mu_g[j])
+                # Insert the block in the (i,j) position of the full Hessian
+                hess_contr[3 * i:3 * i + 3, 3 * j:3 * j + 3] += hessian_block
+                if i != j:
+                    # By symmetry, the (j,i) block is the transpose.
+                    hess_contr[3 * j:3 * j + 3, 3 * i:3 * i + 3] += hessian_block.T
+    # Calculate FBF^gg
+    return hess_contr
+
+def compute_electronic_induction_fock_gradient(i: int,
+                                               classical_subsystem: subsystem.ClassicalSubsystem,
+                                               integral_driver: Any) -> np.ndarray:
+    """Calculates the electronic induction energy gradient (µ_ind * F_el)^g from a ClassicalSubsystem and
+    the one-electron integrals gradients.
+
+    Args:
+        i: Index of Nucleus "i".
+        classical_subsystem: ClassicalSubsystem object containing coordinates and induced dipoles.
+        integral_driver: Integral driver that calculates the one-electron integral gradients on coordinates and
+        contracts them with the induced dipoles at those coordinates.
+
+    Returns:
+        Electronic induction Fock matrix gradient of Nucleus "i".
+    """
+    return integral_driver.electronic_induction_fock_gradient(
+        induced_dipoles=-1.0 * classical_subsystem.induced_dipoles.induced_dipoles,
+        coordinates=classical_subsystem.coordinates,
+        i=i)
 
 
 def compute_rsp_induction_energy(input_cache: rspCache,

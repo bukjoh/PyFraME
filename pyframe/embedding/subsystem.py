@@ -169,8 +169,8 @@ class QuantumSubsystem(Subsystem):
             return engine.nuclei_field_gradients(np.array([0, len(coordinates)], dtype=np.int64))
 
     def compute_nuclear_field_hessian(self,
-                                        coordinates
-                                        ) -> np.ndarray:
+                                      coordinates
+                                      ) -> np.ndarray:
         """Calculate the electric field gradient from the nuclei at the given coordinates.
 
         Args:
@@ -178,7 +178,8 @@ class QuantumSubsystem(Subsystem):
 
         Returns:
             Array of nuclear field gradients in the same ordering as the input coordinates.
-                Shape: (number of nuclei, number of atoms, 6)
+                Shape: (number of nuclei, 3, 3, number of atoms, 3)
+                or maybe (number of nuclei, 3, 3, number of atoms, 3) depending on implementation
         """
         engine.set_coords_nuc_coords_charges(coordinates, self.charges, self.coordinates)
         if self.comm is not None:
@@ -186,6 +187,7 @@ class QuantumSubsystem(Subsystem):
             counts = [avg + 1 if p < res else avg for p in range(self.size)]
             start = sum(counts[:self.rank])
             end = sum(counts[:self.rank + 1])
+            #TODO create nuclei field hessian in engine (
             nuclear_field_gradients = engine.nuclei_field_hessian(np.array([start, end], dtype=np.int64))
             nuclear_field_gradients = self.comm.allreduce(nuclear_field_gradients)
             return nuclear_field_gradients
@@ -772,6 +774,7 @@ class ClassicalSubsystem(Subsystem):
                 return old_pert_induced_dipole.induced_dipoles
             else:
                 residue_norms.append(residue_norm)
+        # TODO implement some kind of DIIS scheme based on previous sets of induced dipoles?
         # check which residue norm is the smallest
         min_res_norm = min(residue_norms)
         if min_res_norm < 1e-6:
@@ -851,7 +854,6 @@ class ClassicalSubsystem(Subsystem):
                                                                  cluster_size_range=cluster_size_range,
                                                                  comm=self.comm)
 
-        # FIXME Maybe this will cache too much if the property is of too high order?
         self.perturbed_induced_dipoles.append(InducedDipoles(induced_dipoles=induced_dipoles,
                                                              external_fields=external_fields,
                                                              number_of_iterations=num_iter,
