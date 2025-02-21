@@ -8,10 +8,12 @@ from pyframe.embedding.logging_util import log_manager
 
 class TestQuantumSubsystem:
     @pytest.fixture(autouse=True)
-    def setup(self, act_wat, two_oxygen, two_wat):
+    def setup(self, act_wat, two_oxygen, two_wat, neon, HF):
         self.core, self.env = act_wat
         self.core_oxygen, self.env_oxygen = two_oxygen
         self.core_two_wat, self.env_two_wat = two_wat
+        self.core_neon, self.env_neon = neon
+        self.core_hf, self.env_hf = HF
 
     def test_init_with_valid_arguments(self):
         nuclei = self.core.nuclei  # Provide appropriate Nuclei instances for testing
@@ -44,7 +46,6 @@ class TestQuantumSubsystem:
         ref_grads = np.array([9.5311929756771267e-3, 7.7985188788112876e-3, -1.0495468203592808e-6,
                               -2.8858133904975198e-3, -5.0597310570715463e-7, -6.6453795851796043e-3],
                              dtype=np.float64)
-        # self.core_oxygen.compute_nuclear_field_gradients(self.env_oxygen.coordinates)
         assert np.allclose(ref_grads, self.core_oxygen.compute_nuclear_field_gradients(self.env_oxygen.coordinates))
 
         ref_grads = np.array([[[9.53119298e-03, 7.79851888e-03, -1.04954682e-06,
@@ -68,6 +69,48 @@ class TestQuantumSubsystem:
                                [8.44935406e-04, 6.96866735e-04, 1.26731929e-06,
                                 -2.53431261e-04, 6.14820143e-07, -5.91504145e-04]]])
         assert np.allclose(ref_grads, self.core_two_wat.compute_nuclear_field_gradients(self.env_two_wat.coordinates))
+
+    # def test_compute_nuclear_field_hessian(self):
+    #
+    #     #print(self.core_neon.compute_nuclear_field_gradients(self.env_neon.coordinates))
+    #     idx = np.array([[0, 1, 2],
+    #                     [1, 3, 4],
+    #                     [2, 4, 5]])
+    #     f_g = np.swapaxes(np.take(self.core_neon.compute_nuclear_field_gradients(
+    #         coordinates=self.env_neon.coordinates), idx, axis=2), 1, 2)
+    #     #print(f_g)
+    #
+    #     mapping = {
+    #         (0, 0, 0): 0,  # xxx
+    #         (0, 0, 1): 1,  # xxy
+    #         (0, 0, 2): 2,  # xxz
+    #         (0, 1, 1): 3,  # xyy
+    #         (0, 1, 2): 4,  # xyz
+    #         (0, 2, 2): 5,  # xzz
+    #         (1, 1, 1): 6,  # yyy
+    #         (1, 1, 2): 7,  # yyz
+    #         (1, 2, 2): 8,  # yzz
+    #         (2, 2, 2): 9  # zzz
+    #     }
+    #     def expand_third_rank(ten_tensor):
+    #         # ten_tensor has shape (num_nuc, num_coords, 10)
+    #         num_nuc, num_coords, _ = ten_tensor.shape
+    #         full_tensor = np.empty((num_nuc, num_coords, 3, 3, 3))
+    #
+    #         for i in range(3):
+    #             for j in range(3):
+    #                 for k in range(3):
+    #                     # Sort the indices to get the canonical ordering
+    #                     key = tuple(sorted((i, j, k)))
+    #                     pos = mapping[key]
+    #                     full_tensor[:, :, i, j, k] = ten_tensor[:, :, pos]
+    #
+    #         return full_tensor
+    #     hess = self.core_neon.compute_nuclear_field_hessian(self.env_neon.coordinates)
+    #     print(hess)
+    #     print(expand_third_rank(hess))
+
+        #print(self.core_hf.compute_nuclear_field_hessian(self.env_hf.coordinates))
 
     def test_compute_electric_fields(self,
                                      act_wat_electric_fields,

@@ -296,7 +296,7 @@ Eigen::MatrixXd nuclei_fields(int start, int end) {
     return nuclei_fields;
 }
 
-// Computes the field of the nuclei on all atoms
+// Computes the field gradients of the nuclei on all atoms
 // Parallelized with OpenMP.
 std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end) {
     const int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
@@ -325,6 +325,37 @@ std::vector<Eigen::MatrixXd> nuclei_field_gradients(int start, int end) {
         }
     }
     return nuclei_field_gradients;
+}
+
+// Computes the field Hessians of the nuclei on all atoms
+// Parallelized with OpenMP.
+std::vector<Eigen::MatrixXd> nuclei_field_hessian(int start, int end) {
+    const int no_nuclei = static_cast<int>(global::nuclei_coordinates.size());
+    const int no_atoms = static_cast<int>(global::coordinates.size());
+    std::vector<Eigen::MatrixXd> nuclei_field_hessian(no_nuclei, Eigen::MatrixXd::Zero(no_atoms, 10));
+    #pragma omp parallel
+    {
+        std::vector<Eigen::MatrixXd> local_nucleus_field_hessian(no_nuclei, Eigen::MatrixXd::Zero(no_atoms, 10));
+
+        #pragma omp for
+        for(int i = start; i < end; i++) {
+            for(int j = 0; j < no_nuclei; j++) {
+                Eigen::Vector3d r_ab = global::coordinates[i] - global::nuclei_coordinates[j];
+                Eigen::MatrixXd t_tensor = compute_t_tensor(r_ab,
+                                                            global::tensor_template_potential,
+                                                            0, 3, 0, 3);
+                local_nucleus_field_hessian[j].row(i) += t_tensor * global::nuclei_charges(j);
+            }
+        }
+        #pragma omp critical
+        {
+            // Combine thread-local nucleus_field_hessian part to the final nuclei_field_hessian
+            for (int k = 0; k < no_nuclei; ++k) {
+                nuclei_field_hessian[k] += local_nucleus_field_hessian[k];
+            }
+        }
+    }
+    return nuclei_field_hessian;
 }
 
 // TODO implement MIC here

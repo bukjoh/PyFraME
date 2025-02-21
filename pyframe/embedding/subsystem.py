@@ -171,6 +171,7 @@ class QuantumSubsystem(Subsystem):
     def compute_nuclear_field_hessian(self,
                                       coordinates
                                       ) -> np.ndarray:
+        #FIXME doc string is wrong
         """Calculate the electric field gradient from the nuclei at the given coordinates.
 
         Args:
@@ -188,9 +189,9 @@ class QuantumSubsystem(Subsystem):
             start = sum(counts[:self.rank])
             end = sum(counts[:self.rank + 1])
             #TODO create nuclei field hessian in engine (
-            nuclear_field_gradients = engine.nuclei_field_hessian(np.array([start, end], dtype=np.int64))
-            nuclear_field_gradients = self.comm.allreduce(nuclear_field_gradients)
-            return nuclear_field_gradients
+            nuclear_field_hessian = engine.nuclei_field_hessian(np.array([start, end], dtype=np.int64))
+            nuclear_field_hessian = self.comm.allreduce(nuclear_field_hessian)
+            return nuclear_field_hessian
         else:
             return engine.nuclei_field_hessian(np.array([0, len(coordinates)], dtype=np.int64))
 

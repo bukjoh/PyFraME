@@ -110,22 +110,24 @@ def compute_electronic_induction_energy_gradients(density_matrix: np.ndarray,
         density_matrix=density_matrix)
 
 
-def compute_electronic_induction_energy_hessian(nuc_list: list,
-                                                density_matrix: np.ndarray,
-                                                classical_subsystem: subsystem.ClassicalSubsystem,
-                                                quantum_subsystem: subsystem.QuantumSubsystem,
-                                                integral_driver: Any,
-                                                threshold: float = 1e-8,
-                                                max_iterations: int = 100,
-                                                mic: bool = False,
-                                                box: np.ndarray = np.array([]),
-                                                solver: str = 'jacobi') -> np.ndarray:
-    no_nuc = len(nuc_list)
+def compute_induction_energy_hessian(density_matrix: np.ndarray,
+                                     classical_subsystem: subsystem.ClassicalSubsystem,
+                                     quantum_subsystem: subsystem.QuantumSubsystem,
+                                     integral_driver: Any,
+                                     threshold: float = 1e-8,
+                                     max_iterations: int = 100,
+                                     mic: bool = False,
+                                     box: np.ndarray = np.array([]),
+                                     solver: str = 'jacobi'
+                                     ) -> np.ndarray:
+    no_nuc = quantum_subsystem.num_nuclei
     hess_contr = np.zeros([3 * no_nuc, 3 * no_nuc])
 
     # Calculate F^gBF^g
     f_g = np.zeros([no_nuc, 3, classical_subsystem.num_atoms, 3])
     mu_g = np.zeros([no_nuc, 3, classical_subsystem.num_atoms, 3])
+    # Calculate FBF^gg
+
     if classical_subsystem.comm is not None:
         rank = classical_subsystem.comm.rank
         size = classical_subsystem.comm.size
@@ -195,8 +197,8 @@ def compute_electronic_induction_energy_hessian(nuc_list: list,
                     box=box,
                     solver=solver,
                     external_fields=f_g[idx, k])
-        for i in nuc_list:
-            for j in nuc_list:
+        for i in range(no_nuc):
+            for j in range(no_nuc):
                 if i > j:
                     continue  # Only compute for the upper triangle (i <= j)
                 # Compute the 3x3 block for nuclei i and j
@@ -206,8 +208,53 @@ def compute_electronic_induction_energy_hessian(nuc_list: list,
                 if i != j:
                     # By symmetry, the (j,i) block is the transpose.
                     hess_contr[3 * j:3 * j + 3, 3 * i:3 * i + 3] += hessian_block.T
-    # Calculate FBF^gg
+        # Calculate FBF^gg
+        # Add electronic contribution to the field Hessian
+
+    # Add electronic µF^gg contribution
+    hess_contr += integral_driver.compute_electronic_field_hessian(
+        coordinates=classical_subsystem.coordinates,
+        induced_dipoles=classical_subsystem.induced_dipoles.induced_dipoles,
+        density_matrix=density_matrix)
+    # Add nuclear µF^gg contributions
+    mapping = {
+        (0, 0, 0): 0,  # xxx
+        (0, 0, 1): 1,  # xxy
+        (0, 0, 2): 2,  # xxz
+        (0, 1, 1): 3,  # xyy
+        (0, 1, 2): 4,  # xyz
+        (0, 2, 2): 5,  # xzz
+        (1, 1, 1): 6,  # yyy
+        (1, 1, 2): 7,  # yyz
+        (1, 2, 2): 8,  # yzz
+        (2, 2, 2): 9  # zzz
+    }
+
+    def expand_third_rank(ten_tensor):
+        # ten_tensor has shape (num_nuc, num_coords, 10)
+        num_nuc, num_coords, _ = ten_tensor.shape
+        full_tensor = np.empty((num_nuc, num_coords, 3, 3, 3))
+
+        for i in range(3):
+            for j in range(3):
+                for k in range(3):
+                    # Sort the indices to get the canonical ordering
+                    key = tuple(sorted((i, j, k)))
+                    pos = mapping[key]
+                    full_tensor[:, :, i, j, k] = ten_tensor[:, :, pos]
+
+        return full_tensor
+
+    f_gg = expand_third_rank(quantum_subsystem.compute_nuclear_field_hessian(classical_subsystem.coordinates))
+    contr_dip_f_gg = np.einsum('ncijk,ck->ncij', f_gg, classical_subsystem.induced_dipoles.induced_dipoles)
+    h_blocks = contr_dip_f_gg.sum(axis=1)
+    num_nuc = h_blocks.shape[0]
+    nuc_hess_contr = np.zeros((3 * num_nuc, 3 * num_nuc))
+    for i in range(num_nuc):
+        nuc_hess_contr[3 * i:3 * (i + 1), 3 * i:3 * (i + 1)] = h_blocks[i]
+    hess_contr += nuc_hess_contr
     return hess_contr
+
 
 def compute_electronic_induction_fock_gradient(i: int,
                                                classical_subsystem: subsystem.ClassicalSubsystem,

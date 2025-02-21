@@ -865,6 +865,18 @@ static PyObject* nuclei_field_gradients(PyObject* self, PyObject* args) {
     return (PyObject *)std_vec_of_eigen_matrixXd_to_numpy(computation::nuclei_field_gradients(start, end));
 }
 
+//Calculates the nuclei field hessian on coordinates
+//args: [start, end] (numpy.ndarray with start and end as entries)
+static PyObject* nuclei_field_hessian(PyObject* self, PyObject* args) {
+    PyObject *start_end_obj;
+    if (!PyArg_ParseTuple(args, "O", &start_end_obj)) {
+        return NULL;
+    }
+    int start = (int)read_vector(start_end_obj)(0);
+    int end = (int)read_vector(start_end_obj)(1);
+    return (PyObject *)std_vec_of_eigen_matrixXd_to_numpy(computation::nuclei_field_hessian(start, end));
+}
+
 
 Eigen::MatrixXi generateIdxPairs(int start_index, int end_index) {
     int num_atoms = static_cast<int>(global::coordinates.size());
@@ -1247,6 +1259,8 @@ static PyMethodDef module_methods[] = {
      "Calculates the field of the nuclei on atoms defined with start and end. Previously set coordinates, nuclei_coords and nuclei_charges."},
      {"nuclei_field_gradients", nuclei_field_gradients, METH_VARARGS,
       "Calculates the field gradients of the nuclei on atoms defined with start and end. Previously set coordinates, nuclei_coords and nuclei_charges."},
+     {"nuclei_field_hessian", nuclei_field_hessian, METH_VARARGS,
+      "Calculates the field hessian of the nuclei on atoms defined with start and end. Previously set coordinates, nuclei_coords and nuclei_charges."},
      {"set_multipoles_multipole_orders", set_multipoles_multipole_orders, METH_VARARGS,
      "Sets multipoles with degeneracy and taylor coefficient and the multipole orders."},
      {"multipole_fields", multipole_fields, METH_VARARGS,
