@@ -777,7 +777,7 @@ class ClassicalSubsystem(Subsystem):
                 residue_norms.append(residue_norm)
         # TODO implement some kind of DIIS scheme based on previous sets of induced dipoles?
         # check which residue norm is the smallest
-        min_res_norm = min(residue_norms)
+        min_res_norm = min(residue_norms, default=float('inf'))
         if min_res_norm < 1e-6:
             log_manager.logger.debug(
                 print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
