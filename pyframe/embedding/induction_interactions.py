@@ -137,11 +137,11 @@ def compute_induction_energy_hessian(density_matrix: np.ndarray,
         start = sum(counts[:rank])
         end = sum(counts[:rank + 1])
         for idx in range(no_nuc):
-            f_g[idx, :, start:end, :] += integral_driver.compute_electronic_field_gradients(
+            f_g[idx, :, start:end, :] += -1 * integral_driver.compute_electronic_field_gradients(
                 coordinates=classical_subsystem.coordinates[start:end],
                 density_matrix=density_matrix,
-                i=idx
-            )
+                i=idx)
+
         f_g = classical_subsystem.comm.allreduce(f_g)
         # Add nuclear Field contribution
         idx = np.array([[0, 1, 2],
@@ -152,7 +152,7 @@ def compute_induction_energy_hessian(density_matrix: np.ndarray,
 
         for idx in range(no_nuc):
             for k in range(3):
-                mu_g = classical_subsystem.solve_perturbed_induced_dipoles(
+                mu_g[idx, k] += classical_subsystem.solve_perturbed_induced_dipoles(
                     threshold=threshold,
                     max_iterations=max_iterations,
                     mic=mic,
@@ -190,7 +190,7 @@ def compute_induction_energy_hessian(density_matrix: np.ndarray,
             coordinates=classical_subsystem.coordinates), idx, axis=2), 1, 2)
         for idx in range(no_nuc):
             for k in range(3):
-                mu_g = classical_subsystem.solve_perturbed_induced_dipoles(
+                mu_g[idx, k] = classical_subsystem.solve_perturbed_induced_dipoles(
                     threshold=threshold,
                     max_iterations=max_iterations,
                     mic=mic,
@@ -214,7 +214,7 @@ def compute_induction_energy_hessian(density_matrix: np.ndarray,
     # Add electronic µF^gg contribution
     hess_contr += integral_driver.compute_electronic_field_hessian(
         coordinates=classical_subsystem.coordinates,
-        induced_dipoles=classical_subsystem.induced_dipoles.induced_dipoles,
+        induced_dipoles= -1 * classical_subsystem.induced_dipoles.induced_dipoles,
         density_matrix=density_matrix)
     # Add nuclear µF^gg contributions
     mapping = {

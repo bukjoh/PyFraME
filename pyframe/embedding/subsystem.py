@@ -171,7 +171,7 @@ class QuantumSubsystem(Subsystem):
     def compute_nuclear_field_hessian(self,
                                       coordinates
                                       ) -> np.ndarray:
-        #FIXME doc string is wrong
+        # FIXME doc string is wrong
         """Calculate the electric field gradient from the nuclei at the given coordinates.
 
         Args:
@@ -188,7 +188,6 @@ class QuantumSubsystem(Subsystem):
             counts = [avg + 1 if p < res else avg for p in range(self.size)]
             start = sum(counts[:self.rank])
             end = sum(counts[:self.rank + 1])
-            #TODO create nuclei field hessian in engine (
             nuclear_field_hessian = engine.nuclei_field_hessian(np.array([start, end], dtype=np.int64))
             nuclear_field_hessian = self.comm.allreduce(nuclear_field_hessian)
             return nuclear_field_hessian
@@ -769,8 +768,8 @@ class ClassicalSubsystem(Subsystem):
             residue_norm = np.linalg.norm(external_fields - old_pert_induced_dipole.external_fields)
             if residue_norm == 0:
                 log_manager.logger.debug(
-                    print("Residue norm between new and old external fields is 0, induced dipoles will not be "
-                          "recalculated.")
+                    "Residue norm between new and old external fields is 0, induced dipoles will not be "
+                    "recalculated."
                 )
                 return old_pert_induced_dipole.induced_dipoles
             else:
@@ -780,21 +779,21 @@ class ClassicalSubsystem(Subsystem):
         min_res_norm = min(residue_norms, default=float('inf'))
         if min_res_norm < 1e-6:
             log_manager.logger.debug(
-                print("Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
-                      "be used as a starting guess.")
+                "Residue norm between new and old external fields is smaller than 1e-6, old induced dipoles will "
+                "be used as a starting guess."
             )
             starting_guess = self.perturbed_induced_dipoles[residue_norms.index(min_res_norm)].induced_dipoles
         else:
             log_manager.logger.debug(
-                print("Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
-                      "not be used as a starting guess.")
+                "Residue norm between new and old external fields is larger than 1e-6, old induced dipoles will "
+                "not be used as a starting guess."
             )
             starting_guess = np.zeros([self.num_atoms, 3])
             for i, field in enumerate(static_fields):
                 starting_guess[i, :] = np.einsum('ij, j', self.dipole_dipole_polarizabilities[i], field)
         if mic and np.shape(box) != (3, 3):
             log_manager.logger.debug(
-                print("No simulation box dimensions, mic disabled.")
+                "No simulation box dimensions, mic disabled."
             )
             mic = False
         induced_dipoles, num_iter = None, None
