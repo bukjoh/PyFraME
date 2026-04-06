@@ -3,7 +3,7 @@
 #ifndef _global_h_
 #define _global_h_
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <vector>
 #include <unordered_set>
 
