@@ -2,7 +2,7 @@
 #define _computation_h_
 
 #include "global.h"
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <omp.h>
 #include <unordered_set>
 #include <cmath>
